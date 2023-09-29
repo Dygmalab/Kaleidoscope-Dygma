@@ -1,0 +1,34 @@
+VERSION 1
+NAME Keyboard Non Modifiers
+
+KEYSWITCH A 2 1
+KEYSWITCH S 2 2
+KEYSWITCH LeftShift 3 7
+
+RUN 10 ms
+PRESS A
+RUN 1 cycle
+EXPECT keyboard-report Key_A  # Report should contain only 'a'
+
+RUN 25 ms
+RELEASE A
+
+RUN 1 cycle
+EXPECT keyboard-report empty # Report should be empty
+
+NAME Keyboard Modifiers
+
+RUN 10 ms
+PRESS LeftShift
+
+RUN 1 cycle
+EXPECT keyboard-report Key_LeftShift  # Report should contain only `shift`
+
+
+RUN 25 ms
+RELEASE LeftShift
+
+RUN 1 cycle
+
+EXPECT keyboard-report empty # No keys should be pressed
+

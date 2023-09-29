@@ -1,0 +1,50 @@
+#! /bin/sh
+## -*- mode: sh -*-
+set -e
+
+uname_S=$(uname -s 2>/dev/null || echo not)
+
+# If we're running in a terminal and want interactive docker
+# Specifically "is there a STDIN file descriptor"
+if [ -t 0 ]; then
+    : "${DOCKER_RUN_INTERACTIVE_OPTS:=--tty --interactive}"
+fi
+
+
+
+if [ "${uname_S}" = "Darwin" ]; then
+    ARDUINO_LOCAL_LIB_PATH="${ARDUINO_LOCAL_LIB_PATH:-${HOME}/Documents/Arduino}"
+    # This stops macos from copying resource forks into thigns like tar
+    export COPYFILE_DISABLE=true
+else
+    ARDUINO_LOCAL_LIB_PATH="${ARDUINO_LOCAL_LIB_PATH:-${HOME}/Arduino}"
+fi
+
+BOARD_HARDWARE_PATH="${BOARD_HARDWARE_PATH:-${ARDUINO_LOCAL_LIB_PATH}/hardware}"
+
+echo "Preparing Kaleidoscope and the bundle..."
+
+XFER_DIR="$(pwd)/.docker_xfer"
+mkdir -p "${XFER_DIR}"
+
+tar  -cf "${XFER_DIR}/kaleidoscope.tar"  \
+	--exclude .docker_xfer	--exclude .git --exclude _build --exclude testing/googletest/build  \
+	.
+
+(cd "${BOARD_HARDWARE_PATH}/keyboardio" && tar  -cf "${XFER_DIR}/bundle.tar" \
+	--exclude .git --exclude avr/libraries/Kaleidoscope .)
+
+echo "Building the docker image..."
+docker build -q -t kaleidoscope/docker etc
+# We do want word splitting since there are multiple options here
+# shellcheck disable=SC2086   
+docker run --rm $DOCKER_RUN_INTERACTIVE_OPTS \
+       --tmpfs /kaleidoscope:exec \
+       --mount type=bind,source="${XFER_DIR}",destination=/kaleidoscope-src,consistency=delegated,readonly \
+       --mount type=volume,source=kaleidoscope-persist,destination=/kaleidoscope-persist,consistency=delegated \
+       --mount type=volume,source=kaleidoscope-googletest-build,destination=/kaleidoscope/hardware/keyboardio/avr/libraries/Kaleidoscope/testing/googletest/build,consistency=delegated \
+       --mount type=volume,source=kaleidoscope-build,destination=/kaleidoscope/hardware/keyboardio/avr/libraries/Kaleidoscope/_build,consistency=delegated \
+       kaleidoscope/docker "$*"
+
+
+exit 0
