@@ -17,35 +17,41 @@
  */
 
 #pragma once
+#ifdef ARDUINO_ARCH_NRF52
 
 #include "kaleidoscope/Runtime.h"
 
 namespace kaleidoscope {
 namespace plugin {
 
-class IdleLEDs: public kaleidoscope::Plugin {
+class IdleLEDsDefy : public kaleidoscope::Plugin {
  public:
-  IdleLEDs(void) {}
-
-  static uint32_t idle_time_limit;
-
-  static uint32_t idleTimeoutSeconds();
-  static void setIdleTimeoutSeconds(uint32_t new_limit);
+   IdleLEDsDefy(void) {}
+    struct IdleTime {
+    uint32_t wired_;
+    uint32_t wireless_;
+  };
+  static IdleTime idle_time_limit; // Declare as IdleTime, not uint32_t
+  static uint32_t idle_time_limit_default;
+  static uint32_t idle_time_limit_default_wireless;
+  static void setIdleTimeoutSeconds(const IdleTime& data);
+  static uint32_t idleTimeoutSeconds(uint32_t time_in_ms);
 
   EventHandlerResult beforeEachCycle();
   EventHandlerResult onKeyswitchEvent(Key &mapped_key, KeyAddr key_addr, uint8_t key_state);
 
  private:
   static bool idle_;
-  static uint32_t start_time_;
+  static uint32_t start_time_wired;
+  static uint32_t start_time_wireless;
 };
 
-class PersistentIdleLEDs : public IdleLEDs {
+class PersistentIdleDefyLEDs : public IdleLEDsDefy
+{
  public:
   EventHandlerResult onSetup();
   EventHandlerResult onFocusEvent(const char *command);
-
-  static void setIdleTimeoutSeconds(uint32_t new_limit);
+  static void setIdleTimeoutSeconds(const IdleTime& data);
  private:
   static uint16_t settings_base_;
 };
@@ -53,5 +59,6 @@ class PersistentIdleLEDs : public IdleLEDs {
 }
 }
 
-extern kaleidoscope::plugin::IdleLEDs IdleLEDs;
-extern kaleidoscope::plugin::PersistentIdleLEDs PersistentIdleLEDs;
+extern kaleidoscope::plugin::IdleLEDsDefy IdleLEDsDefy;
+extern kaleidoscope::plugin::PersistentIdleDefyLEDs PersistentIdleDefyLEDs;
+#endif

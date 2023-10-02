@@ -1,5 +1,6 @@
-/* Kaleidoscope-LEDControl - LED control plugin for Kaleidoscope
- * Copyright (C) 2017-2018  Keyboard.io, Inc.
+/* -*- mode: c++ -*-
+ * Kaleidoscope-Idle-LEDs -- Turn off the LEDs when the keyboard's idle
+ * Copyright (C) 2018  Keyboard.io, Inc
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -16,12 +17,4 @@
 
 #pragma once
 
-#include <kaleidoscope/plugin/LEDMode.h>
-//TODO: refactor this
-#ifdef ARDUINO_ARCH_NRF52
-#include <kaleidoscope/plugin/LEDControlDefy.h>
-#else
-#include <kaleidoscope/plugin/LEDControl.h>
-#endif
-#include <kaleidoscope/plugin/LEDControl/LEDUtils.h>
-#include <kaleidoscope/plugin/LEDControl/LED-Off.h>
+#include <kaleidoscope/plugin/IdleLEDsDefy.h>
