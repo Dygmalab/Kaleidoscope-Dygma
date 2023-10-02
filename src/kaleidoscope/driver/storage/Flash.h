@@ -25,55 +25,117 @@
 
 #pragma once
 
-#include "EEPROM.h"
-#include "kaleidoscope/driver/storage/Base.h"
+#if defined(ARDUINO_SAMD_RAISE)
 
-// #include "Flash_storage.h"
+#include "kaleidoscope/driver/storage/Base.h"
+#include <FlashStorage.h>
+#include <FlashAsEEPROM.h>
+
+// We need to undefine Flash, because `FlashStorage` defines it as a macro, yet,
+// we want to use it as a class name.
+#ifdef Flash
+#undef Flash
+#endif
 
 namespace kaleidoscope {
 namespace driver {
 namespace storage {
 
 struct FlashProps : kaleidoscope::driver::storage::BaseProps {
-    static constexpr uint16_t length = 8192;
+  static constexpr uint16_t length = EEPROM_EMULATION_SIZE;
 };
 
 template <typename _StorageProps>
 class Flash: public kaleidoscope::driver::storage::Base<_StorageProps> {
-  public:
-    template<typename T>
-    T& get(uint16_t offset, T& t) {
-        return EEPROM.get(offset, t);
-    }
+ public:
+  template<typename T>
+  T& get(uint16_t offset, T& t) {
+    return EEPROM.get(offset, t);
+  }
 
-    template<typename T>
-    const T& put(uint16_t offset, T& t) {
-        EEPROM.put(offset, t);
+  template<typename T>
+  const T& put(uint16_t offset, T& t) {
+    EEPROM.put(offset, t);
+  }
 
-        return t;
-    }
+  uint8_t read(int idx) {
+    return EEPROM.read(idx);
+  }
 
-    uint8_t read(int idx) {
-        return EEPROM.read(idx);
-    }
+  void write(int idx, uint8_t val) {
+    EEPROM.write(idx, val);
+  }
 
-    void write(int idx, uint8_t val) {
-        EEPROM.write(idx, val);
-    }
+  void update(int idx, uint8_t val) {
+    EEPROM.update(idx, val);
+  }
 
-    void update(int idx, uint8_t val) {
-        EEPROM.update(idx, val);
-    }
-
-    void commit() {
-        EEPROM.commit();
-    }
-
-    void begin(size_t size) {
-        EEPROM.begin(size);
-    }
+  void commit() {
+    EEPROM.commit();
+  }
 };
 
 }
 }
 }
+
+#elif defined(ARDUINO_RASPBERRY_PI_PICO)  // ARDUINO_RASPBERRY_PI_PICO
+
+#include "kaleidoscope/driver/storage/Base.h"
+#include "EEPROM.h"  // EEPROM library for RP2040: libraries/EEPROM/EEPROM.h
+
+// We need to undefine Flash, because `FlashStorage` defines it as a macro, yet,
+// we want to use it as a class name.
+#ifdef Flash
+#undef Flash
+#endif
+
+namespace kaleidoscope {
+namespace driver {
+namespace storage {
+
+struct FlashProps : kaleidoscope::driver::storage::BaseProps {
+  static constexpr uint16_t length = EEPROM_EMULATION_SIZE;
+};
+
+template <typename _StorageProps>
+class Flash: public kaleidoscope::driver::storage::Base<_StorageProps> {
+ public:
+  template<typename T>
+  T& get(uint16_t offset, T& t) {
+    return EEPROM.get(offset, t);
+  }
+
+  template<typename T>
+  const T& put(uint16_t offset, T& t) {
+    EEPROM.put(offset, t);
+    
+    return t;
+  }
+
+  uint8_t read(int idx) {
+    return EEPROM.read(idx);
+  }
+
+  void write(int idx, uint8_t val) {
+    EEPROM.write(idx, val);
+  }
+
+  void update(int idx, uint8_t val) {
+    EEPROM.update(idx, val);
+  }
+
+  void commit() {
+    EEPROM.commit();
+  }
+
+  void begin(size_t size) {
+    EEPROM.begin(size);
+  }
+};
+
+}
+}
+}
+
+#endif

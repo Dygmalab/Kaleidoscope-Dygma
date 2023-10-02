@@ -1,0 +1,15 @@
+*~
+.arduino
+/.docker_xfer
+.#*
+/output/
+/examples/*/output/
+/out/
+/docs/generated
+/docs/doxyoutput
+/docs/api
+/_build/
+/results/
+generated-testcase.cpp
+.vscode/
+.arduino
