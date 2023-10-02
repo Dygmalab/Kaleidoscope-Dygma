@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU General Public License along with
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#ifdef ARDUINO_NRF5_DEFY
 
 #pragma once
 
@@ -37,3 +38,4 @@ class Focus : public kaleidoscope::Plugin {
 }  // namespace kaleidoscope
 
 extern kaleidoscope::device::dygma::defy_wireless::Focus DefyFocus;
+#endif

@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU General Public License along with
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#ifdef ARDUINO_NRF5_DEFY
 
 #include "kaleidoscope/Runtime.h"
 #include <Kaleidoscope-FocusSerial.h>
@@ -136,3 +137,4 @@ void Focus::init() {
 }  // namespace kaleidoscope
 
 kaleidoscope::device::dygma::defy_wireless::Focus DefyFocus;
+#endif
