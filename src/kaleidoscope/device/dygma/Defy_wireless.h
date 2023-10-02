@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU General Public License along with
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#ifdef ARDUINO_ARCH_NRF52
 
 #pragma once
 
@@ -407,3 +408,4 @@ typedef kaleidoscope::device::dygma::DefyNrf Device;
       r4c0, r4c1, r4c2, r4c3, r4c4, r4c5, r4c6, r4c7, r4c8, r4c9, r4c10, r4c11, r4c12, r4c13, r4c14, r4c15
 
 #endif  // __DEFY_WIRELESS_H__
+#endif

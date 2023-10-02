@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU General Public License along with
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#ifdef ARDUINO_ARCH_NRF52
 
 #include "kaleidoscope/Runtime.h"
 #include <Kaleidoscope-EEPROM-Settings.h>
@@ -753,3 +754,4 @@ void DefyNrf::settings::keyscanInterval(uint16_t interval)
 } // namespace dygma
 } // namespace device
 } // namespace kaleidoscope
+#endif

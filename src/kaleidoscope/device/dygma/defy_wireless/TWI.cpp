@@ -1,3 +1,4 @@
+#ifdef ARDUINO_ARCH_NRF52
 #include "TWI.h"
 
 #include "kaleidoscope/util/crc16.h"
@@ -275,3 +276,4 @@ void TWI::recovery(void)
 }
 }
 
+#endif

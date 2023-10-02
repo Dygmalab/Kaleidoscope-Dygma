@@ -1,3 +1,4 @@
+#ifdef ARDUINO_ARCH_NRF52
 #include "Hand.h"
 
 #include "Defy_wireless.h"
@@ -102,3 +103,4 @@ Devices Hand::getConnectedDevice() const
 } // namespace dygma
 } // namespace device
 } // namespace kaleidoscope
+#endif
