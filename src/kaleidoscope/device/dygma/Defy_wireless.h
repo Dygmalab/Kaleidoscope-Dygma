@@ -47,8 +47,11 @@
 #define PRINT_KEYSWITCH_EVENT_PARAMETERS 0
 
 
-#define Defy_FIRMWARE_VERSION            "v1.0.0"
+#ifndef FIRMWARE_VERSION
+#define FIRMWARE_VERSION "v1.0.0"
+#endif
 
+#define Defy_FIRMWARE_VERSION FIRMWARE_VERSION
 
 namespace kaleidoscope {
 namespace device {
