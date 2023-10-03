@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License along with
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifdef ARDUINO_NRF5_DEFY
+#ifdef ARDUINO_ARCH_NRF52
 
 #pragma once
 
