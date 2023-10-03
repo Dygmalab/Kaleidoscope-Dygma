@@ -43,54 +43,54 @@ bool inline filterHand(Communications_protocol::Devices incomingDevice,Hand::Han
 
 void Hand::init()
 {
-        auto keyScanFunction = [this](Packet const &packet)
+    auto keyScanFunction = [this](Packet const &packet)
+    {
+        if (filterHand(packet.header.device, this_device_))
         {
-            if (filterHand(packet.header.device, this_device_))
-            {
-                if (memcmp(key_data_.rows, packet.data, sizeof(key_data)) == 0) return;
-                new_key_ = true;
-                memcpy(key_data_.rows, packet.data, sizeof(key_data));
-                NRF_LOG_DEBUG("New key %lu",key_data_.all);
-            }
-        };
-        Communications.callbacks.bind(HAS_KEYS, keyScanFunction);
-        auto keyScanFunctionIsAlive = [this](Packet const &packet)
+            if (memcmp(key_data_.rows, packet.data, sizeof(key_data)) == 0) return;
+            new_key_ = true;
+            memcpy(key_data_.rows, packet.data, sizeof(key_data));
+            //                NRF_LOG_DEBUG("New key %lu",key_data_.all);
+        }
+    };
+    Communications.callbacks.bind(HAS_KEYS, keyScanFunction);
+    auto keyScanFunctionIsAlive = [this](Packet const &packet)
+    {
+        if(packet.data[0] != HAS_KEYS) return;
+        if (filterHand(packet.header.device, this_device_))
         {
-            if(packet.data[0] != HAS_KEYS) return;
-            if (filterHand(packet.header.device, this_device_))
-            {
-                if (memcmp(key_data_.rows, &packet.data[1], sizeof(key_data)) == 0) return;
-                new_key_ = true;
-                memcpy(key_data_.rows, &packet.data[1], sizeof(key_data));
-                NRF_LOG_DEBUG("New key is alive %lu",key_data_.all);
-            }
-        };
-        Communications.callbacks.bind(IS_ALIVE, keyScanFunctionIsAlive);
-        auto checkConnected = [this](Packet const &packet)
+            if (memcmp(key_data_.rows, &packet.data[1], sizeof(key_data)) == 0) return;
+            new_key_ = true;
+            memcpy(key_data_.rows, &packet.data[1], sizeof(key_data));
+            NRF_LOG_DEBUG("New key is alive %lu",key_data_.all);
+        }
+    };
+    Communications.callbacks.bind(IS_ALIVE, keyScanFunctionIsAlive);
+    auto checkConnected = [this](Packet const &packet)
+    {
+        if (filterHand(packet.header.device, this_device_))
         {
-            if (filterHand(packet.header.device, this_device_))
-            {
-                NRF_LOG_DEBUG("Connected device %i",packet.header.device);
-                connected_ = packet.header.device;
-                if(ble_innited()){
-                    if(this_device_==RIGHT){
-                        connected_ = BLE_DEFY_RIGHT;
-                    }else{
-                        connected_ = BLE_DEFY_LEFT;
-                    }
+            NRF_LOG_DEBUG("Connected device %i",packet.header.device);
+            connected_ = packet.header.device;
+            if(ble_innited()){
+                if(this_device_==RIGHT){
+                    connected_ = BLE_DEFY_RIGHT;
+                }else{
+                    connected_ = BLE_DEFY_LEFT;
                 }
             }
-        };
-        Communications.callbacks.bind(CONNECTED, checkConnected);
-        auto checkDisconnected = [this](Packet const &packet)
+        }
+    };
+    Communications.callbacks.bind(CONNECTED, checkConnected);
+    auto checkDisconnected = [this](Packet const &packet)
+    {
+        if (filterHand(packet.header.device, this_device_))
         {
-            if (filterHand(packet.header.device, this_device_))
-            {
-                NRF_LOG_DEBUG("Disconnected device %i",packet.header.device);
-                connected_ = packet.header.device;
-            }
-        };
-        Communications.callbacks.bind(DISCONNECTED, checkDisconnected);
+            NRF_LOG_DEBUG("Disconnected device %i",packet.header.device);
+            connected_ = UNKNOWN;
+        }
+    };
+    Communications.callbacks.bind(DISCONNECTED, checkDisconnected);
 }
 
 Devices Hand::getConnectedDevice() const

@@ -16,7 +16,6 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #ifdef ARDUINO_ARCH_NRF52
-
 #include "kaleidoscope/Runtime.h"
 #include <Kaleidoscope-EEPROM-Settings.h>
 #include <Kaleidoscope-LEDControl.h>
@@ -36,7 +35,7 @@
 #include "Defy_wireless.h"
 #include "LED-Palette-Theme-Defy.h"
 #include "Radio_manager.h"
-#include "Wire_nrf52.h"
+#include "Wire.h"  // Arduino Wire wrapper for the NRF52 chips
 #include "defy_wireless/Focus.h"
 #include "nrf_gpio.h"
 
@@ -728,7 +727,7 @@ void DefyNrf::side::reset_sides()
 
 void DefyNrf::side::prepareForFlash()
 {
-    Wire_nrf52::init(100);
+    Wire::begin(100);
 }
 
 uint16_t DefyNrf::settings::keyscanInterval()
