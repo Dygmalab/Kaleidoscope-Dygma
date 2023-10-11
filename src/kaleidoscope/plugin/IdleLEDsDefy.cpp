@@ -28,7 +28,7 @@ namespace kaleidoscope
 namespace plugin
 {
 
-uint32_t IdleLEDsDefy::idle_time_limit_default = 600000; // 10 minutes
+uint32_t IdleLEDsDefy::idle_time_limit_default = 600000;          // 10 minutes
 uint32_t IdleLEDsDefy::idle_time_limit_default_wireless = 300000; // 5 minutes
 IdleLEDsDefy::IdleTime IdleLEDsDefy::idle_time_limit;
 uint32_t IdleLEDsDefy::start_time_wired = 0;
@@ -43,14 +43,14 @@ uint32_t IdleLEDsDefy::idleTimeoutSeconds(uint32_t time_in_ms)
 EventHandlerResult IdleLEDsDefy::beforeEachCycle()
 {
     if (idle_time_limit.wired_ == 0 || idle_time_limit.wireless_ == 0) return EventHandlerResult::OK;
-    auto const& keyScanner = Runtime.device().keyScanner();
+    auto const &keyScanner = Runtime.device().keyScanner();
     auto deviceLeft = keyScanner.leftHandDevice();
     auto devicesRight = keyScanner.rightHandDevice();
+    auto isEitherUnknown = deviceLeft == Communications_protocol::UNKNOWN && devicesRight == Communications_protocol::UNKNOWN;
+    auto isDefyLeftWired = deviceLeft == Communications_protocol::KEYSCANNER_DEFY_LEFT || deviceLeft == Communications_protocol::UNKNOWN;
+    auto isDefyRightWired = devicesRight == Communications_protocol::KEYSCANNER_DEFY_RIGHT || devicesRight == Communications_protocol::UNKNOWN;
 
-    bool checkWiredLeftSide  = (deviceLeft == Communications_protocol::KEYSCANNER_DEFY_RIGHT || deviceLeft == Communications_protocol::KEYSCANNER_DEFY_LEFT);
-    bool checkWiredRightSide = (devicesRight == Communications_protocol::KEYSCANNER_DEFY_RIGHT || devicesRight == Communications_protocol::KEYSCANNER_DEFY_LEFT);
-
-    if (checkWiredLeftSide && checkWiredRightSide)
+    if ((isDefyLeftWired && isDefyRightWired) && !isEitherUnknown)
     {
         start_time_wireless = Runtime.millisAtCycleStart();
         if (::LEDControl.isEnabled() && Runtime.hasTimeExpired(start_time_wired, idle_time_limit.wired_))

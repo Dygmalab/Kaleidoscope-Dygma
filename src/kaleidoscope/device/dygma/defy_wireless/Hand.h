@@ -52,7 +52,6 @@ typedef union {
   uint8_t rows[5];
   uint64_t all;
 } key_data;
-using namespace Communications_protocol;
 class Hand {
  public:
    enum HandSide {
@@ -68,10 +67,8 @@ class Hand {
  private:
   defy_wireless::key_data key_data_{};
   bool new_key_;
-  Communications_protocol::Devices connected_{UNKNOWN};
 
 public:
-  Devices getConnectedDevice() const;
 
 public:
   const key_data &getKeyData() {
