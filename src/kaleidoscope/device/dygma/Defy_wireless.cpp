@@ -148,6 +148,20 @@ void DefyHands::setSidePower(bool power)
 Communications_protocol::Devices leftConnection[3]{UNKNOWN, UNKNOWN, UNKNOWN};
 Communications_protocol::Devices rightConnection[3]{UNKNOWN, UNKNOWN, UNKNOWN};
 
+auto checkBrightness = [](const Packet &)
+{
+    auto &keyScanner = Runtime.device().keyScanner();
+    auto &ledDriver = Runtime.device().ledDriver();
+
+    auto deviceLeft = keyScanner.leftHandDevice();
+    auto deviceRight = keyScanner.rightHandDevice();
+
+    auto isEitherUnknown = deviceLeft == Communications_protocol::UNKNOWN && deviceRight == Communications_protocol::UNKNOWN;
+    auto isDefyLeftWired = deviceLeft == Communications_protocol::KEYSCANNER_DEFY_LEFT || deviceLeft == Communications_protocol::UNKNOWN;
+    auto isDefyRightWired = deviceRight == Communications_protocol::KEYSCANNER_DEFY_RIGHT || deviceRight == Communications_protocol::UNKNOWN;
+    ColormapEffectDefy.updateBrigthness((isDefyLeftWired && isDefyRightWired) && !isEitherUnknown);
+};
+
 void DefyHands::setup()
 {
     rightHand.init();
@@ -186,19 +200,6 @@ void DefyHands::setup()
                                                         if (p.header.device == KEYSCANNER_DEFY_RIGHT) rightConnection[1] = UNKNOWN;
                                                     }));
 
-    auto checkBrightness = [](const Packet &)
-    {
-        auto &keyScanner = Runtime.device().keyScanner();
-        auto &ledDriver = Runtime.device().ledDriver();
-
-        auto deviceLeft = keyScanner.leftHandDevice();
-        auto deviceRight = keyScanner.rightHandDevice();
-
-        auto isEitherUnknown = deviceLeft == Communications_protocol::UNKNOWN && deviceRight == Communications_protocol::UNKNOWN;
-        auto isDefyLeftWired = deviceLeft == Communications_protocol::KEYSCANNER_DEFY_LEFT || deviceLeft == Communications_protocol::UNKNOWN;
-        auto isDefyRightWired = deviceRight == Communications_protocol::KEYSCANNER_DEFY_RIGHT || deviceRight == Communications_protocol::UNKNOWN;
-        ColormapEffectDefy.updateBrigthness((isDefyLeftWired && isDefyRightWired) && !isEitherUnknown);
-    };
     Communications.callbacks.bind(CONNECTED, checkBrightness);
     Communications.callbacks.bind(DISCONNECTED, checkBrightness);
     Communications.callbacks.bind(CONNECTED, ([](const Packet &) { ::LEDControl.set_mode(::LEDControl.get_mode_index()); }));
@@ -277,32 +278,8 @@ void DefyHands::ledBrightnessUGWireless(uint8_t brightnessUG)
 
 void DefyHands::sendPacketBrightness()
 {
-    auto &keyScanner = Runtime.device().keyScanner();
-
-    auto deviceLeft = keyScanner.leftHandDevice();
-    auto devicesRight = keyScanner.rightHandDevice();
-
-    bool checkWiredLeftSide = (deviceLeft == KEYSCANNER_DEFY_RIGHT || deviceLeft == Communications_protocol::KEYSCANNER_DEFY_LEFT);
-    bool checkWiredRightSide = (devicesRight == KEYSCANNER_DEFY_RIGHT || devicesRight == Communications_protocol::KEYSCANNER_DEFY_LEFT);
-
-    if (checkWiredLeftSide && checkWiredRightSide)
-    {
-        Communications_protocol::Packet p{};
-        p.header.command = Communications_protocol::BRIGHTNESS;
-        p.header.size = 2;
-        p.data[0] = bright.led_brightness_ledDriver_;
-        p.data[1] = bright.led_brightness_underglow_;
-        Communications.sendPacket(p);
-    }
-    else
-    {
-        Communications_protocol::Packet p{};
-        p.header.command = Communications_protocol::BRIGHTNESS;
-        p.header.size = 2;
-        p.data[0] = bright.led_brightness_ledDriver_wireless_;
-        p.data[1] = bright.led_brightness_underglow_wireless_;
-        Communications.sendPacket(p);
-    }
+    Packet p{};
+    checkBrightness(p);
 }
 
 void DefyHands::getChipID(char *cstring, uint16_t len)
