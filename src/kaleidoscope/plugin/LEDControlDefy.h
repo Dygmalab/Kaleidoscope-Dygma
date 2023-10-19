@@ -140,6 +140,15 @@ class LEDControl : public kaleidoscope::Plugin
         return Runtime.device().ledDriver().getBrightnessUGWireless();
     }
 
+    static void activateFadeUG(uint8_t activate_fade_effect){
+        fade_effect = activate_fade_effect;
+
+
+    }
+    static uint8_t FadeUGIsActivated(){
+        return fade_effect;
+    }
+    static uint16_t settings_base_;
   private:
     static uint16_t syncTimer;
     static uint8_t mode_id;
@@ -148,6 +157,7 @@ class LEDControl : public kaleidoscope::Plugin
     static bool enabled_;
     static Key pending_next_prev_key_;
     static bool force;
+    static uint8_t fade_effect;
 };
 
 class FocusLEDCommand : public Plugin
