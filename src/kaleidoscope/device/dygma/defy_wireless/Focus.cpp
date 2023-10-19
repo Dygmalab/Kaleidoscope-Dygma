@@ -46,6 +46,20 @@ EventHandlerResult Focus::onFocusEvent(const char *command) {
         return EventHandlerResult::OK;
     }
 
+    if (strcmp(command + 9, "sideLeft") == 0) {
+        auto &keyScanner = Runtime.device().keyScanner();
+        auto deviceLeft = keyScanner.leftHandDevice();
+        ::Focus.send(static_cast<uint8_t>(deviceLeft));
+        return EventHandlerResult::OK;
+    }
+
+    if (strcmp(command + 9, "sideRight") == 0) {
+        auto &keyScanner = Runtime.device().keyScanner();
+        auto deviceRight = keyScanner.rightHandDevice();
+        ::Focus.send(static_cast<uint8_t>(deviceRight));
+        return EventHandlerResult::OK;
+    }
+
     if (strcmp(command + 9, "version") == 0) {
         NRF_LOG_DEBUG("read request: hardware.version");
 

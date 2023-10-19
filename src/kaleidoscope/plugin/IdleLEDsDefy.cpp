@@ -17,6 +17,7 @@
  */
 #ifdef ARDUINO_ARCH_NRF52
 
+#include "Communications.h"
 #include "Defy_wireless.h"
 #include <Kaleidoscope-EEPROM-Settings.h>
 #include <Kaleidoscope-FocusSerial.h>
@@ -52,7 +53,6 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
 
     if ((isDefyLeftWired && isDefyRightWired) && !isEitherUnknown)
     {
-        start_time_wireless = Runtime.millisAtCycleStart();
         if (::LEDControl.isEnabled() && Runtime.hasTimeExpired(start_time_wired, idle_time_limit.wired_))
         {
             ::LEDControl.disable();
@@ -61,7 +61,6 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
     }
     else
     {
-        start_time_wired = Runtime.millisAtCycleStart();
         if (::LEDControl.isEnabled() && Runtime.hasTimeExpired(start_time_wireless, idle_time_limit.wireless_))
         {
             ::LEDControl.disable();
@@ -91,6 +90,13 @@ uint16_t PersistentIdleDefyLEDs::settings_base_;
 
 EventHandlerResult PersistentIdleDefyLEDs::onSetup()
 {
+    Communications.callbacks.bind(CONNECTED, (
+                                                 [this](const Packet &)
+                                                 {
+                                                     start_time_wired = Runtime.millisAtCycleStart();
+                                                     start_time_wireless = Runtime.millisAtCycleStart();
+                                                     ::LEDControl.enable();
+                                                 }));
     settings_base_ = ::EEPROMSettings.requestSlice(sizeof(IdleTime));
 
     // If idleTime is max, assume that EEPROM is uninitialized, and store the

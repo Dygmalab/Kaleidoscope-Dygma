@@ -35,12 +35,15 @@
 #include "Defy_wireless.h"
 #include "LED-Palette-Theme-Defy.h"
 #include "Radio_manager.h"
+#include "Status_leds.h"
 #include "Wire.h" // Arduino Wire wrapper for the NRF52 chips
 #include "defy_wireless/Focus.h"
 #include "nrf_gpio.h"
 
 
 Twi_master twi_master(TWI_MASTER_SCL_PIN, TWI_MASTER_SDA_PIN);
+Status_leds status_leds(LED_GREEN_PIN, LED_RED_PIN);
+#define NEURON_LED_BRIGHTNESS 2
 
 
 namespace kaleidoscope
@@ -156,9 +159,9 @@ auto checkBrightness = [](const Packet &)
     auto deviceLeft = keyScanner.leftHandDevice();
     auto deviceRight = keyScanner.rightHandDevice();
 
-    auto isEitherUnknown = deviceLeft == Communications_protocol::UNKNOWN && deviceRight == Communications_protocol::UNKNOWN;
-    auto isDefyLeftWired = deviceLeft == Communications_protocol::KEYSCANNER_DEFY_LEFT || deviceLeft == Communications_protocol::UNKNOWN;
-    auto isDefyRightWired = deviceRight == Communications_protocol::KEYSCANNER_DEFY_RIGHT || deviceRight == Communications_protocol::UNKNOWN;
+    volatile auto isEitherUnknown = deviceLeft == Communications_protocol::UNKNOWN && deviceRight == Communications_protocol::UNKNOWN;
+    volatile auto isDefyLeftWired = deviceLeft == Communications_protocol::KEYSCANNER_DEFY_LEFT || deviceLeft == Communications_protocol::UNKNOWN;
+    volatile auto isDefyRightWired = deviceRight == Communications_protocol::KEYSCANNER_DEFY_RIGHT || deviceRight == Communications_protocol::UNKNOWN;
     ColormapEffectDefy.updateBrigthness((isDefyLeftWired && isDefyRightWired) && !isEitherUnknown);
 };
 
@@ -170,38 +173,26 @@ void DefyHands::setup()
     Communications.callbacks.bind(CONNECTED, (
                                                  [](const Packet &p)
                                                  {
-                                                     if (ble_innited())
-                                                     {
-                                                         if (p.header.device == RF_DEFY_LEFT) leftConnection[0] = BLE_DEFY_LEFT;
-                                                         if (p.header.device == RF_DEFY_RIGHT) rightConnection[0] = BLE_DEFY_RIGHT;
-                                                         if (p.header.device == KEYSCANNER_DEFY_LEFT) leftConnection[0] = BLE_DEFY_LEFT;
-                                                         if (p.header.device == KEYSCANNER_DEFY_RIGHT) rightConnection[0] = BLE_DEFY_RIGHT;
-                                                         return;
-                                                     }
+                                                     if (p.header.device == BLE_DEFY_RIGHT) rightConnection[0] = BLE_DEFY_RIGHT;
+                                                     if (p.header.device == BLE_DEFY_LEFT) leftConnection[0] = BLE_DEFY_LEFT;
                                                      if (p.header.device == RF_DEFY_LEFT) leftConnection[2] = RF_DEFY_LEFT;
                                                      if (p.header.device == RF_DEFY_RIGHT) rightConnection[2] = RF_DEFY_RIGHT;
-                                                     if (p.header.device == KEYSCANNER_DEFY_LEFT) leftConnection[1] = KEYSCANNER_DEFY_LEFT;
-                                                     if (p.header.device == KEYSCANNER_DEFY_RIGHT) rightConnection[1] = KEYSCANNER_DEFY_RIGHT;
+                                                     if (p.header.device == KEYSCANNER_DEFY_LEFT) leftConnection[1] = ble_innited() ? BLE_DEFY_LEFT: KEYSCANNER_DEFY_LEFT;
+                                                     if (p.header.device == KEYSCANNER_DEFY_RIGHT) rightConnection[1] =  ble_innited() ? BLE_DEFY_RIGHT: KEYSCANNER_DEFY_RIGHT;
                                                  }));
     Communications.callbacks.bind(DISCONNECTED, (
                                                     [](const Packet &p)
                                                     {
-                                                        if (ble_innited())
-                                                        {
-                                                            if (p.header.device == RF_DEFY_LEFT) leftConnection[0] = UNKNOWN;
-                                                            if (p.header.device == RF_DEFY_RIGHT) rightConnection[0] = UNKNOWN;
-                                                            if (p.header.device == KEYSCANNER_DEFY_LEFT) leftConnection[0] = UNKNOWN;
-                                                            if (p.header.device == KEYSCANNER_DEFY_RIGHT) rightConnection[0] = UNKNOWN;
-                                                            return;
-                                                        }
+                                                        if (p.header.device == BLE_DEFY_RIGHT) rightConnection[0] = UNKNOWN;
+                                                        if (p.header.device == BLE_DEFY_LEFT) leftConnection[0] = UNKNOWN;
                                                         if (p.header.device == RF_DEFY_LEFT) leftConnection[2] = UNKNOWN;
                                                         if (p.header.device == RF_DEFY_RIGHT) rightConnection[2] = UNKNOWN;
                                                         if (p.header.device == KEYSCANNER_DEFY_LEFT) leftConnection[1] = UNKNOWN;
                                                         if (p.header.device == KEYSCANNER_DEFY_RIGHT) rightConnection[1] = UNKNOWN;
                                                     }));
 
-    Communications.callbacks.bind(CONNECTED, checkBrightness);
     Communications.callbacks.bind(DISCONNECTED, checkBrightness);
+    Communications.callbacks.bind(CONNECTED, checkBrightness);
     Communications.callbacks.bind(CONNECTED, ([](const Packet &) { ::LEDControl.set_mode(::LEDControl.get_mode_index()); }));
 
 
@@ -367,6 +358,7 @@ void DefyLEDDriver::syncLeds()
         leds_enabled_ = is_enabled;
         Communications_protocol::Packet p{};
         p.header.command = Communications_protocol::SLEEP;
+        status_leds.stop_all();
         Communications.sendPacket(p);
     }
 
@@ -376,6 +368,7 @@ void DefyLEDDriver::syncLeds()
         Communications_protocol::Packet p{};
         p.header.command = Communications_protocol::WAKE_UP;
         Communications.sendPacket(p);
+        status_leds.static_green(NEURON_LED_BRIGHTNESS);
     }
 
     if (isLEDChangedNeuron)
@@ -728,6 +721,8 @@ void DefyNrf::setup()
 {
     // Check if we can live without this reset sides
     // DefyNrf::side::reset_sides();
+    status_leds.init();
+    status_leds.static_green(NEURON_LED_BRIGHTNESS);
     DefyHands::setup();
     DefyFocus.init();
     KeyScanner::setup();
