@@ -352,12 +352,11 @@ EventHandlerResult FocusLEDCommand::onFocusEvent(const char *command) {
         }
     }
     case SETALL: {
-        cRGB c;
-
-        ::Focus.read(c);
-
-        ::LEDControl.set_all_leds_to(c);
-
+        if (!::Focus.isEOL()) {
+            cRGB c;
+            ::Focus.read(c);
+            ::LEDControl.set_all_leds_to(c);
+        }
         break;
     }
     case MODE: {

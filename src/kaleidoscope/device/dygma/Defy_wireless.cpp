@@ -109,6 +109,8 @@ struct DefyHands
         uint8_t flag;
     } bright;
 
+    static void sendPacketBrightness();
+
   private:
     static uint8_t keyscan_interval_;
     static bool side_power_;
@@ -116,8 +118,6 @@ struct DefyHands
     static uint16_t settings_base;
 
     static void setbrightness(const Brightness &data);
-
-    static void sendPacketBrightness();
 };
 
 defy_wireless::Hand DefyHands::leftHand(defy_wireless::Hand::LEFT);
@@ -175,20 +175,30 @@ void DefyHands::setup()
                                                  {
                                                      if (p.header.device == BLE_DEFY_RIGHT) rightConnection[0] = BLE_DEFY_RIGHT;
                                                      if (p.header.device == BLE_DEFY_LEFT) leftConnection[0] = BLE_DEFY_LEFT;
+                                                     if (p.header.device == KEYSCANNER_DEFY_LEFT)
+                                                         leftConnection[1] = ble_innited() ? BLE_DEFY_LEFT : KEYSCANNER_DEFY_LEFT;
+                                                     if (p.header.device == KEYSCANNER_DEFY_RIGHT)
+                                                         rightConnection[1] = ble_innited() ? BLE_DEFY_RIGHT : KEYSCANNER_DEFY_RIGHT;
                                                      if (p.header.device == RF_DEFY_LEFT) leftConnection[2] = RF_DEFY_LEFT;
                                                      if (p.header.device == RF_DEFY_RIGHT) rightConnection[2] = RF_DEFY_RIGHT;
-                                                     if (p.header.device == KEYSCANNER_DEFY_LEFT) leftConnection[1] = ble_innited() ? BLE_DEFY_LEFT: KEYSCANNER_DEFY_LEFT;
-                                                     if (p.header.device == KEYSCANNER_DEFY_RIGHT) rightConnection[1] =  ble_innited() ? BLE_DEFY_RIGHT: KEYSCANNER_DEFY_RIGHT;
                                                  }));
     Communications.callbacks.bind(DISCONNECTED, (
                                                     [](const Packet &p)
                                                     {
-                                                        if (p.header.device == BLE_DEFY_RIGHT) rightConnection[0] = UNKNOWN;
-                                                        if (p.header.device == BLE_DEFY_LEFT) leftConnection[0] = UNKNOWN;
-                                                        if (p.header.device == RF_DEFY_LEFT) leftConnection[2] = UNKNOWN;
-                                                        if (p.header.device == RF_DEFY_RIGHT) rightConnection[2] = UNKNOWN;
+                                                        if (p.header.device == BLE_DEFY_RIGHT)
+                                                        {
+                                                            rightConnection[0] = UNKNOWN;
+                                                            rightConnection[1] = UNKNOWN;
+                                                        }
+                                                        if (p.header.device == BLE_DEFY_LEFT)
+                                                        {
+                                                            leftConnection[0] = UNKNOWN;
+                                                            leftConnection[1] = UNKNOWN;
+                                                        }
                                                         if (p.header.device == KEYSCANNER_DEFY_LEFT) leftConnection[1] = UNKNOWN;
                                                         if (p.header.device == KEYSCANNER_DEFY_RIGHT) rightConnection[1] = UNKNOWN;
+                                                        if (p.header.device == RF_DEFY_LEFT) leftConnection[2] = UNKNOWN;
+                                                        if (p.header.device == RF_DEFY_RIGHT) rightConnection[2] = UNKNOWN;
                                                     }));
 
     Communications.callbacks.bind(DISCONNECTED, checkBrightness);
@@ -704,6 +714,9 @@ void DefyKeyScanner::usbConnectionsStateMachine()
         else
         {
             kaleidoscope::plugin::BleManager::init();
+            if(leftConnection[1] == KEYSCANNER_DEFY_LEFT) leftConnection[1] = BLE_DEFY_LEFT;
+            if(rightConnection[1] == KEYSCANNER_DEFY_RIGHT) rightConnection[1] = BLE_DEFY_RIGHT;
+            DefyHands::sendPacketBrightness();
         }
     }
 
