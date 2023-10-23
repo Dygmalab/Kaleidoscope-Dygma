@@ -733,7 +733,7 @@ void DefyKeyScanner::usbConnectionsStateMachine()
 void DefyNrf::setup()
 {
     // Check if we can live without this reset sides
-    // DefyNrf::side::reset_sides();
+    DefyNrf::side::reset_sides();
     status_leds.init();
     status_leds.static_green(NEURON_LED_BRIGHTNESS);
     DefyHands::setup();
