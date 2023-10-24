@@ -88,6 +88,10 @@ class LedDriverWN : public kaleidoscope::driver::led::Base<LedDriverProps> {
   static constexpr uint8_t underglow_leds  = LedDriverProps::underglow_leds;
   static constexpr uint8_t key_matrix_leds = LedDriverProps::key_matrix_leds;
 
+  int getBrightnessWireless();
+
+  uint8_t getBrightnessUGWireless();
+
  private:
   inline static bool isLEDChangedNeuron;
   inline static bool leds_enabled_ = true;
@@ -145,6 +149,8 @@ class KeyScannerWN : public kaleidoscope::driver::keyscanner::Base<KeyScannerPro
   static void scanMatrix();
   static void readMatrix();
   static void actOnMatrixScan();
+  static Communications_protocol::Devices rightHandDevice(void);
+  static Communications_protocol::Devices leftHandDevice(void);
 
   static void maskKey(KeyAddr key_addr);
   static void unMaskKey(KeyAddr key_addr);
@@ -167,6 +173,7 @@ class KeyScannerWN : public kaleidoscope::driver::keyscanner::Base<KeyScannerPro
   inline static defyWN::key_data previousRightHandState;
   inline static defyWN::key_data leftHandMask;
   inline static defyWN::key_data rightHandMask;
+
 };
 
 struct StoragePropsWN : public kaleidoscope::driver::storage::FlashProps {
