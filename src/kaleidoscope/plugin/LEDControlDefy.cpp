@@ -16,18 +16,20 @@
 
 #ifdef ARDUINO_ARCH_NRF52
 
-#include "Kaleidoscope-LEDControl.h"
+#include "Colormap-Defy.h"
+#include "EEPROM-Settings.h"
 #include "Kaleidoscope-FocusSerial.h"
-#include "kaleidoscope_internal/LEDModeManager.h"
+#include "Kaleidoscope-LEDControl.h"
 #include "kaleidoscope/keyswitch_state.h"
+#include "kaleidoscope_internal/LEDModeManager.h"
 
 using namespace kaleidoscope::internal;  // NOLINT(build/namespaces)
 
 namespace kaleidoscope {
 namespace plugin {
-
+uint16_t LEDControl::settings_base_    = 0;
 static constexpr uint8_t uninitialized_mode_id = 255;
-
+uint8_t LEDControl::fade_effect        = 0;
 uint8_t LEDControl::mode_id            = uninitialized_mode_id;
 uint8_t LEDControl::num_led_modes_     = LEDModeManager::numLEDModes();
 LEDMode *LEDControl::cur_led_mode_     = nullptr;
@@ -136,6 +138,18 @@ void LEDControl::syncLeds(void) {
 }
 
 kaleidoscope::EventHandlerResult LEDControl::onSetup() {
+    settings_base_ = kaleidoscope::plugin::EEPROMSettings::requestSlice(sizeof(fade_effect));
+
+    Runtime.storage().get(settings_base_, fade_effect);
+    // For now lest think that if one block is invalid restart everything
+    if (fade_effect == 0xFF)
+    {
+        fade_effect = 0;
+        Runtime.storage().put(settings_base_, fade_effect);
+        Runtime.storage().commit();
+    }
+    Runtime.storage().get(settings_base_, fade_effect);
+    ::ColormapEffectDefy.setFadein(fade_effect);
     set_all_leds_to({0, 0, 0});
 
     LEDModeManager::setupPersistentLEDModes();
@@ -215,7 +229,8 @@ EventHandlerResult FocusLEDCommand::onFocusEvent(const char *command) {
         BRIGHTNESS_WIRED,
         BRIGHTNESS_UG_WIRED,
         BRIGHTNESS_WIRELESS,
-        BRIGHTNESS_UG_WIRELESS
+        BRIGHTNESS_UG_WIRELESS,
+        FADE_UG
     } subCommand;
 
     if (!Runtime.has_leds)
@@ -229,6 +244,7 @@ EventHandlerResult FocusLEDCommand::onFocusEvent(const char *command) {
                            "led.brightnessUG\n"
                            "led.brightness.wireless\n"
                            "led.brightnessUG.wireless\n"
+                           "led.fade\n"
                            "led.theme"))
         return EventHandlerResult::OK;
 
@@ -250,6 +266,8 @@ EventHandlerResult FocusLEDCommand::onFocusEvent(const char *command) {
         subCommand = BRIGHTNESS_WIRELESS;
     else if (strcmp(command + 4, "brightnessUG.wireless") == 0)
         subCommand = BRIGHTNESS_UG_WIRELESS;
+    else if (strcmp(command + 4, "fade") == 0)
+        subCommand = FADE_UG;
     else
         return EventHandlerResult::OK;
 
@@ -316,13 +334,29 @@ EventHandlerResult FocusLEDCommand::onFocusEvent(const char *command) {
         }
         break;
     }
+    case FADE_UG:
+    {
+        if (::Focus.isEOL())
+        {
+            ::Focus.send(::LEDControl.FadeUGIsActivated());
+        }
+        else
+        {
+            uint8_t fade_ug_effect;
+
+            ::Focus.read(fade_ug_effect);
+            ::LEDControl.activateFadeUG(fade_ug_effect);
+            ::ColormapEffectDefy.setFadein(fade_ug_effect);
+            Runtime.storage().put(LEDControl::settings_base_, fade_ug_effect);
+            Runtime.storage().commit();
+        }
+    }
     case SETALL: {
-        cRGB c;
-
-        ::Focus.read(c);
-
-        ::LEDControl.set_all_leds_to(c);
-
+        if (!::Focus.isEOL()) {
+            cRGB c;
+            ::Focus.read(c);
+            ::LEDControl.set_all_leds_to(c);
+        }
         break;
     }
     case MODE: {

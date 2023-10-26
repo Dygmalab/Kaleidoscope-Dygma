@@ -35,12 +35,15 @@
 #include "Defy_wireless.h"
 #include "LED-Palette-Theme-Defy.h"
 #include "Radio_manager.h"
-#include "Wire.h"  // Arduino Wire wrapper for the NRF52 chips
+#include "Status_leds.h"
+#include "Wire.h" // Arduino Wire wrapper for the NRF52 chips
 #include "defy_wireless/Focus.h"
 #include "nrf_gpio.h"
 
 
 Twi_master twi_master(TWI_MASTER_SCL_PIN, TWI_MASTER_SDA_PIN);
+Status_leds status_leds(LED_GREEN_PIN, LED_RED_PIN);
+#define NEURON_LED_BRIGHTNESS 2
 
 
 namespace kaleidoscope
@@ -105,16 +108,16 @@ struct DefyHands
         uint8_t led_brightness_underglow_wireless_;
         uint8_t flag;
     } bright;
-  private:
 
+    static void sendPacketBrightness();
+
+  private:
     static uint8_t keyscan_interval_;
     static bool side_power_;
     static uint16_t settings_interval_;
     static uint16_t settings_base;
 
     static void setbrightness(const Brightness &data);
-
-    static void sendPacketBrightness();
 };
 
 defy_wireless::Hand DefyHands::leftHand(defy_wireless::Hand::LEFT);
@@ -144,11 +147,64 @@ void DefyHands::setSidePower(bool power)
 
     side_power_ = power;
 }
+// BLE       WIRED       RF
+Communications_protocol::Devices leftConnection[3]{UNKNOWN, UNKNOWN, UNKNOWN};
+Communications_protocol::Devices rightConnection[3]{UNKNOWN, UNKNOWN, UNKNOWN};
+
+auto checkBrightness = [](const Packet &)
+{
+    auto &keyScanner = Runtime.device().keyScanner();
+    auto &ledDriver = Runtime.device().ledDriver();
+
+    auto deviceLeft = keyScanner.leftHandDevice();
+    auto deviceRight = keyScanner.rightHandDevice();
+
+    volatile auto isEitherUnknown = deviceLeft == Communications_protocol::UNKNOWN && deviceRight == Communications_protocol::UNKNOWN;
+    volatile auto isDefyLeftWired = deviceLeft == Communications_protocol::KEYSCANNER_DEFY_LEFT || deviceLeft == Communications_protocol::UNKNOWN;
+    volatile auto isDefyRightWired = deviceRight == Communications_protocol::KEYSCANNER_DEFY_RIGHT || deviceRight == Communications_protocol::UNKNOWN;
+    ColormapEffectDefy.updateBrigthness((isDefyLeftWired && isDefyRightWired) && !isEitherUnknown);
+};
 
 void DefyHands::setup()
 {
     rightHand.init();
     leftHand.init();
+
+    Communications.callbacks.bind(CONNECTED, (
+                                                 [](const Packet &p)
+                                                 {
+                                                     if (p.header.device == BLE_DEFY_RIGHT) rightConnection[0] = BLE_DEFY_RIGHT;
+                                                     if (p.header.device == BLE_DEFY_LEFT) leftConnection[0] = BLE_DEFY_LEFT;
+                                                     if (p.header.device == KEYSCANNER_DEFY_LEFT)
+                                                         leftConnection[1] = ble_innited() ? BLE_DEFY_LEFT : KEYSCANNER_DEFY_LEFT;
+                                                     if (p.header.device == KEYSCANNER_DEFY_RIGHT)
+                                                         rightConnection[1] = ble_innited() ? BLE_DEFY_RIGHT : KEYSCANNER_DEFY_RIGHT;
+                                                     if (p.header.device == RF_DEFY_LEFT) leftConnection[2] = RF_DEFY_LEFT;
+                                                     if (p.header.device == RF_DEFY_RIGHT) rightConnection[2] = RF_DEFY_RIGHT;
+                                                 }));
+    Communications.callbacks.bind(DISCONNECTED, (
+                                                    [](const Packet &p)
+                                                    {
+                                                        if (p.header.device == BLE_DEFY_RIGHT)
+                                                        {
+                                                            rightConnection[0] = UNKNOWN;
+                                                            rightConnection[1] = UNKNOWN;
+                                                        }
+                                                        if (p.header.device == BLE_DEFY_LEFT)
+                                                        {
+                                                            leftConnection[0] = UNKNOWN;
+                                                            leftConnection[1] = UNKNOWN;
+                                                        }
+                                                        if (p.header.device == KEYSCANNER_DEFY_LEFT) leftConnection[1] = UNKNOWN;
+                                                        if (p.header.device == KEYSCANNER_DEFY_RIGHT) rightConnection[1] = UNKNOWN;
+                                                        if (p.header.device == RF_DEFY_LEFT) leftConnection[2] = UNKNOWN;
+                                                        if (p.header.device == RF_DEFY_RIGHT) rightConnection[2] = UNKNOWN;
+                                                    }));
+
+    Communications.callbacks.bind(DISCONNECTED, checkBrightness);
+    Communications.callbacks.bind(CONNECTED, checkBrightness);
+    Communications.callbacks.bind(CONNECTED, ([](const Packet &) { ::LEDControl.set_mode(::LEDControl.get_mode_index()); }));
+
 
     settings_interval_ = ::EEPROMSettings.requestSlice(sizeof(keyscan_interval_));
     settings_base = ::EEPROMSettings.requestSlice(sizeof(DefyHands::Brightness));
@@ -223,32 +279,8 @@ void DefyHands::ledBrightnessUGWireless(uint8_t brightnessUG)
 
 void DefyHands::sendPacketBrightness()
 {
-    auto& keyScanner = Runtime.device().keyScanner();
-
-    auto deviceLeft = keyScanner.leftHandDevice();
-    auto devicesRight = keyScanner.rightHandDevice();
-
-    bool checkWiredLeftSide  = (deviceLeft == KEYSCANNER_DEFY_RIGHT || deviceLeft == Communications_protocol::KEYSCANNER_DEFY_LEFT);
-    bool checkWiredRightSide = (devicesRight == KEYSCANNER_DEFY_RIGHT || devicesRight == Communications_protocol::KEYSCANNER_DEFY_LEFT);
-
-    if (checkWiredLeftSide && checkWiredRightSide)
-    {
-        Communications_protocol::Packet p{};
-        p.header.command = Communications_protocol::BRIGHTNESS;
-        p.header.size = 2;
-        p.data[0] = bright.led_brightness_ledDriver_;
-        p.data[1] = bright.led_brightness_underglow_;
-        Communications.sendPacket(p);
-    }
-    else
-    {
-        Communications_protocol::Packet p{};
-        p.header.command = Communications_protocol::BRIGHTNESS;
-        p.header.size = 2;
-        p.data[0] = bright.led_brightness_ledDriver_wireless_;
-        p.data[1] = bright.led_brightness_underglow_wireless_;
-        Communications.sendPacket(p);
-    }
+    Packet p{};
+    checkBrightness(p);
 }
 
 void DefyHands::getChipID(char *cstring, uint16_t len)
@@ -272,8 +304,8 @@ void DefyHands::get_chip_info(char *cstring, uint16_t len)
         returns a cstring.
     */
 
-    snprintf(cstring, len, "DEVICEID=%8lx%8lx\nPART=%lx\nVARIANT=%lx\nPACKAGE=%lx\nRAM=%ld\nFLASH=%ld", NRF_FICR->DEVICEID[1], NRF_FICR->DEVICEID[0], NRF_FICR->INFO.PART,
-             NRF_FICR->INFO.VARIANT, NRF_FICR->INFO.PACKAGE, NRF_FICR->INFO.RAM, NRF_FICR->INFO.FLASH);
+    snprintf(cstring, len, "DEVICEID=%8lx%8lx\nPART=%lx\nVARIANT=%lx\nPACKAGE=%lx\nRAM=%ld\nFLASH=%ld", NRF_FICR->DEVICEID[1], NRF_FICR->DEVICEID[0],
+             NRF_FICR->INFO.PART, NRF_FICR->INFO.VARIANT, NRF_FICR->INFO.PACKAGE, NRF_FICR->INFO.RAM, NRF_FICR->INFO.FLASH);
 }
 
 
@@ -336,6 +368,7 @@ void DefyLEDDriver::syncLeds()
         leds_enabled_ = is_enabled;
         Communications_protocol::Packet p{};
         p.header.command = Communications_protocol::SLEEP;
+        status_leds.stop_all();
         Communications.sendPacket(p);
     }
 
@@ -345,6 +378,7 @@ void DefyLEDDriver::syncLeds()
         Communications_protocol::Packet p{};
         p.header.command = Communications_protocol::WAKE_UP;
         Communications.sendPacket(p);
+        status_leds.static_green(NEURON_LED_BRIGHTNESS);
     }
 
     if (isLEDChangedNeuron)
@@ -641,12 +675,26 @@ void DefyKeyScanner::reset(void)
 
 Communications_protocol::Devices DefyKeyScanner::leftHandDevice(void)
 {
-    return DefyHands::leftHand.getConnectedDevice();
+    for (const auto &connection : leftConnection)
+    {
+        if (connection != UNKNOWN)
+        {
+            return connection;
+        }
+    }
+    return UNKNOWN;
 }
 
 Communications_protocol::Devices DefyKeyScanner::rightHandDevice(void)
 {
-    return DefyHands::rightHand.getConnectedDevice();
+    for (const auto &connection : rightConnection)
+    {
+        if (connection != UNKNOWN)
+        {
+            return connection;
+        }
+    }
+    return UNKNOWN;
 }
 
 void DefyKeyScanner::usbConnectionsStateMachine()
@@ -657,16 +705,24 @@ void DefyKeyScanner::usbConnectionsStateMachine()
     bool radioInitiated = kaleidoscope::plugin::RadioManager::isInited();
 
     // For 100ms at the 700ms mark, check whether to initialize BLE or RF
-    if ((actualTime > 700 && actualTime < 800) && !bleInitiated && !radioInitiated) {
-        if (usbMounted) {
+    if ((actualTime > 700 && actualTime < 800) && !bleInitiated && !radioInitiated)
+    {
+        if (usbMounted)
+        {
             kaleidoscope::plugin::RadioManager::init();
-        } else {
+        }
+        else
+        {
             kaleidoscope::plugin::BleManager::init();
+            if(leftConnection[1] == KEYSCANNER_DEFY_LEFT) leftConnection[1] = BLE_DEFY_LEFT;
+            if(rightConnection[1] == KEYSCANNER_DEFY_RIGHT) rightConnection[1] = BLE_DEFY_RIGHT;
+            DefyHands::sendPacketBrightness();
         }
     }
 
     // If USB state and BLE or RF state are mismatched, reboot
-    if ((bleInitiated && usbMounted) || (radioInitiated && !usbMounted)) {
+    if ((bleInitiated && usbMounted) || (radioInitiated && !usbMounted))
+    {
         reset_mcu();
     }
 }
@@ -676,7 +732,10 @@ void DefyKeyScanner::usbConnectionsStateMachine()
 
 void DefyNrf::setup()
 {
+    // Check if we can live without this reset sides
     DefyNrf::side::reset_sides();
+    status_leds.init();
+    status_leds.static_green(NEURON_LED_BRIGHTNESS);
     DefyHands::setup();
     DefyFocus.init();
     KeyScanner::setup();
@@ -722,7 +781,7 @@ void DefyNrf::side::reset_sides()
     delay(10);
     nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_PULLUP);
     nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_PULLUP);
-    delay(10); //We should give a bit more time but for now lest leave it like this
+    delay(10); // We should give a bit more time but for now lest leave it like this
 }
 
 void DefyNrf::side::prepareForFlash()

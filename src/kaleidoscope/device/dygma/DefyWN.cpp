@@ -85,8 +85,33 @@ class Hands {
   inline static uint16_t settings_base_;
 };
 
+Communications_protocol::Devices leftConnection[1]{UNKNOWN};
+Communications_protocol::Devices rightConnection[1]{UNKNOWN};
+
+auto checkBrightness = [](const Packet &)
+{
+  ColormapEffectDefy.updateBrigthness(true);
+};
 
 void Hands::setup() {
+
+  Communications.callbacks.bind(CONNECTED, (
+                                             [](const Packet &p)
+                                             {
+                                               if (p.header.device == KEYSCANNER_DEFY_LEFT) leftConnection[0] = KEYSCANNER_DEFY_LEFT;
+                                               if (p.header.device == KEYSCANNER_DEFY_RIGHT) leftConnection[0] = KEYSCANNER_DEFY_RIGHT;
+                                             }));
+  Communications.callbacks.bind(DISCONNECTED, (
+                                                [](const Packet &p){
+                                                  if (p.header.device == KEYSCANNER_DEFY_LEFT) leftConnection[0] = UNKNOWN;
+                                                  if (p.header.device == KEYSCANNER_DEFY_RIGHT) rightConnection[0] = UNKNOWN;
+                                                }));
+
+  Communications.callbacks.bind(DISCONNECTED, checkBrightness);
+  Communications.callbacks.bind(CONNECTED, checkBrightness);
+  Communications.callbacks.bind(CONNECTED, ([](const Packet &) { ::LEDControl.set_mode(::LEDControl.get_mode_index()); }));
+
+
   settings_base_ = ::EEPROMSettings.requestSlice(sizeof(Settings));
   bool edited    = false;
   Settings settings;
@@ -468,6 +493,18 @@ uint8_t DefyWN::settings::keyscanInterval() {
 }
 void DefyWN::settings::keyscanInterval(uint8_t interval) {
   Hands::setKeyscanInterval(interval);
+}
+int LedDriverWN::getBrightnessWireless() {
+  return getBrightness();
+}
+uint8_t LedDriverWN::getBrightnessUGWireless() {
+  return getBrightnessUG();
+}
+Devices KeyScannerWN::leftHandDevice() {
+  return leftConnection[0];
+}
+Devices KeyScannerWN::rightHandDevice() {
+  return rightConnection[0];
 }
 }  // namespace dygma
 }  // namespace device
