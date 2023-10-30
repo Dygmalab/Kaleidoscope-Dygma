@@ -108,8 +108,7 @@ namespace kaleidoscope
           previous_macro_ended = false;
           break;
 
-        case MACRO_ACTION_STEP_INTERVAL:
-        case MACRO_ACTION_STEP_WAIT:
+
         case MACRO_ACTION_STEP_KEYCODEDOWN:
         case MACRO_ACTION_STEP_KEYCODEUP:
         case MACRO_ACTION_STEP_TAPCODE:
@@ -117,6 +116,8 @@ namespace kaleidoscope
           pos++;
           break;
 
+        case MACRO_ACTION_STEP_INTERVAL:
+        case MACRO_ACTION_STEP_WAIT:
         case MACRO_ACTION_STEP_KEYDOWN:
         case MACRO_ACTION_STEP_KEYUP:
         case MACRO_ACTION_STEP_TAP:
@@ -148,6 +149,7 @@ namespace kaleidoscope
         }
 
         case MACRO_ACTION_END:
+          NRF_LOG_INFO("End of macro %i",pos - storage_base_);
           map_[++current_id] = pos - storage_base_;
 
           if (previous_macro_ended)
