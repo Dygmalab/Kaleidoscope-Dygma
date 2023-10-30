@@ -42,7 +42,7 @@ EventHandlerResult SettingsConfigurator::onFocusEvent(const char *command) {
                               "hardware.side_ver\n"
                               "hardware.keyscanInterval\n"
                               "hardware.firmware\n"
-                              "hardware.chip_id\n")))
+                              "hardware.chip_id")))
     return EventHandlerResult::OK;
 
   if (strncmp_P(command, PSTR("hardware."), 9) != 0)
