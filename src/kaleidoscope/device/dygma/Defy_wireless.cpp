@@ -153,6 +153,18 @@ Communications_protocol::Devices rightConnection[3]{UNKNOWN, UNKNOWN, UNKNOWN};
 
 auto checkBrightness = [](const Packet &)
 {
+    if(!::LEDControl.isEnabled()){
+        status_leds.stop_all();
+        Communications_protocol::Packet p{};
+        p.header.command = Communications_protocol::BRIGHTNESS;
+        p.header.device = UNKNOWN;
+        p.data[0] = 0;
+        p.data[1] = 0;
+        p.header.size = 2;
+        Communications.sendPacket(p);
+        return;
+    }
+    status_leds.static_green(NEURON_LED_BRIGHTNESS);
     auto &keyScanner = Runtime.device().keyScanner();
     auto &ledDriver = Runtime.device().ledDriver();
 
@@ -181,6 +193,7 @@ void DefyHands::setup()
                                                          rightConnection[1] = ble_innited() ? BLE_DEFY_RIGHT : KEYSCANNER_DEFY_RIGHT;
                                                      if (p.header.device == RF_DEFY_LEFT) leftConnection[2] = RF_DEFY_LEFT;
                                                      if (p.header.device == RF_DEFY_RIGHT) rightConnection[2] = RF_DEFY_RIGHT;
+                                                     ::LEDControl.enable();
                                                  }));
     Communications.callbacks.bind(DISCONNECTED, (
                                                     [](const Packet &p)
@@ -199,6 +212,8 @@ void DefyHands::setup()
                                                         if (p.header.device == KEYSCANNER_DEFY_RIGHT) rightConnection[1] = UNKNOWN;
                                                         if (p.header.device == RF_DEFY_LEFT) leftConnection[2] = UNKNOWN;
                                                         if (p.header.device == RF_DEFY_RIGHT) rightConnection[2] = UNKNOWN;
+
+                                                        ::LEDControl.enable();
                                                     }));
 
     Communications.callbacks.bind(DISCONNECTED, checkBrightness);
@@ -363,22 +378,10 @@ void DefyLEDDriver::syncLeds()
 {
     bool is_enabled = ::LEDControl.isEnabled();
 
-    if (leds_enabled_ && !is_enabled)
+    if (leds_enabled_ != is_enabled)
     {
         leds_enabled_ = is_enabled;
-        Communications_protocol::Packet p{};
-        p.header.command = Communications_protocol::SLEEP;
-        status_leds.stop_all();
-        Communications.sendPacket(p);
-    }
-
-    if (!leds_enabled_ && is_enabled)
-    {
-        leds_enabled_ = is_enabled;
-        Communications_protocol::Packet p{};
-        p.header.command = Communications_protocol::WAKE_UP;
-        Communications.sendPacket(p);
-        status_leds.static_green(NEURON_LED_BRIGHTNESS);
+        DefyHands::sendPacketBrightness();
     }
 
     if (isLEDChangedNeuron)

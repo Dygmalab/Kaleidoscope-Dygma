@@ -90,6 +90,16 @@ Communications_protocol::Devices rightConnection[1]{UNKNOWN};
 
 auto checkBrightness = [](const Packet &)
 {
+    if(!::LEDControl.isEnabled()){
+        Communications_protocol::Packet p{};
+        p.header.command = Communications_protocol::BRIGHTNESS;
+        p.header.device = UNKNOWN;
+        p.data[0] = 0;
+        p.data[1] = 0;
+        p.header.size = 2;
+        Communications.sendPacket(p);
+        return;
+    }
  ColormapEffectDefy.updateBrigthness(true);
 };
 
@@ -100,15 +110,15 @@ void Hands::setup() {
                                             {
                                               if (p.header.device == KEYSCANNER_DEFY_LEFT) leftConnection[0] = KEYSCANNER_DEFY_LEFT;
                                               if (p.header.device == KEYSCANNER_DEFY_RIGHT) rightConnection[0] = KEYSCANNER_DEFY_RIGHT;
+                                              ::LEDControl.enable();
                                             }));
  Communications.callbacks.bind(DISCONNECTED, (
                                                [](const Packet &p){
                                                  if (p.header.device == KEYSCANNER_DEFY_LEFT) leftConnection[0] = UNKNOWN;
                                                  if (p.header.device == KEYSCANNER_DEFY_RIGHT) rightConnection[0] = UNKNOWN;
+                                                 ::LEDControl.enable();
                                                }));
 
- Communications.callbacks.bind(DISCONNECTED, checkBrightness);
- Communications.callbacks.bind(CONNECTED, checkBrightness);
  Communications.callbacks.bind(CONNECTED, ([](const Packet &) { ::LEDControl.set_mode(::LEDControl.get_mode_index()); }));
 
 
@@ -191,18 +201,10 @@ uint8_t LedDriverWN::getBrightnessUG() {
 void LedDriverWN::syncLeds() {
  bool is_enabled = ::LEDControl.isEnabled();
 
- if (leds_enabled_ && !is_enabled) {
+ if (leds_enabled_ != is_enabled)
+ {
    leds_enabled_ = is_enabled;
-   Packet p{};
-   p.header.command = Communications_protocol::SLEEP;
-   Communications.sendPacket(p);
- }
-
- if (!leds_enabled_ && is_enabled) {
-   leds_enabled_ = is_enabled;
-   Packet p{};
-   p.header.command = Communications_protocol::WAKE_UP;
-   Communications.sendPacket(p);
+   DefyHands::sendPacketBrightness();
  }
 
  if (isLEDChangedNeuron) {

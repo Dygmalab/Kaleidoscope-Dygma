@@ -65,6 +65,9 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
         {
             ::LEDControl.disable();
             idle_ = true;
+            Communications_protocol::Packet p{};
+            p.header.command = Communications_protocol::SLEEP;
+            Communications.sendPacket(p);
         }
     }
 
