@@ -149,7 +149,6 @@ namespace kaleidoscope
         }
 
         case MACRO_ACTION_END:
-          NRF_LOG_INFO("End of macro %i",pos - storage_base_);
           map_[++current_id] = pos - storage_base_;
 
           if (previous_macro_ended)
