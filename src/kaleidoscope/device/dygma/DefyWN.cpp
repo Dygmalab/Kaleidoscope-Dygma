@@ -204,7 +204,8 @@ void LedDriverWN::syncLeds() {
  if (leds_enabled_ != is_enabled)
  {
    leds_enabled_ = is_enabled;
-   DefyHands::sendPacketBrightness();
+   Packet p;
+   checkBrightness(p);
  }
 
  if (isLEDChangedNeuron) {
