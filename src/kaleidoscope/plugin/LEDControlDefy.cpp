@@ -60,7 +60,7 @@ void LEDControl::next_mode(void) {
 void LEDControl::prev_mode(void) {
     if (mode_id == 0) {
         // wrap around
-        mode_id = num_led_modes_ - 1;
+        mode_id = num_led_modes_ - user_effects;
     } else {
         mode_id--;
     }
