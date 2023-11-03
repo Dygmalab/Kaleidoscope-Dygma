@@ -160,7 +160,9 @@ auto checkBrightness = [](const Packet &)
         p.header.device = UNKNOWN;
         p.data[0] = 0;
         p.data[1] = 0;
-        p.header.size = 2;
+        p.data[2] = static_cast<uint8_t>(ColormapEffectDefy.no_led_effect);
+        p.data[3] = 1;
+        p.header.size = 4;
         Communications.sendPacket(p);
         return;
     }
@@ -174,7 +176,7 @@ auto checkBrightness = [](const Packet &)
     volatile auto isEitherUnknown = deviceLeft == Communications_protocol::UNKNOWN && deviceRight == Communications_protocol::UNKNOWN;
     volatile auto isDefyLeftWired = deviceLeft == Communications_protocol::KEYSCANNER_DEFY_LEFT || deviceLeft == Communications_protocol::UNKNOWN;
     volatile auto isDefyRightWired = deviceRight == Communications_protocol::KEYSCANNER_DEFY_RIGHT || deviceRight == Communications_protocol::UNKNOWN;
-    ColormapEffectDefy.updateBrigthness((isDefyLeftWired && isDefyRightWired) && !isEitherUnknown);
+    ColormapEffectDefy.updateBrigthness(ColormapEffectDefy.no_led_effect,true, (isDefyLeftWired && isDefyRightWired) && !isEitherUnknown);
 };
 
 void DefyHands::setup()
