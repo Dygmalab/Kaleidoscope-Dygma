@@ -153,7 +153,8 @@ Communications_protocol::Devices rightConnection[3]{UNKNOWN, UNKNOWN, UNKNOWN};
 
 auto checkBrightness = [](const Packet &)
 {
-    if(!::LEDControl.isEnabled()){
+    if (!::LEDControl.isEnabled())
+    {
         status_leds.stop_all();
         Communications_protocol::Packet p{};
         p.header.command = Communications_protocol::BRIGHTNESS;
@@ -176,7 +177,7 @@ auto checkBrightness = [](const Packet &)
     volatile auto isEitherUnknown = deviceLeft == Communications_protocol::UNKNOWN && deviceRight == Communications_protocol::UNKNOWN;
     volatile auto isDefyLeftWired = deviceLeft == Communications_protocol::KEYSCANNER_DEFY_LEFT || deviceLeft == Communications_protocol::UNKNOWN;
     volatile auto isDefyRightWired = deviceRight == Communications_protocol::KEYSCANNER_DEFY_RIGHT || deviceRight == Communications_protocol::UNKNOWN;
-    ColormapEffectDefy.updateBrigthness(ColormapEffectDefy.no_led_effect,true, (isDefyLeftWired && isDefyRightWired) && !isEitherUnknown);
+    ColormapEffectDefy.updateBrigthness(ColormapEffectDefy.no_led_effect, true, (isDefyLeftWired && isDefyRightWired) && !isEitherUnknown);
 };
 
 void DefyHands::setup()
@@ -708,27 +709,39 @@ void DefyKeyScanner::usbConnectionsStateMachine()
     bool usbMounted = TinyUSBDevice.mounted();
     bool bleInitiated = ble_innited();
     bool radioInitiated = kaleidoscope::plugin::RadioManager::isInited();
+    bool forceBle = BleManager.getForceBle();
 
     // For 100ms at the 700ms mark, check whether to initialize BLE or RF
     if ((actualTime > 700 && actualTime < 800) && !bleInitiated && !radioInitiated)
     {
-        if (usbMounted)
+        NRF_LOG_INFO("Explain this %i %i %i %i %i %i",(actualTime > 700 && actualTime < 800),!bleInitiated,!radioInitiated,(actualTime > 700 && actualTime < 800) && !bleInitiated && !radioInitiated,usbMounted,forceBle);
+        if (usbMounted && !forceBle)
         {
             kaleidoscope::plugin::RadioManager::init();
         }
         else
         {
+            //Force connnect again just in case it was set as a device and not a host
             kaleidoscope::plugin::BleManager::init();
-            if(leftConnection[1] == KEYSCANNER_DEFY_LEFT) leftConnection[1] = BLE_DEFY_LEFT;
-            if(rightConnection[1] == KEYSCANNER_DEFY_RIGHT) rightConnection[1] = BLE_DEFY_RIGHT;
+            if (leftConnection[1] == KEYSCANNER_DEFY_LEFT) leftConnection[1] = BLE_DEFY_LEFT;
+            if (rightConnection[1] == KEYSCANNER_DEFY_RIGHT) rightConnection[1] = BLE_DEFY_RIGHT;
             DefyHands::sendPacketBrightness();
+            BleManager.setForceBle(false);
+            Packet p{};
+            p.header.command = CONNECTED;
+            p.header.size = 0;
+            p.header.device = BLE_NEURON_2_DEFY;
+            Communications.sendPacket(p);
         }
     }
 
-    // If USB state and BLE or RF state are mismatched, reboot
-    if ((bleInitiated && usbMounted) || (radioInitiated && !usbMounted))
-    {
-        reset_mcu();
+    if(actualTime>2000){
+        auto const &keyScanner = Runtime.device().keyScanner();
+        auto deviceLeft = keyScanner.leftHandDevice();
+        auto devicesRight = keyScanner.rightHandDevice();
+        if(deviceLeft == Communications_protocol::UNKNOWN && devicesRight == Communications_protocol::UNKNOWN ){
+            reset_mcu();
+        }
     }
 }
 
@@ -738,7 +751,7 @@ void DefyKeyScanner::usbConnectionsStateMachine()
 void DefyNrf::setup()
 {
     // Check if we can live without this reset sides
-    DefyNrf::side::reset_sides();
+    //DefyNrf::side::reset_sides();
     status_leds.init();
     status_leds.static_green(NEURON_LED_BRIGHTNESS);
     DefyHands::setup();

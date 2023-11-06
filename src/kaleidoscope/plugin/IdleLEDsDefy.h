@@ -28,12 +28,15 @@ class IdleLEDsDefy : public kaleidoscope::Plugin {
  public:
    IdleLEDsDefy(void) {}
     struct IdleTime {
+    bool true_sleep_activated_;
+    uint32_t true_sleep_;
     uint32_t wired_;
     uint32_t wireless_;
   };
-  static IdleTime idle_time_limit; // Declare as IdleTime, not uint32_t
-  static uint32_t idle_time_limit_default;
-  static uint32_t idle_time_limit_default_wireless;
+  static IdleTime idle_time_limit;
+  static constexpr const uint32_t idle_time_limit_default = 600000;
+  static constexpr const uint32_t idle_time_limit_default_wireless = 300000;
+  static constexpr const uint32_t true_sleep_time_limit_default = 60000;
   static void setIdleTimeoutSeconds(const IdleTime& data);
   static uint32_t idleTimeoutSeconds(uint32_t time_in_ms);
 
@@ -46,6 +49,7 @@ class IdleLEDsDefy : public kaleidoscope::Plugin {
  protected:
    static uint32_t start_time_wired;
    static uint32_t start_time_wireless;
+   static uint32_t start_time_true_sleep;
 };
 
 class PersistentIdleDefyLEDs : public IdleLEDsDefy

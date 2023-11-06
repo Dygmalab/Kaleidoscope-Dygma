@@ -23,54 +23,64 @@
 #include "kaleidoscope/keyswitch_state.h"
 #include "kaleidoscope_internal/LEDModeManager.h"
 
-using namespace kaleidoscope::internal;  // NOLINT(build/namespaces)
+using namespace kaleidoscope::internal; // NOLINT(build/namespaces)
 
-namespace kaleidoscope {
-namespace plugin {
-uint16_t LEDControl::settings_base_    = 0;
+namespace kaleidoscope
+{
+namespace plugin
+{
+uint16_t LEDControl::settings_base_ = 0;
 static constexpr uint8_t uninitialized_mode_id = 255;
-uint8_t LEDControl::fade_effect        = 0;
-uint8_t LEDControl::mode_id            = uninitialized_mode_id;
-uint8_t LEDControl::num_led_modes_     = LEDModeManager::numLEDModes();
-LEDMode *LEDControl::cur_led_mode_     = nullptr;
-uint8_t LEDControl::syncDelay          = 32;
-uint16_t LEDControl::syncTimer         = 0;
-bool LEDControl::enabled_              = true;
+uint8_t LEDControl::fade_effect = 0;
+uint8_t LEDControl::mode_id = uninitialized_mode_id;
+uint8_t LEDControl::num_led_modes_ = LEDModeManager::numLEDModes();
+LEDMode *LEDControl::cur_led_mode_ = nullptr;
+uint8_t LEDControl::syncDelay = 32;
+uint16_t LEDControl::syncTimer = 0;
+bool LEDControl::enabled_ = true;
 Key LEDControl::pending_next_prev_key_ = Key_NoKey;
-uint8_t user_effects = 3; //Battery status, advertising mode. 
+uint8_t user_effects = 3; // Battery status, advertising mode.
 bool LEDControl::force = false;
 
-LEDControl::LEDControl(void) {
+LEDControl::LEDControl(void)
+{
 }
 
-void LEDControl::set_force_mode(bool status){
+void LEDControl::set_force_mode(bool status)
+{
     force = status;
 }
 
-void LEDControl::next_mode(void) {
+void LEDControl::next_mode(void)
+{
     mode_id++;
 
-    if (mode_id >= num_led_modes_ - user_effects) {
+    if (mode_id >= num_led_modes_ - user_effects)
+    {
         return set_mode(0);
     }
 
     return set_mode(mode_id);
 }
 
-void LEDControl::prev_mode(void) {
-    if (mode_id == 0) {
+void LEDControl::prev_mode(void)
+{
+    if (mode_id == 0)
+    {
         // wrap around
         mode_id = num_led_modes_ - user_effects;
-    } else {
+    }
+    else
+    {
         mode_id--;
     }
 
     return set_mode(mode_id);
 }
 
-void LEDControl::set_mode(uint8_t mode_) {
-    if (mode_ >= num_led_modes_)
-        return;
+void LEDControl::set_mode(uint8_t mode_)
+{
+    if (mode_ >= num_led_modes_) return;
 
     mode_id = mode_;
 
@@ -83,23 +93,26 @@ void LEDControl::set_mode(uint8_t mode_) {
     kaleidoscope::Hooks::onLEDModeChange();
 }
 
-void LEDControl::activate(LEDModeInterface *plugin) {
-    for (uint8_t i = 0; i < num_led_modes_; i++) {
+void LEDControl::activate(LEDModeInterface *plugin)
+{
+    for (uint8_t i = 0; i < num_led_modes_; i++)
+    {
 
         led_mode_management::LEDModeFactory fac;
 
         LEDModeManager::retreiveLEDModeFactoryFromPROGMEM(i, fac);
 
-        if (fac.isAssociatedWithPlugin(plugin)) {
+        if (fac.isAssociatedWithPlugin(plugin))
+        {
             set_mode(i);
             return;
         }
     }
 }
 
-void LEDControl::set_all_leds_to(uint8_t r, uint8_t g, uint8_t b) {
-    if (!Runtime.has_leds)
-        return;
+void LEDControl::set_all_leds_to(uint8_t r, uint8_t g, uint8_t b)
+{
+    if (!Runtime.has_leds) return;
 
     cRGB color;
     color.r = r;
@@ -108,36 +121,43 @@ void LEDControl::set_all_leds_to(uint8_t r, uint8_t g, uint8_t b) {
     set_all_leds_to(color);
 }
 
-void LEDControl::set_all_leds_to(cRGB color) {
-    for (auto led_index : Runtime.device().LEDs().all()) {
+void LEDControl::set_all_leds_to(cRGB color)
+{
+    for (auto led_index : Runtime.device().LEDs().all())
+    {
         setCrgbAt(led_index.offset(), color);
     }
 }
 
-void LEDControl::setCrgbAt(uint8_t led_index, cRGB crgb) {
+void LEDControl::setCrgbAt(uint8_t led_index, cRGB crgb)
+{
     Runtime.device().setCrgbAt(led_index, crgb);
 }
 
-void LEDControl::setCrgbAt(KeyAddr key_addr, cRGB color) {
+void LEDControl::setCrgbAt(KeyAddr key_addr, cRGB color)
+{
     Runtime.device().setCrgbAt(key_addr, color);
 }
 
-cRGB LEDControl::getCrgbAt(uint8_t led_index) {
+cRGB LEDControl::getCrgbAt(uint8_t led_index)
+{
     return Runtime.device().getCrgbAt(led_index);
 }
-cRGB LEDControl::getCrgbAt(KeyAddr key_addr) {
+cRGB LEDControl::getCrgbAt(KeyAddr key_addr)
+{
     return Runtime.device().getCrgbAt(Runtime.device().getLedIndex(key_addr));
 }
 
-void LEDControl::syncLeds(void) {
-    if(force) return;
-    if (!enabled_)
-        return;
+void LEDControl::syncLeds(void)
+{
+    if (force) return;
+    if (!enabled_) return;
 
     Runtime.device().syncLeds();
 }
 
-kaleidoscope::EventHandlerResult LEDControl::onSetup() {
+kaleidoscope::EventHandlerResult LEDControl::onSetup()
+{
     settings_base_ = kaleidoscope::plugin::EEPROMSettings::requestSlice(sizeof(fade_effect));
 
     Runtime.storage().get(settings_base_, fade_effect);
@@ -154,35 +174,42 @@ kaleidoscope::EventHandlerResult LEDControl::onSetup() {
 
     LEDModeManager::setupPersistentLEDModes();
 
-    if (mode_id == uninitialized_mode_id) {
+    if (mode_id == uninitialized_mode_id)
+    {
         set_mode(0);
     }
 
     return EventHandlerResult::OK;
 }
 
-void LEDControl::disable() {
+void LEDControl::disable()
+{
     set_all_leds_to(CRGB(0, 0, 0));
     enabled_ = false;
     Runtime.device().syncLeds();
 }
 
-void LEDControl::enable() {
+void LEDControl::enable()
+{
     enabled_ = true;
     refreshAll();
     Runtime.device().syncLeds();
 }
 
-kaleidoscope::EventHandlerResult LEDControl::onKeyswitchEvent(Key &mappedKey, KeyAddr key_addr, uint8_t keyState) {
-    if (mappedKey.getFlags() != (SYNTHETIC | IS_INTERNAL | LED_TOGGLE))
-        return kaleidoscope::EventHandlerResult::OK;
+kaleidoscope::EventHandlerResult LEDControl::onKeyswitchEvent(Key &mappedKey, KeyAddr key_addr, uint8_t keyState)
+{
+    if (mappedKey.getFlags() != (SYNTHETIC | IS_INTERNAL | LED_TOGGLE)) return kaleidoscope::EventHandlerResult::OK;
 
-    if (keyToggledOn(keyState)) {
-        if (mappedKey == Key_LEDEffectNext || mappedKey == Key_LEDEffectPrevious) {
+    if (keyToggledOn(keyState))
+    {
+        if (mappedKey == Key_LEDEffectNext || mappedKey == Key_LEDEffectPrevious)
+        {
             // Handling of these keys is delayed into `beforeReportingState`
             // so that we can incorporate the shift modifier state.
             pending_next_prev_key_ = mappedKey;
-        } else if (mappedKey == Key_LEDToggle) {
+        }
+        else if (mappedKey == Key_LEDToggle)
+        {
             if (enabled_)
                 disable();
             else
@@ -193,25 +220,28 @@ kaleidoscope::EventHandlerResult LEDControl::onKeyswitchEvent(Key &mappedKey, Ke
     return kaleidoscope::EventHandlerResult::EVENT_CONSUMED;
 }
 
-kaleidoscope::EventHandlerResult LEDControl::beforeReportingState(void) {
-    if (!enabled_)
-        return kaleidoscope::EventHandlerResult::OK;
+kaleidoscope::EventHandlerResult LEDControl::beforeReportingState(void)
+{
+    if (!enabled_) return kaleidoscope::EventHandlerResult::OK;
 
-    if (pending_next_prev_key_ != Key_NoKey) {
+    if (pending_next_prev_key_ != Key_NoKey)
+    {
         bool is_shifted =
-          kaleidoscope::Runtime.hid().keyboard().isModifierKeyActive(Key_LeftShift) ||
-          kaleidoscope::Runtime.hid().keyboard().isModifierKeyActive(Key_RightShift);
+            kaleidoscope::Runtime.hid().keyboard().isModifierKeyActive(Key_LeftShift) || kaleidoscope::Runtime.hid().keyboard().isModifierKeyActive(Key_RightShift);
 
-        if ((pending_next_prev_key_ == Key_LEDEffectNext && !is_shifted) ||
-            (pending_next_prev_key_ == Key_LEDEffectPrevious && is_shifted)) {
+        if ((pending_next_prev_key_ == Key_LEDEffectNext && !is_shifted) || (pending_next_prev_key_ == Key_LEDEffectPrevious && is_shifted))
+        {
             next_mode();
-        } else {
+        }
+        else
+        {
             prev_mode();
         }
         pending_next_prev_key_ = Key_NoKey;
     }
 
-    if (Runtime.hasTimeExpired(syncTimer, syncDelay)) {
+    if (Runtime.hasTimeExpired(syncTimer, syncDelay))
+    {
         syncLeds();
         syncTimer += syncDelay;
         update();
@@ -219,9 +249,24 @@ kaleidoscope::EventHandlerResult LEDControl::beforeReportingState(void) {
 
     return kaleidoscope::EventHandlerResult::OK;
 }
+void LEDControl::refreshAll()
+{
+    if (!Runtime.has_leds) return;
 
-EventHandlerResult FocusLEDCommand::onFocusEvent(const char *command) {
-    enum {
+    if (mode_id < num_led_modes_ - user_effects)
+    {
+        if (!enabled_) return;
+    }
+
+    set_all_leds_to({0, 0, 0});
+
+    if (cur_led_mode_ != nullptr) cur_led_mode_->onActivate();
+}
+
+EventHandlerResult FocusLEDCommand::onFocusEvent(const char *command)
+{
+    enum
+    {
         SETALL,
         MODE,
         AT,
@@ -233,23 +278,20 @@ EventHandlerResult FocusLEDCommand::onFocusEvent(const char *command) {
         FADE_UG
     } subCommand;
 
-    if (!Runtime.has_leds)
+    if (!Runtime.has_leds) return EventHandlerResult::OK;
+
+    if (::Focus.handleHelp(command, "led.at\n"
+                                    "led.setAll\n"
+                                    "led.mode\n"
+                                    "led.brightness\n"
+                                    "led.brightnessUG\n"
+                                    "led.brightness.wireless\n"
+                                    "led.brightnessUG.wireless\n"
+                                    "led.fade\n"
+                                    "led.theme"))
         return EventHandlerResult::OK;
 
-    if (::Focus.handleHelp(command,
-                           "led.at\n"
-                           "led.setAll\n"
-                           "led.mode\n"
-                           "led.brightness\n"
-                           "led.brightnessUG\n"
-                           "led.brightness.wireless\n"
-                           "led.brightnessUG.wireless\n"
-                           "led.fade\n"
-                           "led.theme"))
-        return EventHandlerResult::OK;
-
-    if (strncmp(command, "led.", 4) != 0)
-        return EventHandlerResult::OK;
+    if (strncmp(command, "led.", 4) != 0) return EventHandlerResult::OK;
     if (strcmp(command + 4, "at") == 0)
         subCommand = AT;
     else if (strcmp(command + 4, "setAll") == 0)
@@ -271,140 +313,176 @@ EventHandlerResult FocusLEDCommand::onFocusEvent(const char *command) {
     else
         return EventHandlerResult::OK;
 
-    switch (subCommand) {
-    case AT: {
-        uint8_t idx;
-
-        ::Focus.read(idx);
-
-        if (::Focus.isEOL()) {
-            cRGB c = ::LEDControl.getCrgbAt(idx);
-
-            ::Focus.send(c);
-        } else {
-            cRGB c;
-
-            ::Focus.read(c);
-
-            ::LEDControl.setCrgbAt(idx, c);
-        }
-        break;
-    }
-    case BRIGHTNESS_WIRED: {
-        if (::Focus.isEOL()) {
-            ::Focus.send(::LEDControl.getBrightness());
-        } else {
-            uint8_t brightness;
-
-            ::Focus.read(brightness);
-            ::LEDControl.setBrightness(brightness);
-        }
-        break;
-    }
-    case BRIGHTNESS_UG_WIRED: {
-        if (::Focus.isEOL()) {
-            ::Focus.send(::LEDControl.getBrightnessUG());
-        } else {
-            uint8_t brightness;
-
-            ::Focus.read(brightness);
-            ::LEDControl.setBrightnessUG(brightness);
-        }
-        break;
-    }
-    case BRIGHTNESS_WIRELESS: {
-        if (::Focus.isEOL()) {
-            ::Focus.send(::LEDControl.getBrightnessWireless());
-        } else {
-            uint8_t brightness;
-
-            ::Focus.read(brightness);
-            ::LEDControl.setBrightnessWireless(brightness);
-        }
-        break;
-    }
-    case BRIGHTNESS_UG_WIRELESS: {
-        if (::Focus.isEOL()) {
-            ::Focus.send(::LEDControl.getBrightnessUGWireless());
-        } else {
-            uint8_t brightness;
-
-            ::Focus.read(brightness);
-            ::LEDControl.setBrightnessUGWireless(brightness);
-        }
-        break;
-    }
-    case FADE_UG:
+    switch (subCommand)
     {
-        if (::Focus.isEOL())
+        case AT:
         {
-            ::Focus.send(::LEDControl.FadeUGIsActivated());
-        }
-        else
-        {
-            uint8_t fade_ug_effect;
+            uint8_t idx;
 
-            ::Focus.read(fade_ug_effect);
-            ::LEDControl.activateFadeUG(fade_ug_effect);
-            ::ColormapEffectDefy.setFadein(fade_ug_effect);
-            Runtime.storage().put(LEDControl::settings_base_, fade_ug_effect);
-            Runtime.storage().commit();
-        }
-    }
-    case SETALL: {
-        if (!::Focus.isEOL()) {
-            cRGB c;
-            ::Focus.read(c);
-            ::LEDControl.set_all_leds_to(c);
-        }
-        break;
-    }
-    case MODE: {
-        char peek = ::Focus.peek();
-        if (peek == '\n') {
-            ::Focus.send(::LEDControl.get_mode_index());
-        } else if (peek == 'n') {
-            ::LEDControl.next_mode();
-        } else if (peek == 'p') {
-            ::LEDControl.prev_mode();
-        } else {
-            uint8_t mode_id;
+            ::Focus.read(idx);
 
-            ::Focus.read(mode_id);
-            ::LEDControl.set_mode(mode_id);
-        }
-        break;
-    }
-    case THEME: {
-        if (::Focus.isEOL()) {
-            for (auto led_index : Runtime.device().LEDs().all()) {
-                cRGB c = ::LEDControl.getCrgbAt(led_index.offset());
+            if (::Focus.isEOL())
+            {
+                cRGB c = ::LEDControl.getCrgbAt(idx);
 
                 ::Focus.send(c);
             }
+            else
+            {
+                cRGB c;
+
+                ::Focus.read(c);
+
+                ::LEDControl.setCrgbAt(idx, c);
+            }
             break;
         }
+        case BRIGHTNESS_WIRED:
+        {
+            if (::Focus.isEOL())
+            {
+                ::Focus.send(::LEDControl.getBrightness());
+            }
+            else
+            {
+                uint8_t brightness;
 
-        for (auto led_index : Runtime.device().LEDs().all()) {
-            if (::Focus.isEOL()) {
+                ::Focus.read(brightness);
+                ::LEDControl.setBrightness(brightness);
+            }
+            break;
+        }
+        case BRIGHTNESS_UG_WIRED:
+        {
+            if (::Focus.isEOL())
+            {
+                ::Focus.send(::LEDControl.getBrightnessUG());
+            }
+            else
+            {
+                uint8_t brightness;
+
+                ::Focus.read(brightness);
+                ::LEDControl.setBrightnessUG(brightness);
+            }
+            break;
+        }
+        case BRIGHTNESS_WIRELESS:
+        {
+            if (::Focus.isEOL())
+            {
+                ::Focus.send(::LEDControl.getBrightnessWireless());
+            }
+            else
+            {
+                uint8_t brightness;
+
+                ::Focus.read(brightness);
+                ::LEDControl.setBrightnessWireless(brightness);
+            }
+            break;
+        }
+        case BRIGHTNESS_UG_WIRELESS:
+        {
+            if (::Focus.isEOL())
+            {
+                ::Focus.send(::LEDControl.getBrightnessUGWireless());
+            }
+            else
+            {
+                uint8_t brightness;
+
+                ::Focus.read(brightness);
+                ::LEDControl.setBrightnessUGWireless(brightness);
+            }
+            break;
+        }
+        case FADE_UG:
+        {
+            if (::Focus.isEOL())
+            {
+                ::Focus.send(::LEDControl.FadeUGIsActivated());
+            }
+            else
+            {
+                uint8_t fade_ug_effect;
+
+                ::Focus.read(fade_ug_effect);
+                ::LEDControl.activateFadeUG(fade_ug_effect);
+                ::ColormapEffectDefy.setFadein(fade_ug_effect);
+                Runtime.storage().put(LEDControl::settings_base_, fade_ug_effect);
+                Runtime.storage().commit();
+            }
+        }
+        case SETALL:
+        {
+            if (!::Focus.isEOL())
+            {
+                cRGB c;
+                ::Focus.read(c);
+                ::LEDControl.set_all_leds_to(c);
+            }
+            break;
+        }
+        case MODE:
+        {
+            char peek = ::Focus.peek();
+            if (peek == '\n')
+            {
+                ::Focus.send(::LEDControl.get_mode_index());
+            }
+            else if (peek == 'n')
+            {
+                ::LEDControl.next_mode();
+            }
+            else if (peek == 'p')
+            {
+                ::LEDControl.prev_mode();
+            }
+            else
+            {
+                uint8_t mode_id;
+
+                ::Focus.read(mode_id);
+                ::LEDControl.set_mode(mode_id);
+            }
+            break;
+        }
+        case THEME:
+        {
+            if (::Focus.isEOL())
+            {
+                for (auto led_index : Runtime.device().LEDs().all())
+                {
+                    cRGB c = ::LEDControl.getCrgbAt(led_index.offset());
+
+                    ::Focus.send(c);
+                }
                 break;
             }
 
-            cRGB color;
+            for (auto led_index : Runtime.device().LEDs().all())
+            {
+                if (::Focus.isEOL())
+                {
+                    break;
+                }
 
-            ::Focus.read(color);
+                cRGB color;
 
-            ::LEDControl.setCrgbAt(led_index.offset(), color);
+                ::Focus.read(color);
+
+                ::LEDControl.setCrgbAt(led_index.offset(), color);
+            }
+            break;
         }
-        break;
-    }
     }
 
     return EventHandlerResult::EVENT_CONSUMED;
 }
 
-}  // namespace plugin
-}  // namespace kaleidoscope
+} // namespace plugin
+} // namespace kaleidoscope
 
 kaleidoscope::plugin::LEDControl LEDControl;
 kaleidoscope::plugin::FocusLEDCommand FocusLEDCommand;
