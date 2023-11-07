@@ -50,6 +50,7 @@ class IdleLEDsDefy : public kaleidoscope::Plugin {
    static uint32_t start_time_wired;
    static uint32_t start_time_wireless;
    static uint32_t start_time_true_sleep;
+   static bool sleep_;
 };
 
 class PersistentIdleDefyLEDs : public IdleLEDsDefy

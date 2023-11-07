@@ -735,7 +735,7 @@ void DefyKeyScanner::usbConnectionsStateMachine()
         }
     }
 
-    if(actualTime>2000){
+    if(actualTime>2000 && ble_innited()){
         auto const &keyScanner = Runtime.device().keyScanner();
         auto deviceLeft = keyScanner.leftHandDevice();
         auto devicesRight = keyScanner.rightHandDevice();

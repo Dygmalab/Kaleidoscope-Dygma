@@ -28,7 +28,7 @@ namespace kaleidoscope
 {
 namespace plugin
 {
-
+bool IdleLEDsDefy::sleep_ = false;
 IdleLEDsDefy::IdleTime IdleLEDsDefy::idle_time_limit;
 uint32_t IdleLEDsDefy::start_time_wired = 0;
 uint32_t IdleLEDsDefy::start_time_wireless = 0;
@@ -64,15 +64,17 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
         {
             ::LEDControl.disable();
             idle_ = true;
+            sleep_ = false;
             start_time_true_sleep = Runtime.millisAtCycleStart();
         }
     }
 
-    if (idle_time_limit.wired_ && Runtime.hasTimeExpired(start_time_true_sleep, idle_time_limit.true_sleep_))
+    if (!::LEDControl.isEnabled() && !sleep_ && idle_time_limit.wired_ && Runtime.hasTimeExpired(start_time_true_sleep, idle_time_limit.true_sleep_))
     {
         Communications_protocol::Packet p{};
         p.header.command = Communications_protocol::SLEEP;
         Communications.sendPacket(p);
+        sleep_ = true;
     }
 
 
@@ -90,6 +92,8 @@ EventHandlerResult IdleLEDsDefy::onKeyswitchEvent(Key &mapped_key, KeyAddr key_a
 
     start_time_wired = Runtime.millisAtCycleStart();
     start_time_wireless = Runtime.millisAtCycleStart();
+    start_time_true_sleep = Runtime.millisAtCycleStart();
+    sleep_ = false;
     return EventHandlerResult::OK;
 }
 
