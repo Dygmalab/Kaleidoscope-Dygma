@@ -133,8 +133,8 @@ void DefyHands::setSidePower(bool power)
     // 0 -> reset keyboard side, 1 -> run keyboard side
     if (power)
     {
-        nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_PULLUP);
-        nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_PULLUP);
+        nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
+        nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_NOPULL);
     }
     else
     {
@@ -215,8 +215,6 @@ void DefyHands::setup()
                                                         if (p.header.device == KEYSCANNER_DEFY_RIGHT) rightConnection[1] = UNKNOWN;
                                                         if (p.header.device == RF_DEFY_LEFT) leftConnection[2] = UNKNOWN;
                                                         if (p.header.device == RF_DEFY_RIGHT) rightConnection[2] = UNKNOWN;
-
-                                                        ::LEDControl.enable();
                                                     }));
 
     Communications.callbacks.bind(DISCONNECTED, checkBrightness);
@@ -735,13 +733,9 @@ void DefyKeyScanner::usbConnectionsStateMachine()
         }
     }
 
-    if(actualTime>2000 && ble_innited()){
-        auto const &keyScanner = Runtime.device().keyScanner();
-        auto deviceLeft = keyScanner.leftHandDevice();
-        auto devicesRight = keyScanner.rightHandDevice();
-        if(deviceLeft == Communications_protocol::UNKNOWN && devicesRight == Communications_protocol::UNKNOWN ){
-            reset_mcu();
-        }
+    //Only in the case that we have ble init and there is not any usb connected we reboot the system
+    if(actualTime>4000 && ble_innited() && !nrf_gpio_pin_read(SIDE_NRESET_1) && !nrf_gpio_pin_read(SIDE_NRESET_2)){
+        reset_mcu();
     }
 }
 
@@ -751,7 +745,8 @@ void DefyKeyScanner::usbConnectionsStateMachine()
 void DefyNrf::setup()
 {
     // Check if we can live without this reset sides
-    //DefyNrf::side::reset_sides();
+    nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
+    nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_NOPULL);
     status_leds.init();
     status_leds.static_green(NEURON_LED_BRIGHTNESS);
     DefyHands::setup();
@@ -797,8 +792,8 @@ void DefyNrf::side::reset_sides()
     nrf_gpio_pin_write(SIDE_NRESET_1, 0);
     nrf_gpio_pin_write(SIDE_NRESET_2, 0);
     delay(10);
-    nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_PULLUP);
-    nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_PULLUP);
+    nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
+    nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_NOPULL);
     delay(10); // We should give a bit more time but for now lest leave it like this
 }
 
