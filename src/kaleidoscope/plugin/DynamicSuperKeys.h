@@ -137,7 +137,9 @@ public:
    uint16_t delayed_time;
    bool has_already_send;
    bool is_layer_shifting;
-   bool macro_is_running;
+   bool released;
+   bool has_macros;
+   bool is_qukey;
  };
 
  struct KeyValue {
@@ -311,6 +313,8 @@ private:
         * @return A KeyValue struct representing the next tracked super key and its associated state.
       */
  static KeyValue getNextSuperKey();
+
+ static void flush_superkeys();
 
 };
 
