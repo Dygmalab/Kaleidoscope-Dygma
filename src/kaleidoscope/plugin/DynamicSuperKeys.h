@@ -140,6 +140,7 @@ public:
    bool released;
    bool has_macros;
    bool is_qukey;
+   uint32_t timeStamp;
  };
 
  struct KeyValue {
@@ -148,7 +149,9 @@ public:
    Key key;
    KeyAddr keyAddr;
  };
-private:
+ static uint8_t overlap_threshold_;
+
+ private:
  static constexpr uint8_t SUPER_KEY_COUNT = ranges::DYNAMIC_SUPER_LAST - ranges::DYNAMIC_SUPER_FIRST + 1;
 
  static SuperKeyState state_[SUPER_KEY_COUNT];
@@ -168,7 +171,6 @@ private:
  static uint16_t wait_for_;
  static uint16_t hold_start_;
  static uint8_t repeat_interval_;
- static uint8_t overlap_threshold_;
  static bool fast_key_release;
  static uint8_t super_key_index;
  /**
@@ -316,6 +318,7 @@ private:
 
  static void flush_superkeys();
 
+ bool releaseDelayed(uint16_t overlap_start, uint16_t overlap_end) const;
 };
 
 }
