@@ -709,7 +709,7 @@ void DefyKeyScanner::usbConnectionsStateMachine()
     {
         if (usbMounted)
         {
-            kaleidoscope::plugin::RadioManager::init();
+            kaleidoscope::plugin::RadioManager::enable();
         }
         else
         {
