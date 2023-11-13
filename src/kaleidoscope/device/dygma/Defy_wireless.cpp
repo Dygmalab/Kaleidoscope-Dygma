@@ -715,7 +715,7 @@ void DefyKeyScanner::usbConnectionsStateMachine()
         NRF_LOG_INFO("Explain this %i %i %i %i %i %i",(actualTime > 700 && actualTime < 800),!bleInitiated,!radioInitiated,(actualTime > 700 && actualTime < 800) && !bleInitiated && !radioInitiated,usbMounted,forceBle);
         if (usbMounted && !forceBle)
         {
-            kaleidoscope::plugin::RadioManager::init();
+            kaleidoscope::plugin::RadioManager::enabled();
         }
         else
         {
