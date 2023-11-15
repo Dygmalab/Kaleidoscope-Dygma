@@ -364,6 +364,8 @@ bool DynamicSuperKeys::SuperKeys(uint8_t super_key_index, KeyAddr key_addr, Dyna
  case DynamicSuperKeys::Interrupt:
  case DynamicSuperKeys::Timeout:{
    uint8_t modif = (key.getRaw() & 0xFF00) >> 8;
+   uint8_t TEST = key.getRaw();
+   NRF_LOG_DEBUG("TEST %i",TEST);
    if (key.getRaw() == 1)
    {
      if (tap_count == DynamicSuperKeys::Tap_Twice)
@@ -422,7 +424,6 @@ bool DynamicSuperKeys::SuperKeys(uint8_t super_key_index, KeyAddr key_addr, Dyna
      handleKeyswitchEvent(key, key_addr, IS_PRESSED | INJECTED);
      break;
    }
-   handleKeyswitchEvent(key, key_addr, IS_PRESSED | INJECTED);
    /*If we press a modifier and after that a SK we have to be able to release this SK with the associated modifier*/
    if (key.getRaw() < ALPHA_KEYS && modifier_pressed_ ){
      NRF_LOG_DEBUG("key.getRaw() < 256");
@@ -478,7 +479,8 @@ bool DynamicSuperKeys::SuperKeys(uint8_t super_key_index, KeyAddr key_addr, Dyna
    //We get the most significant bits from the keys. These bits tell us which modifiers the key has.
    uint8_t modif = (key.getRaw() & 0xFF00) >> 8;
    uint8_t key_id = key.getRaw() & 0x00FF;
-
+   uint8_t TEST = key.getRaw();
+   NRF_LOG_DEBUG("TEST %i",TEST);
    if (state_[super_key_index].delayed_time == 0)//This will execute in the first moment we hold the key and the hold_start timer expires.
    {
      if (key.getRaw() >= LAYER_LOCK_FIRST && key.getRaw() <= LAYER_LOCK_LAST)
