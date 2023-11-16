@@ -68,6 +68,17 @@ public:
  } Modifiers;
  DynamicSuperKeys() {}
 
+typedef enum : uint16_t {
+     ALPHA_KEYS = 256,
+     LED_BUTTONS_FIRST = 17152,
+     PREVIOUS_LED_EFFECT,
+     LED_BUTTONS_LAST,
+     LAYER_SHIFT_FIRST = 17450,
+     LAYER_SHIFT_LAST = 17459,
+     LAYER_LOCK_FIRST = 17492,
+     LAYER_LOCK_LAST = 17501
+ };
+
  static bool SuperKeys(uint8_t tap_dance_index, KeyAddr key_addr, DynamicSuperKeys::SuperType tap_count, DynamicSuperKeys::ActionType tap_dance_action);
  /**
         * Handle a key switch event and perform SuperKeys processing.
@@ -137,7 +148,10 @@ public:
    uint16_t delayed_time;
    bool has_already_send;
    bool is_layer_shifting;
-   bool macro_is_running;
+   bool released;
+   bool has_macros;
+   bool is_qukey;
+   uint32_t timeStamp;
  };
 
  struct KeyValue {
@@ -146,9 +160,12 @@ public:
    Key key;
    KeyAddr keyAddr;
  };
-private:
- static constexpr uint8_t SUPER_KEY_COUNT = ranges::DYNAMIC_SUPER_LAST - ranges::DYNAMIC_SUPER_FIRST + 1;
+ static uint8_t overlap_threshold_;
 
+ private:
+ static constexpr uint8_t SUPER_KEY_COUNT = ranges::DYNAMIC_SUPER_LAST - ranges::DYNAMIC_SUPER_FIRST + 1;
+ static constexpr uint8_t MINIMUM_KEYS_REQUIRES_IN_QUEUE = 2;
+ static constexpr uint8_t SUPERKEY_MEMORY_STORAGE = 12;
  static SuperKeyState state_[SUPER_KEY_COUNT];
  static uint16_t map_[SUPER_KEY_COUNT];
  static uint16_t storage_base_;
@@ -166,7 +183,6 @@ private:
  static uint16_t wait_for_;
  static uint16_t hold_start_;
  static uint8_t repeat_interval_;
- static uint8_t overlap_threshold_;
  static bool fast_key_release;
  static uint8_t super_key_index;
  /**
@@ -312,6 +328,9 @@ private:
       */
  static KeyValue getNextSuperKey();
 
+ static void flush_superkeys();
+
+ bool releaseDelayed(uint16_t overlap_start, uint16_t overlap_end) const;
 };
 
 }
