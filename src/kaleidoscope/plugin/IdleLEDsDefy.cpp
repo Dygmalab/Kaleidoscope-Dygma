@@ -116,7 +116,7 @@ EventHandlerResult PersistentIdleDefyLEDs::onSetup()
     Runtime.storage().get(settings_base_, idle_time);
     if (idle_time.wired_ == 0xffffffff)
     {
-        idle_time.true_sleep_activated_ = true;
+        idle_time.true_sleep_activated_ = false;
         idle_time.true_sleep_ = true_sleep_time_limit_default;
         idle_time.wired_ = idle_time_limit_default;
         idle_time.wireless_ = idle_time_limit_default_wireless;
