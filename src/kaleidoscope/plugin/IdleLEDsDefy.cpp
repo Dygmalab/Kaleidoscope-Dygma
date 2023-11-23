@@ -68,8 +68,8 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
             start_time_true_sleep = Runtime.millisAtCycleStart();
         }
     }
-
-    if (!::LEDControl.isEnabled() && !sleep_ && idle_time_limit.wired_ && Runtime.hasTimeExpired(start_time_true_sleep, idle_time_limit.true_sleep_))
+    if (idle_time_limit.true_sleep_activated_ && !::LEDControl.isEnabled() && !sleep_ && idle_time_limit.wired_ &&
+        Runtime.hasTimeExpired(start_time_true_sleep, idle_time_limit.true_sleep_))
     {
         Communications_protocol::Packet p{};
         p.header.command = Communications_protocol::SLEEP;
