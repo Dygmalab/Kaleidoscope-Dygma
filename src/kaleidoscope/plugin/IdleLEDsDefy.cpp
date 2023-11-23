@@ -150,7 +150,7 @@ EventHandlerResult PersistentIdleDefyLEDs::onFocusEvent(const char *command)
         {
             uint8_t enabled;
             ::Focus.read(enabled);
-            idle_time_limit.true_sleep_ = enabled;
+            idle_time_limit.true_sleep_activated_ = enabled;
             setIdleTimeoutSeconds(idle_time_limit);
         }
     }
