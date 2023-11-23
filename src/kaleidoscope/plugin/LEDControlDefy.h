@@ -67,16 +67,7 @@ class LEDControl : public kaleidoscope::Plugin
         return static_cast<LEDMode__ *>(cur_led_mode_);
     }
 
-    static void refreshAll()
-    {
-        if (!Runtime.has_leds) return;
-
-        if (!enabled_) return;
-
-        set_all_leds_to({0, 0, 0});
-
-        if (cur_led_mode_ != nullptr) cur_led_mode_->onActivate();
-    }
+    static void refreshAll();
 
     static void setCrgbAt(uint8_t led_index, cRGB crgb);
     static void setCrgbAt(KeyAddr key_addr, cRGB color);

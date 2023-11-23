@@ -17,11 +17,6 @@
 #pragma once
 
 #include <kaleidoscope/plugin/LEDMode.h>
-//TODO: refactor this
-#ifdef ARDUINO_ARCH_NRF52
-#include <kaleidoscope/plugin/LEDControlDefy.h>
-#else
-#include <kaleidoscope/plugin/LEDControl.h>
-#endif
+#include KALEIDOSCOPE_LED_CONTROL_H
 #include <kaleidoscope/plugin/LEDControl/LEDUtils.h>
 #include <kaleidoscope/plugin/LEDControl/LED-Off.h>

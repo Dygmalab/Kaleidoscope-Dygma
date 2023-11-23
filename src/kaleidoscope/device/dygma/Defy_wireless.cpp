@@ -133,8 +133,8 @@ void DefyHands::setSidePower(bool power)
     // 0 -> reset keyboard side, 1 -> run keyboard side
     if (power)
     {
-        nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_PULLUP);
-        nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_PULLUP);
+        nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
+        nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_NOPULL);
     }
     else
     {
@@ -153,6 +153,21 @@ Communications_protocol::Devices rightConnection[3]{UNKNOWN, UNKNOWN, UNKNOWN};
 
 auto checkBrightness = [](const Packet &)
 {
+    if (!::LEDControl.isEnabled())
+    {
+        status_leds.stop_all();
+        Communications_protocol::Packet p{};
+        p.header.command = Communications_protocol::BRIGHTNESS;
+        p.header.device = UNKNOWN;
+        p.data[0] = 0;
+        p.data[1] = 0;
+        p.data[2] = static_cast<uint8_t>(ColormapEffectDefy.no_led_effect);
+        p.data[3] = 1;
+        p.header.size = 4;
+        Communications.sendPacket(p);
+        return;
+    }
+    status_leds.static_green(NEURON_LED_BRIGHTNESS);
     auto &keyScanner = Runtime.device().keyScanner();
     auto &ledDriver = Runtime.device().ledDriver();
 
@@ -162,7 +177,7 @@ auto checkBrightness = [](const Packet &)
     volatile auto isEitherUnknown = deviceLeft == Communications_protocol::UNKNOWN && deviceRight == Communications_protocol::UNKNOWN;
     volatile auto isDefyLeftWired = deviceLeft == Communications_protocol::KEYSCANNER_DEFY_LEFT || deviceLeft == Communications_protocol::UNKNOWN;
     volatile auto isDefyRightWired = deviceRight == Communications_protocol::KEYSCANNER_DEFY_RIGHT || deviceRight == Communications_protocol::UNKNOWN;
-    ColormapEffectDefy.updateBrigthness((isDefyLeftWired && isDefyRightWired) && !isEitherUnknown);
+    ColormapEffectDefy.updateBrigthness(ColormapEffectDefy.no_led_effect, true, (isDefyLeftWired && isDefyRightWired) && !isEitherUnknown);
 };
 
 void DefyHands::setup()
@@ -181,6 +196,7 @@ void DefyHands::setup()
                                                          rightConnection[1] = ble_innited() ? BLE_DEFY_RIGHT : KEYSCANNER_DEFY_RIGHT;
                                                      if (p.header.device == RF_DEFY_LEFT) leftConnection[2] = RF_DEFY_LEFT;
                                                      if (p.header.device == RF_DEFY_RIGHT) rightConnection[2] = RF_DEFY_RIGHT;
+                                                     ::LEDControl.enable();
                                                  }));
     Communications.callbacks.bind(DISCONNECTED, (
                                                     [](const Packet &p)
@@ -363,22 +379,10 @@ void DefyLEDDriver::syncLeds()
 {
     bool is_enabled = ::LEDControl.isEnabled();
 
-    if (leds_enabled_ && !is_enabled)
+    if (leds_enabled_ != is_enabled)
     {
         leds_enabled_ = is_enabled;
-        Communications_protocol::Packet p{};
-        p.header.command = Communications_protocol::SLEEP;
-        status_leds.stop_all();
-        Communications.sendPacket(p);
-    }
-
-    if (!leds_enabled_ && is_enabled)
-    {
-        leds_enabled_ = is_enabled;
-        Communications_protocol::Packet p{};
-        p.header.command = Communications_protocol::WAKE_UP;
-        Communications.sendPacket(p);
-        status_leds.static_green(NEURON_LED_BRIGHTNESS);
+        DefyHands::sendPacketBrightness();
     }
 
     if (isLEDChangedNeuron)
@@ -702,27 +706,34 @@ void DefyKeyScanner::usbConnectionsStateMachine()
     uint32_t actualTime = millis();
     bool usbMounted = TinyUSBDevice.mounted();
     bool bleInitiated = ble_innited();
-    bool radioInitiated = kaleidoscope::plugin::RadioManager::isInited();
+    bool radioInited = kaleidoscope::plugin::RadioManager::isInited();
+    bool forceBle = BleManager.getForceBle();
 
     // For 100ms at the 700ms mark, check whether to initialize BLE or RF
-    if ((actualTime > 700 && actualTime < 800) && !bleInitiated && !radioInitiated)
+    if ((actualTime > 700 && actualTime < 800) && !bleInitiated && !radioInited)
     {
-        if (usbMounted)
+        if (usbMounted && !forceBle)
         {
             kaleidoscope::plugin::RadioManager::init();
         }
         else
         {
+            //Force connnect again just in case it was set as a device and not a host
             kaleidoscope::plugin::BleManager::init();
-            if(leftConnection[1] == KEYSCANNER_DEFY_LEFT) leftConnection[1] = BLE_DEFY_LEFT;
-            if(rightConnection[1] == KEYSCANNER_DEFY_RIGHT) rightConnection[1] = BLE_DEFY_RIGHT;
+            if (leftConnection[1] == KEYSCANNER_DEFY_LEFT) leftConnection[1] = BLE_DEFY_LEFT;
+            if (rightConnection[1] == KEYSCANNER_DEFY_RIGHT) rightConnection[1] = BLE_DEFY_RIGHT;
             DefyHands::sendPacketBrightness();
+            BleManager.setForceBle(false);
+            Packet p{};
+            p.header.command = CONNECTED;
+            p.header.size = 0;
+            p.header.device = BLE_NEURON_2_DEFY;
+            Communications.sendPacket(p);
         }
     }
 
-    // If USB state and BLE or RF state are mismatched, reboot
-    if ((bleInitiated && usbMounted) || (radioInitiated && !usbMounted))
-    {
+    //Only in the case that we have ble init and there is not any usb connected we reboot the system
+    if(actualTime>4000 && ble_innited() && !nrf_gpio_pin_read(SIDE_NRESET_1) && !nrf_gpio_pin_read(SIDE_NRESET_2)){
         reset_mcu();
     }
 }
@@ -733,7 +744,8 @@ void DefyKeyScanner::usbConnectionsStateMachine()
 void DefyNrf::setup()
 {
     // Check if we can live without this reset sides
-    DefyNrf::side::reset_sides();
+    nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
+    nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_NOPULL);
     status_leds.init();
     status_leds.static_green(NEURON_LED_BRIGHTNESS);
     DefyHands::setup();
@@ -779,8 +791,8 @@ void DefyNrf::side::reset_sides()
     nrf_gpio_pin_write(SIDE_NRESET_1, 0);
     nrf_gpio_pin_write(SIDE_NRESET_2, 0);
     delay(10);
-    nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_PULLUP);
-    nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_PULLUP);
+    nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
+    nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_NOPULL);
     delay(10); // We should give a bit more time but for now lest leave it like this
 }
 

@@ -28,12 +28,11 @@ namespace kaleidoscope
 {
 namespace plugin
 {
-
-uint32_t IdleLEDsDefy::idle_time_limit_default = 600000;          // 10 minutes
-uint32_t IdleLEDsDefy::idle_time_limit_default_wireless = 300000; // 5 minutes
+bool IdleLEDsDefy::sleep_ = false;
 IdleLEDsDefy::IdleTime IdleLEDsDefy::idle_time_limit;
 uint32_t IdleLEDsDefy::start_time_wired = 0;
 uint32_t IdleLEDsDefy::start_time_wireless = 0;
+uint32_t IdleLEDsDefy::start_time_true_sleep = 0;
 bool IdleLEDsDefy::idle_ = false; // Initialize with false
 
 uint32_t IdleLEDsDefy::idleTimeoutSeconds(uint32_t time_in_ms)
@@ -65,7 +64,17 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
         {
             ::LEDControl.disable();
             idle_ = true;
+            sleep_ = false;
+            start_time_true_sleep = Runtime.millisAtCycleStart();
         }
+    }
+    if (idle_time_limit.true_sleep_activated_ && !::LEDControl.isEnabled() && !sleep_ && idle_time_limit.wired_ &&
+        Runtime.hasTimeExpired(start_time_true_sleep, idle_time_limit.true_sleep_))
+    {
+        Communications_protocol::Packet p{};
+        p.header.command = Communications_protocol::SLEEP;
+        Communications.sendPacket(p);
+        sleep_ = true;
     }
 
 
@@ -83,6 +92,8 @@ EventHandlerResult IdleLEDsDefy::onKeyswitchEvent(Key &mapped_key, KeyAddr key_a
 
     start_time_wired = Runtime.millisAtCycleStart();
     start_time_wireless = Runtime.millisAtCycleStart();
+    start_time_true_sleep = Runtime.millisAtCycleStart();
+    sleep_ = false;
     return EventHandlerResult::OK;
 }
 
@@ -105,6 +116,8 @@ EventHandlerResult PersistentIdleDefyLEDs::onSetup()
     Runtime.storage().get(settings_base_, idle_time);
     if (idle_time.wired_ == 0xffffffff)
     {
+        idle_time.true_sleep_activated_ = false;
+        idle_time.true_sleep_ = true_sleep_time_limit_default;
         idle_time.wired_ = idle_time_limit_default;
         idle_time.wireless_ = idle_time_limit_default_wireless;
     }
@@ -122,18 +135,41 @@ void PersistentIdleDefyLEDs::setIdleTimeoutSeconds(const IdleTime &data)
 
 EventHandlerResult PersistentIdleDefyLEDs::onFocusEvent(const char *command)
 {
-    const char *cmd = "idleleds.time_limit";
-    const char *cmdw = "idleleds.wireless";
 
-    if (::Focus.handleHelp(command, "idleleds.time_limit\nidleleds.wireless")) return EventHandlerResult::OK;
+    if (::Focus.handleHelp(command, "idleleds.true_sleep\nidleleds.true_sleep_time\nidleleds.time_limit\nidleleds.wireless")) return EventHandlerResult::OK;
 
-    if (strcmp(command, cmd) != 0)
+    if (strncmp(command, "idleleds.", 9) != 0) return EventHandlerResult::OK;
+
+    if (strcmp(command + 9, "true_sleep") == 0)
     {
-        if (strcmp(command, cmdw) != 0)
+        if (::Focus.isEOL())
         {
-            return EventHandlerResult::OK;
+            ::Focus.send(idle_time_limit.true_sleep_activated_ ? 1 : 0);
+        }
+        else
+        {
+            uint8_t enabled;
+            ::Focus.read(enabled);
+            idle_time_limit.true_sleep_activated_ = enabled;
+            setIdleTimeoutSeconds(idle_time_limit);
         }
     }
+
+    if (strcmp(command + 9, "true_sleep_time") == 0)
+    {
+        if (::Focus.isEOL())
+        {
+            ::Focus.send(idleTimeoutSeconds(idle_time_limit.true_sleep_));
+        }
+        else
+        {
+            uint16_t true_sleep;
+            ::Focus.read(true_sleep);
+            idle_time_limit.true_sleep_ = true_sleep * 1000;
+            setIdleTimeoutSeconds(idle_time_limit);
+        }
+    }
+
     if (strcmp(command + 9, "time_limit") == 0)
     {
         if (::Focus.isEOL())
