@@ -100,7 +100,7 @@ auto checkBrightness = [](const Packet &)
         Communications.sendPacket(p);
         return;
     }
- ColormapEffectDefy.updateBrigthness(true);
+    ColormapEffectDefy.updateBrigthness(ColormapEffectDefy.no_led_effect, true, true);
 };
 
 void Hands::setup() {
