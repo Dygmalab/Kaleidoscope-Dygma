@@ -162,6 +162,8 @@ class DefyKeyScanner : public kaleidoscope::driver::keyscanner::Base<DefyKeyScan
     static void readMatrix();
     static void actOnMatrixScan();
     static Communications_protocol::Devices rightHandDevice(void);
+    static bool rightSideWiredConnection();
+    static bool leftSideWiredConnection();
     static Communications_protocol::Devices leftHandDevice(void);
 
     static void maskKey(KeyAddr key_addr);

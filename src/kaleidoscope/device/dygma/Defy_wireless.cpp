@@ -169,15 +169,9 @@ auto checkBrightness = [](const Packet &)
     }
     status_leds.static_green(NEURON_LED_BRIGHTNESS);
     auto &keyScanner = Runtime.device().keyScanner();
-    auto &ledDriver = Runtime.device().ledDriver();
-
-    auto deviceLeft = keyScanner.leftHandDevice();
-    auto deviceRight = keyScanner.rightHandDevice();
-
-    volatile auto isEitherUnknown = deviceLeft == Communications_protocol::UNKNOWN && deviceRight == Communications_protocol::UNKNOWN;
-    volatile auto isDefyLeftWired = deviceLeft == Communications_protocol::KEYSCANNER_DEFY_LEFT || deviceLeft == Communications_protocol::UNKNOWN;
-    volatile auto isDefyRightWired = deviceRight == Communications_protocol::KEYSCANNER_DEFY_RIGHT || deviceRight == Communications_protocol::UNKNOWN;
-    ColormapEffectDefy.updateBrigthness(ColormapEffectDefy.no_led_effect, true, (isDefyLeftWired && isDefyRightWired) && !isEitherUnknown);
+    auto isDefyLeftWired = keyScanner.leftSideWiredConnection();
+    auto isDefyRightWired = keyScanner.rightSideWiredConnection();
+    ColormapEffectDefy.updateBrigthness(ColormapEffectDefy.no_led_effect, true, isDefyLeftWired && isDefyRightWired);
 };
 
 void DefyHands::setup()
@@ -737,6 +731,18 @@ void DefyKeyScanner::usbConnectionsStateMachine()
         reset_mcu();
     }
 }
+
+bool DefyKeyScanner::rightSideWiredConnection()
+{
+    return nrf_gpio_pin_read(SIDE_NRESET_2);
+}
+
+bool DefyKeyScanner::leftSideWiredConnection()
+{
+    return nrf_gpio_pin_read(SIDE_NRESET_1);
+}
+
+
 
 
 /********* DefyNrf class (Hardware plugin) *********/
