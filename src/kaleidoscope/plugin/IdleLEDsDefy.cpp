@@ -47,7 +47,7 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
     auto isDefyLeftWired = keyScanner.leftSideWiredConnection();
     auto isDefyRightWired = keyScanner.rightSideWiredConnection();
 
-    if (isDefyLeftWired && isDefyRightWired)
+    if (isDefyLeftWired && isDefyRightWired && !ble_innited())
     {
         if (::LEDControl.isEnabled() && Runtime.hasTimeExpired(start_time_wired, idle_time_limit.wired_))
         {

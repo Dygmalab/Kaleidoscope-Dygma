@@ -171,7 +171,7 @@ auto checkBrightness = [](const Packet &)
     auto &keyScanner = Runtime.device().keyScanner();
     auto isDefyLeftWired = keyScanner.leftSideWiredConnection();
     auto isDefyRightWired = keyScanner.rightSideWiredConnection();
-    ColormapEffectDefy.updateBrigthness(ColormapEffectDefy.no_led_effect, true, isDefyLeftWired && isDefyRightWired);
+    ColormapEffectDefy.updateBrigthness(ColormapEffectDefy.no_led_effect, true, isDefyLeftWired && isDefyRightWired && !ble_innited());
 };
 
 void DefyHands::setup()
