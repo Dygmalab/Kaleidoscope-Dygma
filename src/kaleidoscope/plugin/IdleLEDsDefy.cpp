@@ -44,13 +44,10 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
 {
     if (idle_time_limit.wired_ == 0 || idle_time_limit.wireless_ == 0) return EventHandlerResult::OK;
     auto const &keyScanner = Runtime.device().keyScanner();
-    auto deviceLeft = keyScanner.leftHandDevice();
-    auto devicesRight = keyScanner.rightHandDevice();
-    auto isEitherUnknown = deviceLeft == Communications_protocol::UNKNOWN && devicesRight == Communications_protocol::UNKNOWN;
-    auto isDefyLeftWired = deviceLeft == Communications_protocol::KEYSCANNER_DEFY_LEFT || deviceLeft == Communications_protocol::UNKNOWN;
-    auto isDefyRightWired = devicesRight == Communications_protocol::KEYSCANNER_DEFY_RIGHT || devicesRight == Communications_protocol::UNKNOWN;
+    auto isDefyLeftWired = keyScanner.leftSideWiredConnection();
+    auto isDefyRightWired = keyScanner.rightSideWiredConnection();
 
-    if ((isDefyLeftWired && isDefyRightWired) && !isEitherUnknown)
+    if (isDefyLeftWired && isDefyRightWired && !ble_innited())
     {
         if (::LEDControl.isEnabled() && Runtime.hasTimeExpired(start_time_wired, idle_time_limit.wired_))
         {
@@ -67,14 +64,14 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
             sleep_ = false;
             start_time_true_sleep = Runtime.millisAtCycleStart();
         }
-    }
-    if (idle_time_limit.true_sleep_activated_ && !::LEDControl.isEnabled() && !sleep_ && idle_time_limit.wired_ &&
-        Runtime.hasTimeExpired(start_time_true_sleep, idle_time_limit.true_sleep_))
-    {
-        Communications_protocol::Packet p{};
-        p.header.command = Communications_protocol::SLEEP;
-        Communications.sendPacket(p);
-        sleep_ = true;
+        if (idle_time_limit.true_sleep_activated_ && !::LEDControl.isEnabled() && !sleep_ && idle_time_limit.wired_ &&
+            Runtime.hasTimeExpired(start_time_true_sleep, idle_time_limit.true_sleep_))
+        {
+            Communications_protocol::Packet p{};
+            p.header.command = Communications_protocol::SLEEP;
+            Communications.sendPacket(p);
+            sleep_ = true;
+        }
     }
 
 
