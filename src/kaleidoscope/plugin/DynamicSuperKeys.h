@@ -144,12 +144,12 @@ typedef enum : uint16_t {
    SuperType count;
    SuperConfiguration actions;
    bool has_modifier_in_action;
-   uint16_t start_time;
+   uint32_t start_time;
+   uint32_t hold_start;
    uint16_t delayed_time;
    bool has_already_send;
    bool is_layer_shifting;
    bool released;
-   bool has_macros;
    bool is_qukey;
    uint32_t timeStamp;
  };
@@ -297,15 +297,15 @@ typedef enum : uint16_t {
         * @param index The index of the key to search for.
         * @return The index of the key if found, or 0 if not found.
       */
- __attribute__((unused)) static Key findKey(uint8_t index);
+ __attribute__((unused)) static bool findKey(Key mapped_key);
  /**
         * Check if a specified key ID corresponds to a modifier key.
         *
         * This method determines whether a given key ID corresponds to a modifier key or not. It checks the key ID against a list
         * of known modifier key IDs and returns a boolean value indicating whether the key is a modifier key.
         *
-        * @param key_id The key ID to be checked for being a modifier key.
-        * @return `true` if the key ID corresponds to a modifier key, `false` otherwise.
+        * @param mapped_key The key to be checked for being a super-key or not.
+        * @return `true` if the key is a super-key, `false` otherwise.
       */
  static bool lowerKeyIsModifier(uint8_t key_id);
  /**
@@ -330,7 +330,11 @@ typedef enum : uint16_t {
 
  static void flush_superkeys();
 
- bool releaseDelayed(uint16_t overlap_start, uint16_t overlap_end) const;
+ static bool releaseDelayed(uint32_t next_superkey_timestamp, uint32_t actual_superkey_start_time,uint32_t next_superkey_start_time) ;
+
+ static bool hasTimeExpired(uint32_t start_time, uint16_t ttl);
+
+ static bool checkForCoordIng(Key mapped_key,KeyAddr key_addr);
 };
 
 }
