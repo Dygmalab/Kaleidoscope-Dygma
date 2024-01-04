@@ -3,8 +3,13 @@
 #ifndef NRF_NEURON_SUPERKEYSHANDLER_H
 #define NRF_NEURON_SUPERKEYSHANDLER_H
 
-#include "libraries/Kaleidoscope/src/kaleidoscope/plugin/Superkeys/Superkey/Superkey.h"
 #include <Kaleidoscope.h>
+#include "Kaleidoscope-Ranges.h"
+#include "EEPROM-Settings.h"
+#include "Kaleidoscope-FocusSerial.h"
+
+#include "libraries/Kaleidoscope/src/kaleidoscope/plugin/Superkeys/includes.h"
+
 
 using KeyID = uint16_t;
 
@@ -14,6 +19,12 @@ namespace plugin
 {
 class SuperkeysHandler : public kaleidoscope::Plugin
 {
+  static constexpr uint8_t SUPER_KEY_COUNT = kaleidoscope::ranges::DYNAMIC_SUPER_LAST - kaleidoscope::ranges::DYNAMIC_SUPER_FIRST + 2;
+  static constexpr uint8_t MAX_SUPER_KEYS_ACTIVE = 50;
+  static constexpr uint8_t KEY_PER_ACTION = 6;
+  static constexpr uint8_t offset = 8;
+
+
   public:
     // Kaleidoscope plugin methods
 
@@ -60,22 +71,59 @@ class SuperkeysHandler : public kaleidoscope::Plugin
      * @param dynamic_offset The offset for DynamicSuperKeys in the EEPROM storage.
      * @param size The size of the storage slice required for DynamicSuperKeys settings.
      */
-    static void setup(uint8_t dynamic_offset, uint16_t size);
+    static void setup();
+    static uint8_t get_active_sk();
 
-  public:
-    // Variable declarations
-  private:
-    //Superkey Sk_queue[15];
+    struct Configurations{
+        //Memory space
+        uint16_t storage_base_;
+        uint16_t storage_size_;
+
+        //Superkey configurations
+        uint16_t delayed_time_;
+        uint16_t wait_for_ ;
+        uint16_t hold_start_;
+        uint8_t repeat_interval_;
+        uint8_t overlap_threshold_;
+        uint16_t time_out_;
+
+        //Keys
+        Key keys[SUPER_KEY_COUNT][KEY_PER_ACTION];
+
+        void reset(){
+            delayed_time_ = 0;
+            wait_for_ = 500;
+            hold_start_ = 236;
+            repeat_interval_ = 20;
+            overlap_threshold_ = 80;
+            time_out_ = 144;
+            static Key IDLE_KEY;
+            IDLE_KEY.setRaw(0xFFFF);
+            for (uint16_t i = 0; i < SUPER_KEY_COUNT; ++i)
+            {
+                for (int j = 0; j < KEY_PER_ACTION; ++j)
+                {
+                    keys[i][j] = IDLE_KEY;
+                }
+            }
+        }
+    };
 
   private:
+
+    static Superkey state_[SUPER_KEY_COUNT];
+    static uint16_t settings_base_;
+    static Superkey Sk_queue[MAX_SUPER_KEYS_ACTIVE];
+    static uint8_t active_superkeys;
+
     static void init();
     static void config();
     static void enable();
     static void disable();
-    static void run();
     static void sk_enabled(KeyID);
+    static void save_configurations();
+    static void set_active_sk();
 };
-
 } // namespace plugin
 } // namespace kaleidoscope
 extern kaleidoscope::plugin::SuperkeysHandler SuperkeysHandler;

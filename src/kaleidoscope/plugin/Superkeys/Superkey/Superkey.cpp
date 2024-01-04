@@ -1,7 +1,6 @@
 #include "Superkey.h"
 /*Variable declarations*/
 
-
 /************SUPERKEY CONFIGURATION*************/
 void Superkey::init()
 {
@@ -41,24 +40,26 @@ void Superkey::run()
 void Superkey::key_pressed()
 {
     superKeyState.pressed = true;
-    ActionsDriver::event_handler(this,ActionsDriver::EventType::TAP, tap);
+    superKeyState.tap_count++;
+    ActionsDriver::event_handler(ActionsDriver::EventType::TAP, this);
 }
 
 void Superkey::key_released()
 {
-    ActionsDriver::event_handler(this,ActionsDriver::EventType::RELEASE, release);
+    superKeyState.tap_count++;
+    ActionsDriver::event_handler(ActionsDriver::EventType::RELEASE, this);
 }
 
 void Superkey::key_is_pressed()
 {
-    ActionsDriver::event_handler(this,ActionsDriver::EventType::HOLD, hold);
+    ActionsDriver::event_handler(ActionsDriver::EventType::HOLD, this);
 }
 
 /************SUPERKEY ACTIONS*************/
 
 uint8_t Superkey::tap()
 {
-    return superKeyState.tap_count++;
+    return ++superKeyState.tap_count;
 }
 
 uint8_t Superkey::hold()
@@ -70,7 +71,7 @@ uint8_t Superkey::hold()
 uint8_t Superkey::release()
 {
     superKeyState.holded = false;
-    return superKeyState.tap_count++;
+    return ++superKeyState.tap_count;
 }
 
 void Superkey::timeout()
@@ -86,23 +87,23 @@ void Superkey::interrupt()
 }
 
 /***************SUPERKEY TYPE****************/
-void Superkey::tap_action()
+void Superkey::set_tap_action()
 {
     superKeyState.type = SuperType::Tap_Once;
 }
-void Superkey::hold_action()
+void Superkey::set_hold_action()
 {
     superKeyState.type = SuperType::Hold_Once;
 }
-void Superkey::tap_and_hold_action()
+void Superkey::set_tap_and_hold_action()
 {
     superKeyState.type = SuperType::Tap_Hold;
 }
-void Superkey::double_tap_action()
+void Superkey::set_double_tap_action()
 {
     superKeyState.type = SuperType::Tap_Twice;
 }
-void Superkey::double_tap_hold_action()
+void Superkey::set_double_tap_hold_action()
 {
     superKeyState.type = SuperType::Tap_Twice_Hold;
 }

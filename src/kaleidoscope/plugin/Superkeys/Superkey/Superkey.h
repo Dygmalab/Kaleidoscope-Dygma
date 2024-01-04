@@ -1,8 +1,9 @@
 #ifndef NRF_NEURON_SUPERKEY_H
 #define NRF_NEURON_SUPERKEY_H
-
-#include "kaleidoscope/src/kaleidoscope/plugin/Superkeys/Actions/ActionsDriver.h"
 #include <Kaleidoscope.h>
+#include "libraries/Kaleidoscope/src/kaleidoscope/plugin/Superkeys/includes.h"
+//Forward declarations.
+class ActionsDriver;
 
 class Superkey
 {
@@ -13,7 +14,7 @@ class Superkey
     void config();
     void enable();
     void disable();
-    void run();
+    static void run();
 
     //Key actions
     void key_pressed();
@@ -21,11 +22,11 @@ class Superkey
     void key_is_pressed();
 
     // Superkey Actions
-    void tap_action();
-    void hold_action();
-    void tap_and_hold_action();
-    void double_tap_action();
-    void double_tap_hold_action();
+    void set_tap_action();
+    void set_hold_action();
+    void set_tap_and_hold_action();
+    void set_double_tap_action();
+    void set_double_tap_hold_action();
 
   private:
     struct ActionsConfiguration
@@ -72,6 +73,13 @@ class Superkey
         uint32_t hold_start;
         uint16_t delayed_time;
         uint32_t timeStamp;
+
+        //keys in Actions
+        Key tap_key;
+        Key hold_key;
+        Key tap_hold_key;
+        Key double_tap_key;
+        Key double_tap_hold_key;
     };
 
     bool enabled;

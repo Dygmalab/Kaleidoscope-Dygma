@@ -889,12 +889,12 @@ EventHandlerResult DynamicSuperKeys::beforeReportingState()
 
 EventHandlerResult DynamicSuperKeys::onFocusEvent(const char *command)
 {
-    if (::Focus.handleHelp(command, "superkeys.map\nsuperkeys.waitfor\nsuperkeys.timeout\nsuperkeys.repeat\nsuperkeys.holdstart\nsuperkeys.overlap"))
+    if (::Focus.handleHelp(command, "tsuperkeys.map\nsuperkeys.waitfor\nsuperkeys.timeout\nsuperkeys.repeat\nsuperkeys.holdstart\nsuperkeys.overlap"))
         return EventHandlerResult::OK;
 
-    if (strncmp_P(command, "superkeys.", 10) != 0) return EventHandlerResult::OK;
+    if (strncmp_P(command, "tsuperkeys.", 10) != 0) return EventHandlerResult::OK;
 
-    if (strcmp_P(command + 10, "map") == 0)
+    if (strcmp_P(command + 11, "map") == 0)
     {
         if (::Focus.isEOL())
         {
