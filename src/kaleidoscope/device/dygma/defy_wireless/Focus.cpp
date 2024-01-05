@@ -19,7 +19,7 @@
 
 #include "kaleidoscope/Runtime.h"
 #include <Kaleidoscope-FocusSerial.h>
-#include "kaleidoscope/device/dygma/defy_wireless/Focus.h"
+#include "kaleidoscope/device/dygma/raise2/Focus.h"
 #include "Communications.h"
 
 namespace kaleidoscope {
@@ -71,7 +71,7 @@ EventHandlerResult Focus::onFocusEvent(const char *command) {
     if (strcmp(command + 9, "firmware") == 0) {
         NRF_LOG_DEBUG("read request: hardware.firmware");
 
-        ::Focus.send<char *>(Defy_FIRMWARE_VERSION);
+        ::Focus.send<char *>(RAISE_2_FIRMWARE_VERSION);
 
         return EventHandlerResult::EVENT_CONSUMED;
     }

@@ -326,7 +326,9 @@ bool Raise2LEDDriver::leds_enabled_ = true;
 uint8_t Raise2LEDDriver::isLEDChangedLeft[LED_BANKS];
 uint8_t Raise2LEDDriver::isLEDChangedRight[LED_BANKS];
 cRGB Raise2LEDDriver::neuronLED;
+// Add this line to define the static member variable
 constexpr uint8_t Raise2LEDDriver::led_map[Raise2LEDDriverProps::led_count];
+//constexpr uint8_t Raise2LEDDriver::led_map[Raise2LEDDriverProps::led_count];
 constexpr uint8_t Raise2LEDDriverProps::key_led_map[];
 // Wired setters and getters
 void Raise2LEDDriver::setBrightness(uint8_t brightness)
@@ -420,7 +422,7 @@ void Raise2LEDDriver::setCrgbAt(uint8_t i, cRGB crgb)
     }
 
     // get the SLED index
-    uint8_t sled_num = led_map[i];
+    uint8_t sled_num = Raise2LEDDriver::led_map[i];
     if (sled_num < LEDS_PER_HAND)
     {
         cRGB oldColor = Raise2Hands::leftHand.led_data.leds[sled_num];
@@ -451,7 +453,7 @@ cRGB Raise2LEDDriver::getCrgbAt(uint8_t i)
 {
     if (i >= Raise2LEDDriverProps::led_count) return {0, 0, 0};
 
-    uint8_t sled_num = led_map[i];
+    uint8_t sled_num = Raise2LEDDriver::led_map[i];
     if (sled_num < LEDS_PER_HAND)
     {
         return Raise2Hands::leftHand.led_data.leds[sled_num];

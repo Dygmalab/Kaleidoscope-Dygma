@@ -108,10 +108,9 @@ class Raise2LEDDriver : public kaleidoscope::driver::led::Base<Raise2LEDDriverPr
     // clang-format off
     // led_count + 1, to account for the Neuron's LED. The last one is the
     // Neuron's LED, never send that to SLED.
-//    static constexpr uint8_t led_map[][Raise2LEDDriverProps::led_count + 1] = {
-    static constexpr uint8_t led_map[Raise2LEDDriverProps::led_count + 1] = {
+    //static constexpr uint8_t led_map[][Raise2LEDDriverProps::led_count + 1] = {
+    static constexpr uint8_t led_map[Raise2LEDDriverProps::led_count] = {
         // ISO
-//        {
                 // left side - 33 keys includes LP
                 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 68, 69,
 
@@ -125,24 +124,7 @@ class Raise2LEDDriver : public kaleidoscope::driver::led::Base<Raise2LEDDriverPr
                 // right underglow - 32
                 34 + LPH, 35 + LPH, 36 + LPH, 37 + LPH, 38 + LPH, 39 + LPH, 40 + LPH, 41 + LPH, 42 + LPH, 43 + LPH, 44 + LPH, 45 + LPH, 46 + LPH, 47 + LPH, 48 + LPH, 49 + LPH, 50 + LPH, 51 + LPH,
                 52 + LPH, 53 + LPH, 54 + LPH, 55 + LPH, 56 + LPH, 57 + LPH, 58 + LPH, 59 + LPH, 60 + LPH, 61 + LPH, 62 + LPH, 63 + LPH, 64 + LPH, 65 + LPH, 0xff
-//        },
-//        // ANSI
-//        {
-//                // left side - 32 keys includes LP: key 19 is missing for ANSI layout
-//                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 0xff, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 68, 69,
-//
-//                // right side - 36 keys includes LP
-//                0 + LPH, 1 + LPH, 2 + LPH, 3 + LPH, 4 + LPH, 5 + LPH, 6 + LPH, 7 + LPH, 8 + LPH, 9 + LPH, 10 + LPH, 11 + LPH, 12 + LPH, 13 + LPH, 14 + LPH, 15 + LPH, 16 + LPH, 17 + LPH, 18 + LPH, 19 + LPH,
-//                20 + LPH, 21 + LPH, 22 + LPH, 23 + LPH, 24 + LPH, 25 + LPH, 26 + LPH, 27 + LPH, 28 + LPH, 29 + LPH, 30 + LPH, 31 + LPH, 32 + LPH, 33 + LPH, 68 + LPH, 69 + LPH,
-//
-//                // left under glow - 30
-//                34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
-//
-//                // right underglow - 32
-//                34 + LPH, 35 + LPH, 36 + LPH, 37 + LPH, 38 + LPH, 39 + LPH, 40 + LPH, 41 + LPH, 42 + LPH, 43 + LPH, 44 + LPH, 45 + LPH, 46 + LPH, 47 + LPH, 48 + LPH, 49 + LPH, 50 + LPH, 51 + LPH,
-//                52 + LPH, 53 + LPH, 54 + LPH, 55 + LPH, 56 + LPH, 57 + LPH, 58 + LPH, 59 + LPH, 60 + LPH, 61 + LPH, 62 + LPH, 63 + LPH, 64 + LPH, 65 + LPH, 0xff
-//        }
-};
+    };
     // clang-format on
 };
 
@@ -296,5 +278,6 @@ typedef kaleidoscope::device::dygma::Raise2 Device;
     r3c0, r3c1, r3c2, r3c3, r3c4, r3c5, r3c6, dflt, dflt, dflt, r3c10, r3c11, r3c12, r3c13, r3c14, r3c15,   \
     r4c0, r4c1, r4c2, r4c3, r4c4, dflt, r4c6, r4c7, r4c8, r4c9, r4c10, r4c11, r4c12, r4c13, r4c14, r4c15
 
-#endif  // __RAISE_2_H__
+#endif
+
 #endif

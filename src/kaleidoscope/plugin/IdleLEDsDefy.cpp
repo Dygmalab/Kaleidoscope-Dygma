@@ -18,7 +18,7 @@
 #ifdef ARDUINO_ARCH_NRF52
 
 #include "Communications.h"
-#include "Defy_wireless.h"
+#include "Raise2.h"
 #include <Kaleidoscope-EEPROM-Settings.h>
 #include <Kaleidoscope-FocusSerial.h>
 #include <Kaleidoscope-IdleLEDsDefy.h>
