@@ -1,5 +1,5 @@
 /* -*- mode: c++ -*-
- * kaleidoscope::device::dygma::defy_wireless -- Kaleidoscope device plugin for Dygma defy_wireless
+ * kaleidoscope::device::dygma::raise2 -- Kaleidoscope device plugin for Dygma raise2
  * Copyright (C) 2017-2019  Keyboard.io, Inc
  * Copyright (C) 2017-2019  Dygma Lab S.L.
  *
@@ -41,7 +41,7 @@
 namespace kaleidoscope {
 namespace device {
 namespace dygma {
-namespace defy_wireless {
+namespace raise2 {
 
 class TWI
 {

@@ -1,5 +1,5 @@
 /* -*- mode: c++ -*-
- * kaleidoscope::device::dygma::Defy -- Kaleidoscope device plugin for Dygma Defy
+ * kaleidoscope::device::dygma::DefyNrf -- Kaleidoscope device plugin for Dygma DefyNrf
  * Copyright (C) 2017-2020  Keyboard.io, Inc
  * Copyright (C) 2017-2020  Dygma Lab S.L.
  *
@@ -38,14 +38,7 @@
 #include "kaleidoscope/driver/storage/Flash.h"
 #include "libraries/KeyboardioHID/src/MultiReport/RawHID.h"
 
-
-#define DEFY_HANDS_DEBUG                 1
-
-#define PRINT_SCANNED_KEYS_FROM_SIDES    0
-#define PRINT_SCANNED_KEYS_FROM_RF_SIDES 0
-
 #define PRINT_KEYSWITCH_EVENT_PARAMETERS 0
-
 
 #ifndef FIRMWARE_VERSION
 #define FIRMWARE_VERSION "v1.1.1"

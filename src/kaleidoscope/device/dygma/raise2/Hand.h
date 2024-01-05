@@ -1,5 +1,5 @@
 /* -*- mode: c++ -*-
- * kaleidoscope::device::dygma::defy_wireless -- Kaleidoscope device plugin for defy_wireless
+ * kaleidoscope::device::dygma::raise2 -- Kaleidoscope device plugin for raise2
  * Defy Copyright (C) 2017-2019  Keyboard.io, Inc Copyright (C) 2017-2019  Dygma
  * Lab S.L.
  *
@@ -32,7 +32,7 @@ struct cRGB {
 namespace kaleidoscope {
 namespace device {
 namespace dygma {
-namespace defy_wireless {
+namespace raise2 {
 
 #define LED_BANKS           11
 
@@ -65,7 +65,7 @@ class Hand {
   LEDData_t led_data{};
 
  private:
-  defy_wireless::key_data key_data_{};
+  raise2::key_data key_data_{};
   bool new_key_;
 
 public:
@@ -79,7 +79,7 @@ public:
   [[nodiscard]] bool newKey() const { return new_key_; }
 };
 
-}  // namespace defy_wireless
+}  // namespace raise2
 }  // namespace dygma
 }  // namespace device
 }  // namespace kaleidoscope
