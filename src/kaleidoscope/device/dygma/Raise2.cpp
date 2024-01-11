@@ -156,6 +156,7 @@ auto checkBrightness = [](const Packet &)
     if (!::LEDControl.isEnabled())
     {
         status_leds.stop_all();
+
         Communications_protocol::Packet p{};
         p.header.command = Communications_protocol::BRIGHTNESS;
         p.header.device = UNKNOWN;
@@ -167,7 +168,15 @@ auto checkBrightness = [](const Packet &)
         Communications.sendPacket(p);
         return;
     }
-    status_leds.static_green(NEURON_LED_BRIGHTNESS);
+
+    #if defined(N2_STATUS_LED_GREEN)
+        status_leds.green_fade(1, 255);
+    #elif defined(N2_STATUS_LED_YELLOW)
+        status_leds.yellow_fade(1, 255);
+    #elif defined(N2_STATUS_LED_RED)
+        status_leds.red_fade(1, 255);
+    #endif
+
     auto &keyScanner = Runtime.device().keyScanner();
     auto isRaise2LeftWired = keyScanner.leftSideWiredConnection();
     auto isRaise2RightWired = keyScanner.rightSideWiredConnection();
@@ -754,8 +763,17 @@ void Raise2::setup()
     // Check if we can live without this reset sides
     nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
     nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_NOPULL);
+
     status_leds.init();
-    status_leds.static_green(NEURON_LED_BRIGHTNESS);
+
+    #if defined(N2_STATUS_LED_GREEN)
+        status_leds.green_fade(1, 255);
+    #elif defined(N2_STATUS_LED_YELLOW)
+        status_leds.yellow_fade(1, 255);
+    #elif defined(N2_STATUS_LED_RED)
+        status_leds.red_fade(1, 255);
+    #endif
+
     Raise2Hands::setup();
     Raise2Focus.init();
     KeyScanner::setup();

@@ -156,6 +156,7 @@ auto checkBrightness = [](const Packet &)
     if (!::LEDControl.isEnabled())
     {
         status_leds.stop_all();
+
         Communications_protocol::Packet p{};
         p.header.command = Communications_protocol::BRIGHTNESS;
         p.header.device = UNKNOWN;
@@ -167,7 +168,17 @@ auto checkBrightness = [](const Packet &)
         Communications.sendPacket(p);
         return;
     }
-    status_leds.static_green(NEURON_LED_BRIGHTNESS);
+
+    #if defined(N2_STATUS_LED_GREEN)
+        status_leds.static_green(255);
+    #elif defined(N2_STATUS_LED_YELLOW)
+        status_leds.static_yellow(255);
+    #elif defined(N2_STATUS_LED_RED)
+        status_leds.static_red(255);
+    #else
+        #error "You must chose a color for the status_leds, in config_app.h header."
+    #endif
+
     auto &keyScanner = Runtime.device().keyScanner();
     auto isDefyLeftWired = keyScanner.leftSideWiredConnection();
     auto isDefyRightWired = keyScanner.rightSideWiredConnection();
@@ -752,8 +763,19 @@ void DefyNrf::setup()
     // Check if we can live without this reset sides
     nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
     nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_NOPULL);
+
     status_leds.init();
-    status_leds.static_green(NEURON_LED_BRIGHTNESS);
+
+    #if defined(N2_STATUS_LED_GREEN)
+        status_leds.static_green(255);
+    #elif defined(N2_STATUS_LED_YELLOW)
+        status_leds.static_yellow(255);
+    #elif defined(N2_STATUS_LED_RED)
+        status_leds.static_red(255);
+    #else
+        #error "You must chose a color for the status_leds, in config_app.h header."
+    #endif
+
     DefyHands::setup();
     DefyFocus.init();
     KeyScanner::setup();
