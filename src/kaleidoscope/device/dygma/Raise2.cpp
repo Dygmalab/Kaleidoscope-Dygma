@@ -175,6 +175,8 @@ auto checkBrightness = [](const Packet &)
         status_leds.yellow_fade(1, 255);
     #elif defined(N2_STATUS_LED_RED)
         status_leds.red_fade(1, 255);
+    #else
+        status_leds.static_green(NEURON_LED_BRIGHTNESS);
     #endif
 
     auto &keyScanner = Runtime.device().keyScanner();
@@ -772,6 +774,8 @@ void Raise2::setup()
         status_leds.yellow_fade(1, 255);
     #elif defined(N2_STATUS_LED_RED)
         status_leds.red_fade(1, 255);
+    #else
+        status_leds.static_green(NEURON_LED_BRIGHTNESS);
     #endif
 
     Raise2Hands::setup();
