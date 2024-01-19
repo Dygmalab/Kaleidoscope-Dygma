@@ -61,6 +61,10 @@ class Flash: public kaleidoscope::driver::storage::Base<_StorageProps> {
     return EEPROM.read(idx);
   }
 
+  void read(int const index, uint8_t *out_read_buff, uint16_t len) {
+    return EEPROM.read(index, out_read_buff, len);
+  }
+
   void write(int idx, uint8_t val) {
     EEPROM.write(idx, val);
   }
