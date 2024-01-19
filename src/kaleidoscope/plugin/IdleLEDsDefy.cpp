@@ -51,26 +51,26 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
     {
         if (::LEDControl.isEnabled() && Runtime.hasTimeExpired(start_time_wired, idle_time_limit.wired_))
         {
-//            ::LEDControl.disable();
-//            idle_ = true;
+            ::LEDControl.disable();
+            idle_ = true;
         }
     }
     else
     {
         if (::LEDControl.isEnabled() && Runtime.hasTimeExpired(start_time_wireless, idle_time_limit.wireless_))
         {
-//            ::LEDControl.disable();
-//            idle_ = true;
-//            sleep_ = false;
-//            start_time_true_sleep = Runtime.millisAtCycleStart();
+            ::LEDControl.disable();
+            idle_ = true;
+            sleep_ = false;
+            start_time_true_sleep = Runtime.millisAtCycleStart();
         }
         if (idle_time_limit.true_sleep_activated_ && !::LEDControl.isEnabled() && !sleep_ && idle_time_limit.wired_ &&
             Runtime.hasTimeExpired(start_time_true_sleep, idle_time_limit.true_sleep_))
         {
-//            Communications_protocol::Packet p{};
-//            p.header.command = Communications_protocol::SLEEP;
-//            Communications.sendPacket(p);
-//            sleep_ = true;
+            Communications_protocol::Packet p{};
+            p.header.command = Communications_protocol::SLEEP;
+            Communications.sendPacket(p);
+           sleep_ = true;
         }
     }
 
