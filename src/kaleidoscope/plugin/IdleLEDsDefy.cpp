@@ -30,7 +30,7 @@ namespace plugin
 {
 
 bool IdleLEDsDefy::sleep_ = false;
-IdleLEDsDefy::IdleTime IdleLEDsDefy::idle_time_limit;
+IdleLEDsDefy::IdleTime IdleLEDsDefy::Power_save;
 uint32_t IdleLEDsDefy::start_time_wired = 0;
 uint32_t IdleLEDsDefy::start_time_wireless = 0;
 uint32_t IdleLEDsDefy::start_time_true_sleep = 0;
@@ -43,7 +43,7 @@ uint32_t IdleLEDsDefy::idleTimeoutSeconds(uint32_t time_in_ms)
 
 EventHandlerResult IdleLEDsDefy::beforeEachCycle()
 {
-    if (idle_time_limit.leds_off_usb_idle_t_ms == 0 || idle_time_limit.leds_off_ble_idle_t_ms == 0)
+    if (Power_save.leds_off_usb_idle_t_ms == 0 || Power_save.leds_off_ble_idle_t_ms == 0)
     {
         return EventHandlerResult::OK;
     }
@@ -56,7 +56,7 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
         isDefyRightWired &&
         !ble_innited())
     {
-        if (::LEDControl.isEnabled() && Runtime.hasTimeExpired(start_time_wired, idle_time_limit.leds_off_usb_idle_t_ms))
+        if (::LEDControl.isEnabled() && Runtime.hasTimeExpired(start_time_wired, Power_save.leds_off_usb_idle_t_ms))
         {
             ::LEDControl.disable();
             idle_ = true;
@@ -64,7 +64,7 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
     }
     else
     {
-        if (::LEDControl.isEnabled() && Runtime.hasTimeExpired(start_time_wireless, idle_time_limit.leds_off_ble_idle_t_ms))
+        if (::LEDControl.isEnabled() && Runtime.hasTimeExpired(start_time_wireless, Power_save.leds_off_ble_idle_t_ms))
         {
             ::LEDControl.disable();
             idle_ = true;
@@ -72,11 +72,11 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
             start_time_true_sleep = Runtime.millisAtCycleStart();
         }
 
-        if ( idle_time_limit.activate_keybsides_sleep &&
+        if ( Power_save.activate_keybsides_sleep &&
             !::LEDControl.isEnabled() &&
             !sleep_ &&
-            idle_time_limit.leds_off_usb_idle_t_ms &&
-            Runtime.hasTimeExpired(start_time_true_sleep, idle_time_limit.sides_sleep_idle_t_ms) )
+            Power_save.leds_off_usb_idle_t_ms &&
+            Runtime.hasTimeExpired(start_time_true_sleep, Power_save.sides_sleep_idle_t_ms) )
         {
             Communications_protocol::Packet p{};
             p.header.command = Communications_protocol::SLEEP;
@@ -129,13 +129,13 @@ EventHandlerResult PersistentIdleDefyLEDs::onSetup()
         idle_time.leds_off_usb_idle_t_ms = idle_time_limit_default;
         idle_time.leds_off_ble_idle_t_ms = idle_time_limit_default_wireless;
     }
-    setIdleTimeoutSeconds(idle_time);
-    Runtime.storage().get(settings_base_, idle_time_limit);
+    save_power_save_settings(idle_time);
+    Runtime.storage().get(settings_base_, Power_save);
 
     return EventHandlerResult::OK;
 }
 
-void PersistentIdleDefyLEDs::setIdleTimeoutSeconds(const IdleTime &data)
+void PersistentIdleDefyLEDs::save_power_save_settings(const IdleTime &data)
 {
     Runtime.storage().put(settings_base_, data);
     Runtime.storage().commit();
@@ -164,14 +164,14 @@ EventHandlerResult PersistentIdleDefyLEDs::onFocusEvent(const char *command)
     {
         if (::Focus.isEOL())
         {
-            ::Focus.send(idle_time_limit.activate_keybsides_sleep ? 1 : 0);
+            ::Focus.send(Power_save.activate_keybsides_sleep ? 1 : 0);
         }
         else
         {
             uint8_t enabled;
             ::Focus.read(enabled);
-            idle_time_limit.activate_keybsides_sleep = enabled;
-            setIdleTimeoutSeconds(idle_time_limit);
+            Power_save.activate_keybsides_sleep = enabled;
+            save_power_save_settings(Power_save);
         }
     }
 
@@ -179,14 +179,14 @@ EventHandlerResult PersistentIdleDefyLEDs::onFocusEvent(const char *command)
     {
         if (::Focus.isEOL())
         {
-            ::Focus.send(idleTimeoutSeconds(idle_time_limit.sides_sleep_idle_t_ms));
+            ::Focus.send(idleTimeoutSeconds(Power_save.sides_sleep_idle_t_ms));
         }
         else
         {
             uint16_t true_sleep;
             ::Focus.read(true_sleep);
-            idle_time_limit.sides_sleep_idle_t_ms = true_sleep * 1000;  // Convert from seconds to ms.
-            setIdleTimeoutSeconds(idle_time_limit);
+            Power_save.sides_sleep_idle_t_ms = true_sleep * 1000;  // Convert from seconds to ms.
+            save_power_save_settings(Power_save);
         }
     }
 
@@ -194,14 +194,14 @@ EventHandlerResult PersistentIdleDefyLEDs::onFocusEvent(const char *command)
     {
         if (::Focus.isEOL())
         {
-            ::Focus.send(idleTimeoutSeconds(idle_time_limit.leds_off_usb_idle_t_ms));
+            ::Focus.send(idleTimeoutSeconds(Power_save.leds_off_usb_idle_t_ms));
         }
         else
         {
             uint16_t idle_time;
             ::Focus.read(idle_time);
-            idle_time_limit.leds_off_usb_idle_t_ms = idle_time * 1000;  // Convert from seconds to ms.
-            setIdleTimeoutSeconds(idle_time_limit);
+            Power_save.leds_off_usb_idle_t_ms = idle_time * 1000;  // Convert from seconds to ms.
+            save_power_save_settings(Power_save);
         }
     }
 
@@ -209,14 +209,14 @@ EventHandlerResult PersistentIdleDefyLEDs::onFocusEvent(const char *command)
     {
         if (::Focus.isEOL())
         {
-            ::Focus.send(idleTimeoutSeconds(idle_time_limit.leds_off_ble_idle_t_ms));
+            ::Focus.send(idleTimeoutSeconds(Power_save.leds_off_ble_idle_t_ms));
         }
         else
         {
             uint16_t idle_time_wireless;
             ::Focus.read(idle_time_wireless);
-            idle_time_limit.leds_off_ble_idle_t_ms = idle_time_wireless * 1000;  // Convert from seconds to ms.
-            setIdleTimeoutSeconds(idle_time_limit);
+            Power_save.leds_off_ble_idle_t_ms = idle_time_wireless * 1000;  // Convert from seconds to ms.
+            save_power_save_settings(Power_save);
         }
         return EventHandlerResult::EVENT_CONSUMED;
     }

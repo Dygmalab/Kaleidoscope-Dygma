@@ -36,11 +36,11 @@ class IdleLEDsDefy : public kaleidoscope::Plugin {
         uint32_t leds_off_ble_idle_t_ms;    // Power off time for LEDs, when the n2 is in BLE mode [ms].
     };
 
-  static IdleTime idle_time_limit;
+  static IdleTime Power_save;
   static constexpr const uint32_t idle_time_limit_default = 600000;             // 600.000 ms = 10 minutes
   static constexpr const uint32_t idle_time_limit_default_wireless = 300000;    // 300.000 ms = 5 minutes
   static constexpr const uint32_t true_sleep_time_limit_default = 60000;        // 60.000 ms = 1 minutes
-  static void setIdleTimeoutSeconds(const IdleTime& data);
+  static void save_power_save_settings(const IdleTime& data);
   static uint32_t idleTimeoutSeconds(uint32_t time_in_ms);
 
   EventHandlerResult beforeEachCycle();
@@ -61,7 +61,7 @@ class PersistentIdleDefyLEDs : public IdleLEDsDefy
  public:
   EventHandlerResult onSetup();
   EventHandlerResult onFocusEvent(const char *command);
-  static void setIdleTimeoutSeconds(const IdleTime& data);
+  static void save_power_save_settings(const IdleTime& data);
  private:
   static uint16_t settings_base_;
 };
