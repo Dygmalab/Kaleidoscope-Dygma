@@ -36,7 +36,7 @@ uint32_t IdleLEDsDefy::start_time_wireless = 0;
 uint32_t IdleLEDsDefy::start_time_true_sleep = 0;
 bool IdleLEDsDefy::idle_ = false; // Initialize with false
 
-uint32_t IdleLEDsDefy::idleTimeoutSeconds(uint32_t time_in_ms)
+uint32_t IdleLEDsDefy::ms_to_seconds(uint32_t time_in_ms)
 {
     return time_in_ms / 1000;
 }
@@ -125,9 +125,9 @@ EventHandlerResult PersistentIdleDefyLEDs::onSetup()
     if (idle_time.leds_off_usb_idle_t_ms == 0xffffffff)
     {
         idle_time.activate_keybsides_sleep = false;
-        idle_time.sides_sleep_idle_t_ms = true_sleep_time_limit_default;
-        idle_time.leds_off_usb_idle_t_ms = idle_time_limit_default;
-        idle_time.leds_off_ble_idle_t_ms = idle_time_limit_default_wireless;
+        idle_time.sides_sleep_idle_t_ms = sides_sleep_idle_t_ms_default;
+        idle_time.leds_off_usb_idle_t_ms = leds_off_usb_idle_t_ms_default;
+        idle_time.leds_off_ble_idle_t_ms = leds_off_ble_idle_t_ms_default;
     }
     save_power_save_settings(idle_time);
     Runtime.storage().get(settings_base_, Power_save);
@@ -179,7 +179,7 @@ EventHandlerResult PersistentIdleDefyLEDs::onFocusEvent(const char *command)
     {
         if (::Focus.isEOL())
         {
-            ::Focus.send(idleTimeoutSeconds(Power_save.sides_sleep_idle_t_ms));
+            ::Focus.send(ms_to_seconds(Power_save.sides_sleep_idle_t_ms));
         }
         else
         {
@@ -194,7 +194,7 @@ EventHandlerResult PersistentIdleDefyLEDs::onFocusEvent(const char *command)
     {
         if (::Focus.isEOL())
         {
-            ::Focus.send(idleTimeoutSeconds(Power_save.leds_off_usb_idle_t_ms));
+            ::Focus.send(ms_to_seconds(Power_save.leds_off_usb_idle_t_ms));
         }
         else
         {
@@ -209,7 +209,7 @@ EventHandlerResult PersistentIdleDefyLEDs::onFocusEvent(const char *command)
     {
         if (::Focus.isEOL())
         {
-            ::Focus.send(idleTimeoutSeconds(Power_save.leds_off_ble_idle_t_ms));
+            ::Focus.send(ms_to_seconds(Power_save.leds_off_ble_idle_t_ms));
         }
         else
         {
