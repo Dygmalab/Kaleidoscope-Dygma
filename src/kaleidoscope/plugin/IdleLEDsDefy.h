@@ -17,6 +17,7 @@
  */
 
 #pragma once
+
 #ifdef ARDUINO_ARCH_NRF52
 
 #include "kaleidoscope/Runtime.h"
@@ -72,4 +73,5 @@ class PersistentIdleDefyLEDs : public IdleLEDsDefy
 
 extern kaleidoscope::plugin::IdleLEDsDefy IdleLEDsDefy;
 extern kaleidoscope::plugin::PersistentIdleDefyLEDs PersistentIdleDefyLEDs;
+
 #endif
