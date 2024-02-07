@@ -199,7 +199,8 @@ void DynamicSuperKeys::updateDynamicSuperKeysCache()
 
 DynamicSuperKeys::SuperType DynamicSuperKeys::ReturnType(DynamicSuperKeys::SuperType previous, DynamicSuperKeys::ActionType action)
 {
-   DynamicSuperKeys::SuperType result;
+   DynamicSuperKeys::SuperType result = DynamicSuperKeys::None;
+
    if (action == Tap)
    {
        switch (previous)
@@ -207,16 +208,20 @@ DynamicSuperKeys::SuperType DynamicSuperKeys::ReturnType(DynamicSuperKeys::Super
            case DynamicSuperKeys::None:
                result = DynamicSuperKeys::Tap_Once;
                break;
+
            case DynamicSuperKeys::Tap_Once:
                result = DynamicSuperKeys::Tap_Twice;
                break;
+
            case DynamicSuperKeys::Tap_Twice:
                result = DynamicSuperKeys::Tap_Trice;
                break;
+
            default:
                result = DynamicSuperKeys::Tap_Trice;
        }
    }
+
    if (action == Hold)
    {
        switch (previous)
@@ -224,15 +229,19 @@ DynamicSuperKeys::SuperType DynamicSuperKeys::ReturnType(DynamicSuperKeys::Super
            case DynamicSuperKeys::None:
                result = DynamicSuperKeys::None;
                break;
+
            case DynamicSuperKeys::Tap_Once:
                result = DynamicSuperKeys::Hold_Once;
                break;
+
            case DynamicSuperKeys::Tap_Twice:
                result = DynamicSuperKeys::Tap_Hold;
                break;
+
            case DynamicSuperKeys::Tap_Trice:
                result = DynamicSuperKeys::Tap_Twice_Hold;
                break;
+
            default:
                result = DynamicSuperKeys::Tap_Twice_Hold;
        }
