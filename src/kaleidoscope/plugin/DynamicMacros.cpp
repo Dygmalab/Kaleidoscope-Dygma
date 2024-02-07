@@ -140,7 +140,7 @@ namespace kaleidoscope
         case MACRO_ACTION_STEP_TAP_CODE_SEQUENCE:
         {
           previous_macro_ended = false;
-          uint8_t keyCode, flags;
+          uint8_t keyCode;
           do
           {
             keyCode = Runtime.storage().read(pos++);
