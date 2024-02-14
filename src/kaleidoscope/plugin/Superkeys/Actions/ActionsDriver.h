@@ -16,10 +16,9 @@ class ActionsDriver
         TAP,
         RELEASE,
         HOLD,
-        TIMEOUT
     };
 
-    enum class Actions
+    enum class TapType
     {
         None,
         Tap_Once,
@@ -31,7 +30,7 @@ class ActionsDriver
     };
 
     // Functions
-    static void event_handler(EventType event_t, Superkey*  superkey);
+    static void return_type(uint8_t tap_count, EventType action);
 };
 
 

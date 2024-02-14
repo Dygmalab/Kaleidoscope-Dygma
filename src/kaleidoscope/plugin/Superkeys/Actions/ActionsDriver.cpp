@@ -4,31 +4,45 @@
 
 #include "ActionsDriver.h"
 
-void ActionsDriver::event_handler(ActionsDriver::EventType event_t, Superkey*  superkey)
+void ActionsDriver::return_type(uint8_t tap_count, EventType action)
 {
-    switch (event_t)
+    DynamicSuperKeys::SuperType result;
+    if (action == EventType::TAP)
     {
-        case ActionsDriver::EventType::IDLE:
+        switch (previous)
         {
-            break;
-        }
-        case ActionsDriver::EventType::TAP:
-        {
-            superkey->set_tap_action();
-            break;
-        }
-        case ActionsDriver::EventType::RELEASE:
-        {
-            superkey->set_tap_action();
-            break;
-        }
-        case ActionsDriver::EventType::HOLD:
-        {
-            break;
-        }
-        case ActionsDriver::EventType::TIMEOUT:
-        {
-            break;
+            case DynamicSuperKeys::None:
+                result = DynamicSuperKeys::Tap_Once;
+                break;
+            case DynamicSuperKeys::Tap_Once:
+                result = DynamicSuperKeys::Tap_Twice;
+                break;
+            case DynamicSuperKeys::Tap_Twice:
+                result = DynamicSuperKeys::Tap_Trice;
+                break;
+            default:
+                result = DynamicSuperKeys::Tap_Trice;
         }
     }
+    if (action == EventType::HOLD)
+    {
+        switch (previous)
+        {
+            case DynamicSuperKeys::None:
+                result = DynamicSuperKeys::None;
+                break;
+            case DynamicSuperKeys::Tap_Once:
+                result = DynamicSuperKeys::Hold_Once;
+                break;
+            case DynamicSuperKeys::Tap_Twice:
+                result = DynamicSuperKeys::Tap_Hold;
+                break;
+            case DynamicSuperKeys::Tap_Trice:
+                result = DynamicSuperKeys::Tap_Twice_Hold;
+                break;
+            default:
+                result = DynamicSuperKeys::Tap_Twice_Hold;
+        }
+    }
+    return result;
 }

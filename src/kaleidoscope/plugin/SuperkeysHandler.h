@@ -21,7 +21,7 @@ class SuperkeysHandler : public kaleidoscope::Plugin
 {
   static constexpr uint8_t SUPER_KEY_COUNT = kaleidoscope::ranges::DYNAMIC_SUPER_LAST - kaleidoscope::ranges::DYNAMIC_SUPER_FIRST + 2;
   static constexpr uint8_t MAX_SUPER_KEYS_ACTIVE = 50;
-  static constexpr uint8_t KEY_PER_ACTION = 6;
+  static constexpr uint8_t KEYS_IN_SUPERKEY = 6;
   static constexpr uint8_t offset = 8;
 
 
@@ -42,7 +42,7 @@ class SuperkeysHandler : public kaleidoscope::Plugin
      */
     EventHandlerResult onKeyswitchEvent(Key &mapped_key, KeyAddr key_addr, uint8_t keyState);
     /**
-     * Handle focus events and configuration commands for DynamicSuperKeys.
+     * Handle focus events and configuration commands for SuperKeys.
      *
      * This method processes focus events and configuration commands related to DynamicSuperKeys.
      * It allows you to manage and modify various settings for SuperKeys, such as key mappings, wait times, timeouts, hold durations, and overlap thresholds.
@@ -54,7 +54,7 @@ class SuperkeysHandler : public kaleidoscope::Plugin
     /**
      * Prepare DynamicSuperKeys state before reporting key events.
      *
-     * This method is responsible for managing the state of DynamicSuperKeys just before reporting key events.
+     * This method is responsible for managing the state of SuperKeys just before reporting key events.
      * It handles releasing SuperKeys and applying time-outs if necessary.
      * Additionally, it ensures that fast key releases and the state of the keys are appropriately managed.
      *
@@ -62,14 +62,11 @@ class SuperkeysHandler : public kaleidoscope::Plugin
      */
     EventHandlerResult beforeReportingState();
     /**
-     * Initialize DynamicSuperKeys with storage settings.
+     * Initialize SuperKeys with storage settings.
      *
      * This method sets up the DynamicSuperKeys by configuring storage parameters.
      * It allocates a storage slice in EEPROM to store the DynamicSuperKeys settings, including size and offset.
-     * After setting up the storage, it updates the DynamicSuperKeys cache to ensure consistency with the stored values.
-     *
-     * @param dynamic_offset The offset for DynamicSuperKeys in the EEPROM storage.
-     * @param size The size of the storage slice required for DynamicSuperKeys settings.
+     * After setting up the storage, it updates the SuperKeys cache to ensure consistency with the stored values.
      */
     static void setup();
     static uint8_t get_active_sk();
@@ -88,7 +85,7 @@ class SuperkeysHandler : public kaleidoscope::Plugin
         uint16_t time_out_;
 
         //Keys
-        Key keys[SUPER_KEY_COUNT][KEY_PER_ACTION];
+        Key keys[SUPER_KEY_COUNT][KEYS_IN_SUPERKEY];
 
         void reset(){
             delayed_time_ = 0;
@@ -101,7 +98,7 @@ class SuperkeysHandler : public kaleidoscope::Plugin
             IDLE_KEY.setRaw(0xFFFF);
             for (uint16_t i = 0; i < SUPER_KEY_COUNT; ++i)
             {
-                for (int j = 0; j < KEY_PER_ACTION; ++j)
+                for (int j = 0; j < KEYS_IN_SUPERKEY; ++j)
                 {
                     keys[i][j] = IDLE_KEY;
                 }
@@ -111,10 +108,12 @@ class SuperkeysHandler : public kaleidoscope::Plugin
 
   private:
 
-    static Superkey state_[SUPER_KEY_COUNT];
+    static Superkey* state_[SUPER_KEY_COUNT];
     static uint16_t settings_base_;
-    static Superkey Sk_queue[MAX_SUPER_KEYS_ACTIVE];
+    static Superkey* Sk_queue[MAX_SUPER_KEYS_ACTIVE];
     static uint8_t active_superkeys;
+    //keys in Actions
+    static Key Actions[KEYS_IN_SUPERKEY];
 
     static void init();
     static void config();
@@ -123,6 +122,11 @@ class SuperkeysHandler : public kaleidoscope::Plugin
     static void sk_enabled(KeyID);
     static void save_configurations();
     static void set_active_sk();
+    /*
+     *  Erase superkeys instances to avoid memory leaks.
+     */
+    static void cleanup();
+
 };
 } // namespace plugin
 } // namespace kaleidoscope
