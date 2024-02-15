@@ -31,7 +31,7 @@ void SuperkeysHandler::init()
     NRF_LOG_DEBUG("Configured Super-keys %i", get_active_sk());
     while (pos < get_active_sk())
     {
-        // Set Superkeys keys.
+        // Set Super-keys keys.
         for (int i = 0; i < KEYS_IN_SUPERKEY; ++i)
         {
             Actions[i] = configurations.keys[pos][i];
@@ -44,10 +44,6 @@ void SuperkeysHandler::init()
         if (Sk_queue[pos] == nullptr)
         {
             Sk_queue[pos] = superkeyInstance;
-        }
-        else
-        {
-            NRF_LOG_DEBUG("ERROR");
         }
         pos++;
     }
@@ -67,16 +63,6 @@ void SuperkeysHandler::config()
         Runtime.storage().commit();
     }
     Runtime.storage().get(settings_base_, configurations);
-}
-
-void SuperkeysHandler::enable()
-{
-    // enable sk so it can be treated.
-}
-
-void SuperkeysHandler::disable()
-{
-    // disable sk so it can't be treated.
 }
 
 void SuperkeysHandler::save_configurations()
@@ -129,10 +115,11 @@ EventHandlerResult SuperkeysHandler::onKeyswitchEvent(Key &mapped_key, KeyAddr k
         return EventHandlerResult::OK;
     }
 
-    // If it's not a super-key press , we treat it here.
+    // If it's not a super-key press, we treat it here.
     if (IS_OUTSIDE_DYNAMIC_SUPER_RANGE(mapped_key.getRaw()))
     {
         // TODO: treat normal, keys.
+        //TODO: treat interruptions
         return EventHandlerResult::OK;
     }
 
@@ -151,6 +138,10 @@ EventHandlerResult SuperkeysHandler::onKeyswitchEvent(Key &mapped_key, KeyAddr k
                 // we enable it, otherwise continue.
                 Sk_queue[pos]->enable();
                 Sk_queue[pos]->init_timer();
+                Sk_queue[pos]->set_key_and_keyAddr(mapped_key,key_addr);
+                Sk_queue[pos]->key_pressed();
+                return EventHandlerResult::EVENT_CONSUMED;
+            } else if (Sk_queue[pos]->get_index() == super_key_index ){
                 Sk_queue[pos]->key_pressed();
                 return EventHandlerResult::EVENT_CONSUMED;
             }
@@ -160,9 +151,8 @@ EventHandlerResult SuperkeysHandler::onKeyswitchEvent(Key &mapped_key, KeyAddr k
     {
         for (uint8_t pos = 0; pos <= get_active_sk(); ++pos)
         {
-
-            if (Sk_queue[pos]->get_index() == super_key_index && !Sk_queue[pos]->is_enable())
-            { // We want to enable the superkey one time, so if the superkey wasn't enabled, we enable it, otherwise continue.
+            if (Sk_queue[pos]->get_index() == super_key_index)
+            {
                 Sk_queue[pos]->key_released();
                 return EventHandlerResult::EVENT_CONSUMED;
             }
@@ -172,7 +162,6 @@ EventHandlerResult SuperkeysHandler::onKeyswitchEvent(Key &mapped_key, KeyAddr k
     {
         for (uint8_t pos = 0; pos <= get_active_sk(); ++pos)
         {
-
             if (Sk_queue[pos]->get_index() == super_key_index)
             { // We want to enable the superkey one time, so if the superkey wasn't enabled, we enable it, otherwise continue.
                 Sk_queue[pos]->key_is_pressed();

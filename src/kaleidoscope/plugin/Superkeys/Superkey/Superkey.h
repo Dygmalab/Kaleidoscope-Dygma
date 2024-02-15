@@ -1,11 +1,12 @@
 #ifndef NRF_NEURON_SUPERKEY_H
 #define NRF_NEURON_SUPERKEY_H
 #include "libraries/Kaleidoscope/src/kaleidoscope/plugin/Superkeys/includes.h"
-#include <Kaleidoscope.h>
-#include <Kaleidoscope-Ranges.h>
+
 
 constexpr uint8_t KEYS_IN_SUPERKEY = 6;
 constexpr uint8_t QUKEY_MIN_IDLE_ACTIONS = 3;
+
+
 // Forward declarations.
 class ActionsDriver;
 
@@ -14,7 +15,6 @@ class Superkey
   public:
     // Superkeys states
     void init(const Key *act);
-    void config();
     void enable();
     void disable();
     void run();
@@ -26,13 +26,7 @@ class Superkey
     void key_pressed();
     void key_released();
     void key_is_pressed();
-
-    // Superkey Actions
-    void set_tap_action();
-    void set_hold_action();
-    void set_tap_and_hold_action();
-    void set_double_tap_action();
-    void set_double_tap_hold_action();
+    void set_key_and_keyAddr(Key key, KeyAddr keyAddr);
 
     // Constructor
     explicit Superkey(uint16_t index, uint16_t hold_start, uint16_t time_out) : index_(index), time_out_(time_out), hold_start_(hold_start)
@@ -53,7 +47,14 @@ class Superkey
         LAYER_LOCK_LAST = 17501
     };
 
+    struct Range
+    {
+        uint16_t start;
+        uint16_t end;
+    };
   private:
+    Key phisical_key_;
+    KeyAddr keyaddr_;
     enum class KeyRanges
     {
         LAYER_LOCK,
@@ -63,17 +64,6 @@ class Superkey
         ALPHA_KEYS,
         LAYER_SHIFT,
         UNKNOW
-    };
-
-    enum class TapType
-    {
-        None,
-        Tap_Once,
-        Hold_Once,
-        Tap_Hold,
-        Tap_Twice,
-        Tap_Twice_Hold,
-        Tap_Trice,
     };
 
     struct SuperKeyState
@@ -88,7 +78,7 @@ class Superkey
 
         // Sk tap count
         uint8_t tap_count{0};
-        TapType type{TapType::None};
+        Utils::TapType type{Utils::TapType::None};
 
         // Sk type
         bool is_qukey{false};
@@ -101,32 +91,24 @@ class Superkey
         uint32_t timeStamp{0};
 
         // keys in Actions
-        struct Actions
-        {
-            Key tap;
-            Key hold;
-            Key tap_hold;
-            Key double_tap;
-            Key double_tap_hold;
-        };
-        Actions Action{};
 
-        Key Actions[6] = {Action.tap, Action.hold, Action.tap_hold, Action.double_tap, Action.double_tap_hold};
+        Utils::Actions action{};
     };
     SuperKeyState superKeyState{};
 
     uint8_t index_{};
     uint16_t time_out_{255};
     uint16_t hold_start_{255};
-    uint8_t action_cnt{0};
 
     // Superkey States
-    uint8_t tap();
-    uint8_t release();
-    uint8_t hold();
+    void tap();
+    void release();
+    void hold();
     void timeout();
     void interrupt();
+    void send_key() const;
 
+    //Sk Configurations
     void set_up_actions(const Key *act);
     void check_if_sk_qukey();
     void check_if_sk_interruptable(const Key& Action);
@@ -135,13 +117,12 @@ class Superkey
     static uint16_t find_key_type(uint16_t value);
     void update_timestamp();
 
-
   public:
-    struct Range
-    {
-        uint16_t start;
-        uint16_t end;
-    };
+    Key Actions[6] = {superKeyState.action.tap,
+                      superKeyState.action.hold,
+                      superKeyState.action.tap_hold,
+                      superKeyState.action.double_tap,
+                      superKeyState.action.double_tap_hold};
 };
 
 #endif // NRF_NEURON_SUPERKEY_H

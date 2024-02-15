@@ -4,45 +4,53 @@
 
 #include "ActionsDriver.h"
 
-void ActionsDriver::return_type(uint8_t tap_count, EventType action)
+Key ActionsDriver::return_type(uint8_t tap_count, const Key *actions)
 {
-    DynamicSuperKeys::SuperType result;
-    if (action == EventType::TAP)
+    switch (static_cast<Utils::TapType>(tap_count))
     {
-        switch (previous)
+        case Utils::TapType::None:
         {
-            case DynamicSuperKeys::None:
-                result = DynamicSuperKeys::Tap_Once;
-                break;
-            case DynamicSuperKeys::Tap_Once:
-                result = DynamicSuperKeys::Tap_Twice;
-                break;
-            case DynamicSuperKeys::Tap_Twice:
-                result = DynamicSuperKeys::Tap_Trice;
-                break;
-            default:
-                result = DynamicSuperKeys::Tap_Trice;
+            NRF_LOG_DEBUG("None");
+            return {0xFFFF};
         }
-    }
-    if (action == EventType::HOLD)
-    {
-        switch (previous)
+        case Utils::TapType::Hold_Once:
         {
-            case DynamicSuperKeys::None:
-                result = DynamicSuperKeys::None;
-                break;
-            case DynamicSuperKeys::Tap_Once:
-                result = DynamicSuperKeys::Hold_Once;
-                break;
-            case DynamicSuperKeys::Tap_Twice:
-                result = DynamicSuperKeys::Tap_Hold;
-                break;
-            case DynamicSuperKeys::Tap_Trice:
-                result = DynamicSuperKeys::Tap_Twice_Hold;
-                break;
-            default:
-                result = DynamicSuperKeys::Tap_Twice_Hold;
+            NRF_LOG_DEBUG("Hold_Once");
+            return actions[1];
         }
+        case Utils::TapType::Tap_Once:
+        {
+            NRF_LOG_DEBUG("Tap_Once");
+            return actions[0];
+        }
+        case Utils::TapType::Tap_Hold:
+        {
+            NRF_LOG_DEBUG("Tap_Hold");
+            return actions[2];
+        }
+        case Utils::TapType::Tap_Twice:
+        {
+            NRF_LOG_DEBUG("Tap_Twice");
+            return actions[3];
+        }
+        case Utils::TapType::Tap_Twice_Hold:
+        {
+            NRF_LOG_DEBUG("Tap_Twice_Hold");
+            return actions[4];
+        }
+        default:
+            NRF_LOG_DEBUG("Tap_Twice");
+            return actions[3];
     }
-    return result;
+}
+
+bool ActionsDriver::action_handler(uint8_t tap_count, const Key *actions, const Key &key, const KeyAddr &keyAddr)
+{
+    //TODO: Create Key list to filter the key and run the corresponding action.
+    //TODO: Add a event type HOLD or TAP in order to decide if the HOLD action has to send serveral times or only once.
+    Key released_key = return_type(tap_count, actions);
+    NRF_LOG_DEBUG("Key relased %i", released_key.getRaw());
+    handleKeyswitchEvent(released_key, keyAddr, IS_PRESSED | INJECTED);
+    kaleidoscope::Runtime.hid().keyboard().sendReport();
+    return true;
 }

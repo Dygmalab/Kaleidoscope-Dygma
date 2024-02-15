@@ -119,7 +119,6 @@ class SuperkeysHandler : public kaleidoscope::Plugin
     static void config();
     static void enable();
     static void disable();
-    static void sk_enabled(KeyID);
     static void save_configurations();
     static void set_active_sk();
     /*

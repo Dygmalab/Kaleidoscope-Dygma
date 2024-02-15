@@ -1,6 +1,5 @@
 #ifndef NRF_NEURON_ACTIONSDRIVER_H
 #define NRF_NEURON_ACTIONSDRIVER_H
-
 #include "libraries/Kaleidoscope/src/kaleidoscope/plugin/Superkeys/includes.h"
 #include <cstdint>
 
@@ -10,15 +9,7 @@ class ActionsDriver
 {
   public:
     // Variables
-    enum class EventType
-    {
-        IDLE,
-        TAP,
-        RELEASE,
-        HOLD,
-    };
-
-    enum class TapType
+/*    enum class TapType
     {
         None,
         Tap_Once,
@@ -27,10 +18,19 @@ class ActionsDriver
         Tap_Twice,
         Tap_Twice_Hold,
         Tap_Trice,
-    };
+    };*/
 
+/*    struct Actions
+    {
+        Key tap;
+        Key hold;
+        Key tap_hold;
+        Key double_tap;
+        Key double_tap_hold;
+    };*/
     // Functions
-    static void return_type(uint8_t tap_count, EventType action);
+    static Key return_type(uint8_t tap_count, const Key *actions);
+    static bool action_handler(uint8_t tap_count,const Key *actions,const Key &key,const KeyAddr &keyAddr);
 };
 
 

@@ -27,16 +27,16 @@ void Superkey::enable()
 
 void Superkey::disable()
 {
+    superKeyState.enabled = false;
     superKeyState.tap_count = 0;
     superKeyState.holded = false;
     superKeyState.triggered = false;
-    superKeyState.type = TapType::None;
+    superKeyState.type = Utils::TapType::None;
     superKeyState.interrupt = false;
     superKeyState.start_time = 0;
     superKeyState.hold_start = 0;
     superKeyState.timeStamp = 0;
     superKeyState.pressed = false;
-    superKeyState.enabled = false;
 }
 
 void Superkey::run()
@@ -45,64 +45,69 @@ void Superkey::run()
     // Check if the key is being hold enough time.
     // Check if superKeyState.triggered = true, check sk type and send the corresponding key to the OS.
     // Check if the sk has to be interrupted by any external event.
-    if (kaleidoscope::Runtime_::hasTimeExpired(superKeyState.timeStamp,time_out_)){
-        NRF_LOG_DEBUG("Releasing key!");
-
-        //sendKey();
+    if (superKeyState.is_qukey && superKeyState.released){
+        timeout();
         disable();
-    } else if (kaleidoscope::Runtime_::hasTimeExpired(superKeyState.hold_start,hold_start_)){
-        hold();
+    }
+    if (kaleidoscope::Runtime_::hasTimeExpired(superKeyState.timeStamp,time_out_)){
+        timeout();
+        disable();
     }
 }
 
 /************SUPERKEY STATES*************/
 void Superkey::key_pressed()
 {
-    superKeyState.pressed = true;
-    superKeyState.tap_count++;
-    superKeyState.hold_start =  kaleidoscope::Runtime_::millisAtCycleStart();
-    NRF_LOG_DEBUG("superkey with index %i pressed ",index_);
     tap();
 }
 
 void Superkey::key_released()
 {
-    superKeyState.pressed = false;
-    superKeyState.tap_count++;
-    superKeyState.hold_start = 0;
-    NRF_LOG_DEBUG("superkey with index %i released ",index_);
+    release();
 }
 
 void Superkey::key_is_pressed()
 {
+    if (kaleidoscope::Runtime_::hasTimeExpired(superKeyState.hold_start,hold_start_) ){
+        hold();
+    }
     update_timestamp();
 }
 
 /************SUPERKEY ACTIONS*************/
 
-uint8_t Superkey::tap()
+void Superkey::tap()
 {
-    return ++superKeyState.tap_count;
+    superKeyState.released = false;
+    superKeyState.hold_start =  kaleidoscope::Runtime_::millisAtCycleStart();
+    update_timestamp();
+    ++superKeyState.tap_count;
 }
 
-uint8_t Superkey::hold()
+void Superkey::hold()
 {
     superKeyState.holded = true;
-    superKeyState.is_being_hold = false; //Set it on false in order to treat a hold just one time.
-    //sendkey();
-    superKeyState.is_being_hold = true; //then, if we continue holding the key, we will set ir as pressed, and take the corresponding actions.
-    return true;
+    superKeyState.released = false;
+    if (!superKeyState.triggered){
+        send_key();
+    }
+    superKeyState.triggered = true; //then, if we continue holding the key, we will set ir as pressed, and take the corresponding actions.
 }
 
-uint8_t Superkey::release()
+void Superkey::release()
 {
-    superKeyState.holded = false;
-    return ++superKeyState.tap_count;
+    superKeyState.released = true;
+    ++superKeyState.tap_count;
+    //Restar timer.
+    superKeyState.hold_start =  kaleidoscope::Runtime_::millisAtCycleStart();
 }
 
 void Superkey::timeout()
 {
-    superKeyState.triggered = true;
+    if (!superKeyState.triggered){
+        superKeyState.triggered = true;
+        send_key();
+    }
 }
 
 void Superkey::interrupt()
@@ -113,41 +118,19 @@ void Superkey::interrupt()
     }
 }
 
-/***************SUPERKEY TYPE****************/
-void Superkey::set_tap_action()
-{
-    superKeyState.type = TapType::Tap_Once;
-}
-void Superkey::set_hold_action()
-{
-    superKeyState.type = TapType::Hold_Once;
-}
-void Superkey::set_tap_and_hold_action()
-{
-    superKeyState.type = TapType::Tap_Hold;
-}
-void Superkey::set_double_tap_action()
-{
-    superKeyState.type = TapType::Tap_Twice;
-}
-void Superkey::set_double_tap_hold_action()
-{
-    superKeyState.type = TapType::Tap_Twice_Hold;
-}
-
 void Superkey::set_up_actions(const Key *act)
 {
     // Set each action in the superkeys.
     for (int i = 0; i < KEYS_IN_SUPERKEY; ++i)
     {
-        superKeyState.Actions[i] = act[i];
+        Actions[i] = act[i];
     }
 }
 
 void Superkey::check_if_sk_qukey()
 {
     uint8_t idle_actions = 0;
-    for (auto Action : superKeyState.Actions)
+    for (auto Action : Actions)
     {
         if (Action.getRaw() == 1)
         {
@@ -165,6 +148,7 @@ void Superkey::check_if_sk_qukey()
     }
 }
 
+//TODO: move check_if_sk_interruptable and find_key_type to the ActionDriver. Asi el ActionDriver es el que se encarga de filtrar las teclas y asignar las acciones.
 void Superkey::check_if_sk_interruptable(const Key &Action)
 {
     auto ranges_t = static_cast<KeyRanges>(find_key_type(Action.getRaw()));
@@ -215,7 +199,7 @@ uint16_t Superkey::find_key_type(uint16_t value)
     }
     return -1;
 }
-
+//*********************************************************************************************
 bool Superkey::is_enable() const
 {
     return superKeyState.enabled;
@@ -235,4 +219,15 @@ void Superkey::update_timestamp()
 uint16_t Superkey::get_index() const
 {
     return index_;
+}
+
+void Superkey::set_key_and_keyAddr(Key key, KeyAddr keyAddr)
+{
+    phisical_key_ = key;
+    keyaddr_ = keyAddr;
+}
+
+void Superkey::send_key() const
+{
+    ActionsDriver::action_handler(superKeyState.tap_count, Actions, phisical_key_, keyaddr_);
 }
