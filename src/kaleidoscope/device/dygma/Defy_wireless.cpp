@@ -713,11 +713,22 @@ void DefyKeyScanner::usbConnectionsStateMachine()
         else
         {
             //Force connnect again just in case it was set as a device and not a host
-            kaleidoscope::plugin::BleManager::init();
-            if (leftConnection[1] == KEYSCANNER_DEFY_LEFT) leftConnection[1] = BLE_DEFY_LEFT;
-            if (rightConnection[1] == KEYSCANNER_DEFY_RIGHT) rightConnection[1] = BLE_DEFY_RIGHT;
+            BleManager.init();
+
+            if (leftConnection[1] == KEYSCANNER_DEFY_LEFT)
+            {
+                leftConnection[1] = BLE_DEFY_LEFT;
+            }
+
+            if (rightConnection[1] == KEYSCANNER_DEFY_RIGHT)
+            {
+                rightConnection[1] = BLE_DEFY_RIGHT;
+            }
+
             DefyHands::sendPacketBrightness();
+
             BleManager.setForceBle(false);
+
             Packet p{};
             p.header.command = CONNECTED;
             p.header.size = 0;

@@ -199,7 +199,8 @@ void DynamicSuperKeys::updateDynamicSuperKeysCache()
 
 DynamicSuperKeys::SuperType DynamicSuperKeys::ReturnType(DynamicSuperKeys::SuperType previous, DynamicSuperKeys::ActionType action)
 {
-   DynamicSuperKeys::SuperType result;
+   DynamicSuperKeys::SuperType result = DynamicSuperKeys::None;
+
    if (action == Tap)
    {
        switch (previous)
@@ -207,16 +208,20 @@ DynamicSuperKeys::SuperType DynamicSuperKeys::ReturnType(DynamicSuperKeys::Super
            case DynamicSuperKeys::None:
                result = DynamicSuperKeys::Tap_Once;
                break;
+
            case DynamicSuperKeys::Tap_Once:
                result = DynamicSuperKeys::Tap_Twice;
                break;
+
            case DynamicSuperKeys::Tap_Twice:
                result = DynamicSuperKeys::Tap_Trice;
                break;
+
            default:
                result = DynamicSuperKeys::Tap_Trice;
        }
    }
+
    if (action == Hold)
    {
        switch (previous)
@@ -224,19 +229,24 @@ DynamicSuperKeys::SuperType DynamicSuperKeys::ReturnType(DynamicSuperKeys::Super
            case DynamicSuperKeys::None:
                result = DynamicSuperKeys::None;
                break;
+
            case DynamicSuperKeys::Tap_Once:
                result = DynamicSuperKeys::Hold_Once;
                break;
+
            case DynamicSuperKeys::Tap_Twice:
                result = DynamicSuperKeys::Tap_Hold;
                break;
+
            case DynamicSuperKeys::Tap_Trice:
                result = DynamicSuperKeys::Tap_Twice_Hold;
                break;
+
            default:
                result = DynamicSuperKeys::Tap_Twice_Hold;
        }
    }
+
    return result;
 }
 
@@ -378,7 +388,7 @@ bool DynamicSuperKeys::SuperKeys(uint8_t super_key_index, KeyAddr key_addr, Dyna
        case DynamicSuperKeys::Timeout:
        {
            uint8_t modif = (key.getRaw() & 0xFF00) >> 8;
-           uint8_t TEST = key.getRaw();
+           // uint8_t TEST = key.getRaw();
            // NRF_LOG_DEBUG("TEST %i",TEST);
            if (key.getRaw() == 1)
            {
@@ -496,7 +506,7 @@ bool DynamicSuperKeys::SuperKeys(uint8_t super_key_index, KeyAddr key_addr, Dyna
            // We get the most significant bits from the keys. These bits tell us which modifiers the key has.
            uint8_t modif = (key.getRaw() & 0xFF00) >> 8;
            uint8_t key_id = key.getRaw() & 0x00FF;
-           uint8_t TEST = key.getRaw();
+           // uint8_t TEST = key.getRaw();
            // NRF_LOG_DEBUG("TEST %i",TEST);
            if (state_[super_key_index].delayed_time == 0) // This will execute in the first moment we hold the key and the hold_start timer expires.
            {
@@ -785,7 +795,7 @@ EventHandlerResult DynamicSuperKeys::onKeyswitchEvent(Key &mapped_key, KeyAddr k
            // At this point, we stop processing the previous key, and analyze the next super-key.
            updateKey(last_super_key_, state_[last_super_index]);
            KeyValue next_super_key = getNextSuperKey();
-           KeyValue last_supe_key = keys[last_super_index];
+           //KeyValue last_supe_key = keys[last_super_index];
 
            if (next_super_key.key != Key_NoKey)
            {

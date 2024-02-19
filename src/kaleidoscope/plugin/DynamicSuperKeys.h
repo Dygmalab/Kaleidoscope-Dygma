@@ -32,43 +32,45 @@ namespace plugin
 class DynamicSuperKeys : public kaleidoscope::Plugin
 {
 public:
+ DynamicSuperKeys() {}
+
  typedef enum
  {
-   Tap,
-   Hold,
-   Interrupt,
-   Timeout,
-   Release,
+     Tap,
+     Hold,
+     Interrupt,
+     Timeout,
+     Release,
  } ActionType;
 
  typedef enum
  {
-   None,
-   Tap_Once,
-   Hold_Once,
-   Tap_Hold,
-   Tap_Twice,
-   Tap_Twice_Hold,
-   Tap_Trice,
+     None,
+     Tap_Once,
+     Hold_Once,
+     Tap_Hold,
+     Tap_Twice,
+     Tap_Twice_Hold,
+     Tap_Trice,
  } SuperType;
 
  typedef enum
  {
-   No_modifier,
-   Tab = 43,
-   BlockMayus = 57,
-   LCtrl = 224,
-   LShift,
-   LAlt,
-   LWin,
-   RCrl,
-   RShift,
-   RAlt,
-   RWin,
+     No_modifier,
+     Tab = 43,
+     BlockMayus = 57,
+     LCtrl = 224,
+     LShift,
+     LAlt,
+     LWin,
+     RCrl,
+     RShift,
+     RAlt,
+     RWin,
  } Modifiers;
- DynamicSuperKeys() {}
 
-typedef enum : uint16_t {
+ enum : uint16_t
+ {
      ALPHA_KEYS = 256,
      LED_BUTTONS_FIRST = 17152,
      PREVIOUS_LED_EFFECT,
