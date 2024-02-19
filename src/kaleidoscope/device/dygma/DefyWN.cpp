@@ -74,6 +74,8 @@ public:
    return settings_.led_brightness_ungerlow;
  }
 
+ static void sendPacketBrightness();
+
 private:
  struct Settings {
    Settings() {}
@@ -83,6 +85,8 @@ private:
  };
  inline static Settings settings_{};
  inline static uint16_t settings_base_;
+
+ static void setbrightness(const Settings &data);
 };
 
 Communications_protocol::Devices leftConnection[1]{UNKNOWN};
@@ -90,13 +94,16 @@ Communications_protocol::Devices rightConnection[1]{UNKNOWN};
 
 auto checkBrightness = [](const Packet &)
 {
-    if(!::LEDControl.isEnabled()){
+    if(!::LEDControl.isEnabled())
+    {
         Communications_protocol::Packet p{};
         p.header.command = Communications_protocol::BRIGHTNESS;
         p.header.device = UNKNOWN;
         p.data[0] = 0;
         p.data[1] = 0;
-        p.header.size = 2;
+        p.data[2] = static_cast<uint8_t>(ColormapEffectDefy.no_led_effect);
+        p.data[3] = 1;
+        p.header.size = 4;
         Communications.sendPacket(p);
         return;
     }
@@ -143,6 +150,12 @@ void Hands::setup() {
  Runtime.storage().get(settings_base_, settings_);
 }
 
+void Hands::setbrightness(const Settings &data)
+{
+    Runtime.storage().put(settings_base_, data);
+    Runtime.storage().commit();
+}
+
 void Hands::setKeyscanInterval(uint8_t interval) {
  if (interval < 15) return;
  settings_.keyscan_interval = interval;
@@ -157,28 +170,21 @@ void Hands::setKeyscanInterval(uint8_t interval) {
 
 void Hands::setLedBrightnessLedDriver(uint8_t brightness) {
  settings_.led_brightness_ledDriver = brightness;
- Packet p{};
- p.header.command = Communications_protocol::BRIGHTNESS;
- p.header.size    = 2;
- p.data[0]        = settings_.led_brightness_ledDriver;
- p.data[1]        = settings_.led_brightness_ungerlow;
- Communications.sendPacket(p);
- Runtime.storage().put(settings_base_, settings_);
- Runtime.storage().commit();
+ sendPacketBrightness();
+ setbrightness(settings_);
 }
 
 void Hands::setLedBrightnessUG(uint8_t brightnessUG) {
  settings_.led_brightness_ungerlow = brightnessUG;
- Packet p{};
- p.header.command = Communications_protocol::BRIGHTNESS;
- p.header.size    = 2;
- p.data[0]        = settings_.led_brightness_ledDriver;
- p.data[1]        = settings_.led_brightness_ungerlow;
- Communications.sendPacket(p);
- Runtime.storage().put(settings_base_, settings_);
- Runtime.storage().commit();
+ sendPacketBrightness();
+ setbrightness(settings_);
 }
 
+void Hands::sendPacketBrightness()
+{
+ Packet p{};
+ checkBrightness(p);
+}
 
 /********* LED Driver *********/
 
