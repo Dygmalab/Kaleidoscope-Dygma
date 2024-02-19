@@ -700,7 +700,7 @@ void DefyKeyScanner::usbConnectionsStateMachine()
     uint32_t actualTime = millis();
     bool usbMounted = TinyUSBDevice.mounted();
     bool bleInitiated = ble_innited();
-    bool radioInited = kaleidoscope::plugin::RadioManager::isInited();
+    bool radioInited = RadioManager.isInited();
     bool forceBle = BleManager.getForceBle();
 
     // For 100ms at the 700ms mark, check whether to initialize BLE or RF
@@ -708,7 +708,7 @@ void DefyKeyScanner::usbConnectionsStateMachine()
     {
         if (usbMounted && !forceBle)
         {
-            kaleidoscope::plugin::RadioManager::init();
+            RadioManager.init();
         }
         else
         {
