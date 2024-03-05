@@ -552,14 +552,14 @@ EventHandlerResult Qukeys::onSetup()
   }
 
   Runtime.storage().get(storage_base_ + 3, minimum);
-  if(minimum < 256){
+  if(minimum < 255){
     Qukeys::minimum_hold_time_ = minimum;
   }else{
     Runtime.storage().update(storage_base_ + 3, Qukeys::minimum_hold_time_);
   }
 
   Runtime.storage().get(storage_base_ + 4, prior);
-  if(prior < 256){
+  if(prior < 255){
     Qukeys::minimum_prior_interval_ = prior;
   }else{
     Runtime.storage().update(storage_base_ + 4, Qukeys::minimum_prior_interval_);
