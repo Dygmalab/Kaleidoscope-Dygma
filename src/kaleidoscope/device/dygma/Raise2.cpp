@@ -447,12 +447,6 @@ void Raise2LEDDriver::setCrgbAt(uint8_t i, cRGB crgb)
         isLEDChangedRight[uint8_t((sled_num - LEDS_PER_HAND) / 8)] |=
             !(oldColor.r == crgb.r && oldColor.g == crgb.g && oldColor.b == crgb.b && oldColor.w == crgb.w);
     }
-    else
-    {
-        // TODO(anyone):
-        // how do we want to handle debugging assertions about crazy user
-        // code that would overwrite other memory?
-    }
 }
 
 // void WiredLEDDriver::setCrgbNeuron(cRGB crgb) {

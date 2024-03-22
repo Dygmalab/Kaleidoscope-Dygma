@@ -34,9 +34,9 @@ namespace device {
 namespace dygma {
 namespace raise2 {
 
-#define LED_BANKS           11
+#define LED_BANKS           9
 
-#define LEDS_PER_HAND       88
+#define LEDS_PER_HAND       68
 #define LPH                 LEDS_PER_HAND
 #define LEDS_PER_BANK       8
 #define LED_BYTES_PER_BANK  (sizeof(cRGB) * LEDS_PER_BANK)
