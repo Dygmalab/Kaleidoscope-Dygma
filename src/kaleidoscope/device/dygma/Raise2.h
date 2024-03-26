@@ -56,8 +56,7 @@ namespace dygma {
 using kaleidoscope::driver::led::no_led;
 
 struct Raise2LEDDriverProps : public kaleidoscope::driver::led::BaseProps {
-    static constexpr uint8_t underglow_leds  = 53;  // Per keyboard side.
-    static constexpr uint8_t key_matrix_leds = 35;  // Per keyboard side.
+    static constexpr uint8_t key_matrix_leds = 34;  // Per keyboard side. ANSI only.
 
     static constexpr uint8_t underglow_leds_leftSide  = 36;  //UG Left side.
     static constexpr uint8_t leds_hand_left  = 34;  // BL Left side
@@ -105,8 +104,10 @@ class Raise2LEDDriver : public kaleidoscope::driver::led::Base<Raise2LEDDriverPr
     static void setBrightnessUGWireless(uint8_t brightnessUG);
     static uint8_t getBrightnessUGWireless();
     static void updateNeuronLED();
-    static constexpr uint8_t underglow_leds  = Raise2LEDDriverProps::underglow_leds;
-    static constexpr uint8_t key_matrix_leds = Raise2LEDDriverProps::key_matrix_leds;
+    static constexpr uint8_t underglow_leds  = Raise2LEDDriverProps::underglow_leds_leftSide;
+    static constexpr uint8_t key_matrix_left = Raise2LEDDriverProps::leds_hand_left;
+    static constexpr uint8_t key_matrix_right = Raise2LEDDriverProps::leds_hand_right;
+    static constexpr uint8_t underglow_leds_right = Raise2LEDDriverProps::underglow_leds_rightSide;
    private:
     static bool isLEDChangedNeuron;
     static bool leds_enabled_;
@@ -129,11 +130,11 @@ class Raise2LEDDriver : public kaleidoscope::driver::led::Base<Raise2LEDDriverPr
       20 + LPH, 21 + LPH, 22 + LPH, 23 + LPH, 24 + LPH, 25 + LPH, 26 + LPH, 27 + LPH, 28 + LPH, 29 + LPH, 30 + LPH, 31 + LPH, 32 + LPH, 33 + LPH, 68 + LPH, 69 + LPH,
 
       // left under glow - 36
-      34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,64,65,66,67,68,69,
+      33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62,63,64,65,66,67,68,
 
       // right underglow - 39
       34 + LPH, 35 + LPH, 36 + LPH, 37 + LPH, 38 + LPH, 39 + LPH, 40 + LPH, 41 + LPH, 42 + LPH, 43 + LPH, 44 + LPH, 45 + LPH, 46 + LPH, 47 + LPH, 48 + LPH, 49 + LPH, 50 + LPH, 51 + LPH,
-      52 + LPH, 53 + LPH, 54 + LPH, 55 + LPH, 56 + LPH, 57 + LPH, 58 + LPH, 59 + LPH, 60 + LPH, 61 + LPH, 62 + LPH, 63 + LPH, 64 + LPH, 65 + LPH, 66 + LPH,67 + LPH,68 + LPH,69 + LPH,70 + LPH,71 + LPH,72 + LPH,0xff
+      52 + LPH, 53 + LPH, 54 + LPH, 55 + LPH, 56 + LPH, 57 + LPH, 58 + LPH, 59 + LPH, 60 + LPH, 61 + LPH, 62 + LPH, 63 + LPH, 64 + LPH, 65 + LPH, 66 + LPH,67 + LPH,68 + LPH,69 + LPH,70 + LPH,71 + LPH,72 + LPH
 };
     // clang-format on
 };
