@@ -212,7 +212,7 @@ class DefyNrf : public kaleidoscope::device::Base<DefyProps> {
    public:
     static void setup();
 
-    auto serialPort() -> Stream_A & {
+    auto serialPort() -> Stream & {
         if(ble_innited()){
             return RawHID;
         }
