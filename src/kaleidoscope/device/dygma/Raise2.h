@@ -59,7 +59,7 @@ struct Raise2LEDDriverProps : public kaleidoscope::driver::led::BaseProps {
     static constexpr uint8_t key_matrix_leds = 34;  // Per keyboard side. ANSI only.
 
     static constexpr uint8_t underglow_leds_leftSide  = 36;  //UG Left side.
-    static constexpr uint8_t leds_hand_left  = 34;  // BL Left side
+    static constexpr uint8_t leds_hand_left  = 33;  // BL Left side
 
     static constexpr uint8_t underglow_leds_rightSide  = 39;  // UG Right side.
     static constexpr uint8_t leds_hand_right  = 38;  // BL Right side.
@@ -68,7 +68,7 @@ struct Raise2LEDDriverProps : public kaleidoscope::driver::led::BaseProps {
     static constexpr uint8_t neuron_led = 2;
     static constexpr uint8_t leds_hand       = underglow_leds_rightSide + underglow_leds_leftSide + leds_hand_right + leds_hand_left;
     //static constexpr uint16_t led_count = leds_hand + neuron_led; //149 This has to be par number that's why the neuron takes 2
-    static constexpr uint8_t led_count = leds_hand;
+    static constexpr uint8_t led_count = leds_hand - 1;
     // clang-format off
 // clang-format off
  static constexpr uint8_t key_led_map[] = {
@@ -134,7 +134,7 @@ class Raise2LEDDriver : public kaleidoscope::driver::led::Base<Raise2LEDDriverPr
 
       // right underglow - 39
       34 + LPH, 35 + LPH, 36 + LPH, 37 + LPH, 38 + LPH, 39 + LPH, 40 + LPH, 41 + LPH, 42 + LPH, 43 + LPH, 44 + LPH, 45 + LPH, 46 + LPH, 47 + LPH, 48 + LPH, 49 + LPH, 50 + LPH, 51 + LPH,
-      52 + LPH, 53 + LPH, 54 + LPH, 55 + LPH, 56 + LPH, 57 + LPH, 58 + LPH, 59 + LPH, 60 + LPH, 61 + LPH, 62 + LPH, 63 + LPH, 64 + LPH, 65 + LPH, 66 + LPH,67 + LPH,68 + LPH,69 + LPH,70 + LPH,71 + LPH,72 + LPH
+      52 + LPH, 53 + LPH, 54 + LPH, 55 + LPH, 56 + LPH, 57 + LPH, 58 + LPH, 59 + LPH, 60 + LPH, 61 + LPH, 62 + LPH, 63 + LPH, 64 + LPH, 65 + LPH, 66 + LPH,67 + LPH,68 + LPH,69 + LPH,70 + LPH,71 + LPH,72 + LPH, 73
 };
     // clang-format on
 };
