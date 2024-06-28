@@ -447,12 +447,6 @@ void Raise2LEDDriver::setCrgbAt(uint8_t i, cRGB crgb)
         isLEDChangedRight[uint8_t((sled_num - LEDS_PER_HAND) / 8)] |=
             !(oldColor.r == crgb.r && oldColor.g == crgb.g && oldColor.b == crgb.b && oldColor.w == crgb.w);
     }
-    else
-    {
-        // TODO(anyone):
-        // how do we want to handle debugging assertions about crazy user
-        // code that would overwrite other memory?
-    }
 }
 
 // void WiredLEDDriver::setCrgbNeuron(cRGB crgb) {
@@ -716,8 +710,8 @@ void Raise2KeyScanner::usbConnectionsStateMachine()
     bool radioInited = kaleidoscope::plugin::RadioManager::isInited();
     bool forceBle = _BleManager.getForceBle();
 
-    // For 100ms at the 700ms mark, check whether to initialize BLE or RF
-    if ((actualTime > 700 && actualTime < 800) && !bleInitiated && !radioInited)
+    // For 2000ms at the 2100ms mark, check whether to initialize BLE or RF
+    if ((actualTime > 2000 && actualTime < 2100) && !bleInitiated && !radioInited)
     {
         if (usbMounted && !forceBle)
         {
