@@ -708,7 +708,7 @@ void Raise2KeyScanner::usbConnectionsStateMachine()
     bool usbMounted = TinyUSBDevice.mounted();
     bool bleInitiated = ble_innited();
     bool radioInited = kaleidoscope::plugin::RadioManager::isInited();
-    bool forceBle = BleManager.getForceBle();
+    bool forceBle = _BleManager.getForceBle();
 
     // For 2000ms at the 2100ms mark, check whether to initialize BLE or RF
     if ((actualTime > 2000 && actualTime < 2100) && !bleInitiated && !radioInited)
@@ -720,11 +720,11 @@ void Raise2KeyScanner::usbConnectionsStateMachine()
         else
         {
             //Force connnect again just in case it was set as a device and not a host
-            kaleidoscope::plugin::BleManager::init();
+            _BleManager.init();
             if (leftConnection[1] == KEYSCANNER_DEFY_LEFT) leftConnection[1] = BLE_DEFY_LEFT;
             if (rightConnection[1] == KEYSCANNER_DEFY_RIGHT) rightConnection[1] = BLE_DEFY_RIGHT;
             Raise2Hands::sendPacketBrightness();
-            BleManager.setForceBle(false);
+            _BleManager.setForceBle(false);
             Packet p{};
             p.header.command = CONNECTED;
             p.header.size = 0;
