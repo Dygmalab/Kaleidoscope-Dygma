@@ -56,16 +56,16 @@ namespace dygma {
 using kaleidoscope::driver::led::no_led;
 
 struct Raise2LEDDriverProps : public kaleidoscope::driver::led::BaseProps {
-    static constexpr uint8_t key_matrix_leds = 34;  // Per keyboard side. ANSI only.
+    static constexpr uint8_t key_matrix_leds = 33;  // Per keyboard side. ANSI only.
 
     static constexpr uint8_t underglow_leds_leftSide  = 36;  //UG Left side.
-    static constexpr uint8_t leds_hand_left  = 34;  // BL Left side
+    static constexpr uint8_t leds_hand_left  = 33;  // BL Left side
 
     static constexpr uint8_t underglow_leds_rightSide  = 39;  // UG Right side.
-    static constexpr uint8_t leds_hand_right  = 38;  // BL Right side.
+    static constexpr uint8_t leds_hand_right  = 36;  // BL Right side.
 
     //static constexpr uint8_t leds_hand = underglow_leds + key_matrix_leds;
-    static constexpr uint8_t neuron_led = 2;
+    static constexpr uint8_t neuron_led = 1;
 
     static constexpr uint8_t leds_hand       = underglow_leds_rightSide + underglow_leds_leftSide + leds_hand_right + leds_hand_left;
     //static constexpr uint16_t led_count = leds_hand + neuron_led; //149 This has to be par number that's why the neuron takes 2
@@ -124,23 +124,23 @@ class Raise2LEDDriver : public kaleidoscope::driver::led::Base<Raise2LEDDriverPr
 //constexpr static uint8_t led_mapping_left[]={0,1,2,3,4,5,6,0xff,7,8,9,10,11,12,13,100,14,15,16,17,18,19,100,21,21,22,23,24,25,26,20,28,27,28,29,30,33,31,32,35};
     static constexpr uint8_t led_map[Raise2LEDDriverProps::led_count] = {
 
-      // left side - 32 keys includes LP: key 19 is missing for ANSI layout
-      0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,
+        // left side - 33 keys includes LP: key 19 is missing for ANSI layout
+        0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,
 
-      // right side - 36 keys includes LP
-      35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,
-      64,65,66,67,68, //last array pos 70
+        // right side - 36 keys includes LP
+        33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,
+        64,65,66,67,68,
 
-      // left under glow - 36
+        // left under glow - 36
         69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93,
         94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104,
 
-      // right underglow - 40
+      // right underglow - 39
       105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125,
-      126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144,
+      126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143,
 
      // Neuron LED
-      73, 74
+      144
 };
     // clang-format on
 };
