@@ -48,10 +48,10 @@
 
 
 #ifndef FIRMWARE_VERSION
-#define FIRMWARE_VERSION "v1.1.1"
+    #define FIRMWARE_VERSION "v1.1.1"
 #endif
 
-#define Defy_FIRMWARE_VERSION FIRMWARE_VERSION
+#define DEFY_FIRMWARE_VERSION FIRMWARE_VERSION
 
 namespace kaleidoscope {
 namespace device {

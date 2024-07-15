@@ -27,8 +27,8 @@ namespace device {
 namespace dygma {
 namespace defy_wireless {
 
-#ifndef Defy_FIRMWARE_VERSION
-#define Defy_FIRMWARE_VERSION "<unknown>"
+#ifndef DEFY_FIRMWARE_VERSION
+    #define DEFY_FIRMWARE_VERSION "<unknown>"
 #endif
 
 EventHandlerResult Focus::onFocusEvent(const char *command) {
@@ -71,7 +71,7 @@ EventHandlerResult Focus::onFocusEvent(const char *command) {
     if (strcmp(command + 9, "firmware") == 0) {
         NRF_LOG_DEBUG("read request: hardware.firmware");
 
-        ::Focus.send<char *>(Defy_FIRMWARE_VERSION);
+        ::Focus.send<char *>(DEFY_FIRMWARE_VERSION);
 
         return EventHandlerResult::EVENT_CONSUMED;
     }
