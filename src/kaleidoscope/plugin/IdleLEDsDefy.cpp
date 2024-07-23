@@ -18,7 +18,13 @@
 #ifdef ARDUINO_ARCH_NRF52
 
 #include "Communications.h"
-#include "Defy_wireless.h"
+
+#if COMPILE_DEFY_KEYBOARD
+    #include "Defy_wireless.h"
+#elif COMPILE_RAISE2_KEYBOARD
+    #include "Raise2.h"
+#endif
+
 #include <Kaleidoscope-EEPROM-Settings.h>
 #include <Kaleidoscope-FocusSerial.h>
 #include <Kaleidoscope-IdleLEDsDefy.h>
@@ -56,7 +62,8 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
         isDefyRightWired &&
         !ble_innited())
     {
-        if (::LEDControl.isEnabled() && Runtime.hasTimeExpired(start_time_wired, Power_save.leds_off_usb_idle_t_ms))
+        if (::LEDControl.isEnabled() &&
+            Runtime.hasTimeExpired(start_time_wired, Power_save.leds_off_usb_idle_t_ms))
         {
             ::LEDControl.disable();
             idle_ = true;
@@ -64,7 +71,8 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
     }
     else
     {
-        if (::LEDControl.isEnabled() && Runtime.hasTimeExpired(start_time_wireless, Power_save.leds_off_ble_idle_t_ms))
+        if (::LEDControl.isEnabled() &&
+            Runtime.hasTimeExpired(start_time_wireless, Power_save.leds_off_ble_idle_t_ms))
         {
             ::LEDControl.disable();
             idle_ = true;
@@ -72,11 +80,11 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
             start_time_true_sleep = Runtime.millisAtCycleStart();
         }
 
-        if ( Power_save.activate_keybsides_sleep &&
+        if (Power_save.activate_keybsides_sleep &&
             !::LEDControl.isEnabled() &&
             !sleep_ &&
             Power_save.leds_off_usb_idle_t_ms &&
-            Runtime.hasTimeExpired(start_time_true_sleep, Power_save.sides_sleep_idle_t_ms) )
+            Runtime.hasTimeExpired(start_time_true_sleep, Power_save.sides_sleep_idle_t_ms))
         {
             Communications_protocol::Packet p{};
             p.header.command = Communications_protocol::SLEEP;

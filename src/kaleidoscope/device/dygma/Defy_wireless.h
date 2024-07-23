@@ -39,13 +39,8 @@
 #include "libraries/KeyboardioHID/src/MultiReport/RawHID.h"
 
 
-#define DEFY_HANDS_DEBUG                 1
-
-#define PRINT_SCANNED_KEYS_FROM_SIDES    0
-#define PRINT_SCANNED_KEYS_FROM_RF_SIDES 0
-
-#define PRINT_KEYSWITCH_EVENT_PARAMETERS 0
-
+#define DEFY_HANDS_DEBUG                    1
+#define PRINT_KEYSWITCH_EVENT_PARAMETERS    0
 
 #ifndef FIRMWARE_VERSION
     #define FIRMWARE_VERSION "v1.1.1"
