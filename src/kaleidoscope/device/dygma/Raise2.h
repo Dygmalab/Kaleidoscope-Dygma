@@ -48,6 +48,7 @@
 
 #define RAISE_2_FIRMWARE_VERSION FIRMWARE_VERSION
 
+
 namespace kaleidoscope {
 namespace device {
 namespace dygma {
