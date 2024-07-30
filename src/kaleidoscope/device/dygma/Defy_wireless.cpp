@@ -714,7 +714,9 @@ void DefyKeyScanner::usbConnectionsStateMachine()
     bool forceBle = _BleManager.getForceBle();
 
     // For 2000ms at the 2100ms mark, check whether to initialize BLE or RF
-    if ((actualTime > 2000 && actualTime < 2100) && !bleInitiated && !radioInited)
+    if ( (actualTime > 2000 && actualTime < 2100) &&
+        !bleInitiated &&
+        !radioInited )
     {
         if (usbMounted && !forceBle)
         {
