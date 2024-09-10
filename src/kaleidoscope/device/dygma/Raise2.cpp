@@ -723,7 +723,7 @@ void Raise2KeyScanner::usbConnectionsStateMachine()
         flag_ble_mode_allowed)
     {
         flag_ble_mode_allowed = false;
-        NRF_LOG_DEBUG("BLE mode denied");
+        NRF_LOG_DEBUG("BLE mode denied due to external power on N2.");
     }
 
     // For 3000ms at the 3100ms mark, check whether to initialize BLE or RF
