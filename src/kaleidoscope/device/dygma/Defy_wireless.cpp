@@ -843,7 +843,7 @@ void DefyNrf::side::reset_sides()
     delay(10);
     nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
     nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_NOPULL);
-    delay(10); // We should give a bit more time but for now lest leave it like this
+    delay(50); // We should give a bit more time but for now lest leave it like this
 }
 
 void DefyNrf::side::prepareForFlash()
