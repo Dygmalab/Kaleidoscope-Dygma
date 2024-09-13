@@ -4,7 +4,7 @@
 #include "bootloader_util.h"
 #include "nrf_dfu_types.h"
 #include "nrf_nvmc.h"
-#include "utils/crc32.h"
+#include "utils/dl_crc32.h"
 
 #define EXIT_IF_FALSE( err, msg ) if ( ( err ) == false ) goto _EXIT;
 
@@ -88,7 +88,7 @@ static inline uint32_t _settings_crc_calc( const settings_page_t * _settings_pag
     settings_page_temp.header.crc = 0;
 
     /* Calculate the settings crc */
-    crc_calc = crc32_calculate_data( CRC_INITIAL_VALUE, (uint8_t *)&settings_page_temp, sizeof(settings_page_t) );
+    crc_calc = dlcrc32_calculate_data( CRC_INITIAL_VALUE, (uint8_t *)&settings_page_temp, sizeof(settings_page_t) );
 
     return crc_calc;
 }
