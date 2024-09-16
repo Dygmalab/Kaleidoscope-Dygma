@@ -59,23 +59,24 @@ namespace dygma {
 using kaleidoscope::driver::led::no_led;
 
 struct Raise2LEDDriverProps : public kaleidoscope::driver::led::BaseProps {
-    static constexpr uint8_t key_matrix_leds = 34;  // Per keyboard side. ANSI only.
+    static constexpr uint8_t key_matrix_leds = 33;  // Per keyboard side. ANSI only.
 
-    static constexpr uint8_t underglow_leds_leftSide  = 36;  //UG Left side.
+    static constexpr uint8_t underglow_leds_leftSide  = 53;  //UG Left side.
     static constexpr uint8_t leds_hand_left  = 33;  // BL Left side
 
-    static constexpr uint8_t underglow_leds_rightSide  = 39;  // UG Right side.
-    static constexpr uint8_t leds_hand_right  = 38;  // BL Right side.
+    static constexpr uint8_t underglow_leds_rightSide  = 54;  // UG Right side.
+    static constexpr uint8_t leds_hand_right  = 36;  // BL Right side.
 
     //static constexpr uint8_t leds_hand = underglow_leds + key_matrix_leds;
-    static constexpr uint8_t neuron_led = 2;
+    static constexpr uint8_t neuron_led = 0;
+
     static constexpr uint8_t leds_hand       = underglow_leds_rightSide + underglow_leds_leftSide + leds_hand_right + leds_hand_left;
     //static constexpr uint16_t led_count = leds_hand + neuron_led; //149 This has to be par number that's why the neuron takes 2
-    static constexpr uint8_t led_count = leds_hand - 1;
+    static constexpr uint8_t led_count = leds_hand + neuron_led; //This number needs to be par so Neuron takes two LEDs
     // clang-format off
 // clang-format off
  static constexpr uint8_t key_led_map[] = {
-         // ISO & ANSI (ANSI has no LED at 20, but this key can never be pressed so we can have just one map).
+         // ISO & ANSI (ANSI has no LED at 20, but this key can never be pressed, so we can have just one map).
          0, 1, 2, 3, 4, 5, 6, no_led, no_led, 6 + key_matrix_leds, 5 + key_matrix_leds, 4 + key_matrix_leds, 3 + key_matrix_leds, 2 + key_matrix_leds, 1 + key_matrix_leds, 0 + key_matrix_leds,
          7, 8, 9, 10, 11, 12, 13, no_led, no_led, 13 + key_matrix_leds, 12 + key_matrix_leds, 11 + key_matrix_leds, 10 + key_matrix_leds, 9 + key_matrix_leds, 8 + key_matrix_leds, 7 + key_matrix_leds,
          14, 15, 16, 17, 18, 19, 20, no_led, no_led, 20 + key_matrix_leds, 19 + key_matrix_leds, 18 + key_matrix_leds, 17 + key_matrix_leds, 16 + key_matrix_leds, 15 + key_matrix_leds, 14 + key_matrix_leds,
@@ -125,19 +126,23 @@ class Raise2LEDDriver : public kaleidoscope::driver::led::Base<Raise2LEDDriverPr
     //static constexpr uint8_t led_map[][Raise2LEDDriverProps::led_count + 1] = {
 //constexpr static uint8_t led_mapping_left[]={0,1,2,3,4,5,6,0xff,7,8,9,10,11,12,13,100,14,15,16,17,18,19,100,21,21,22,23,24,25,26,20,28,27,28,29,30,33,31,32,35};
     static constexpr uint8_t led_map[Raise2LEDDriverProps::led_count] = {
-      // left side - 32 keys includes LP: key 19 is missing for ANSI layout
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 68, 69,
 
-      // right side - 36 keys includes LP
-      0 + LPH, 1 + LPH, 2 + LPH, 3 + LPH, 4 + LPH, 5 + LPH, 6 + LPH, 7 + LPH, 8 + LPH, 9 + LPH, 10 + LPH, 11 + LPH, 12 + LPH, 13 + LPH, 14 + LPH, 15 + LPH, 16 + LPH, 17 + LPH, 18 + LPH, 19 + LPH,
-      20 + LPH, 21 + LPH, 22 + LPH, 23 + LPH, 24 + LPH, 25 + LPH, 26 + LPH, 27 + LPH, 28 + LPH, 29 + LPH, 30 + LPH, 31 + LPH, 32 + LPH, 33 + LPH, 68 + LPH, 69 + LPH,
+        // left side - 33 keys includes LP: key 19 is missing for ANSI layout
+        0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,
 
-      // left under glow - 36
-      33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62,63,64,65,66,67,68,
+        // right side - 36 keys includes LP
+        33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,
+        64,65,66,67,68,
 
-      // right underglow - 39
-      34 + LPH, 35 + LPH, 36 + LPH, 37 + LPH, 38 + LPH, 39 + LPH, 40 + LPH, 41 + LPH, 42 + LPH, 43 + LPH, 44 + LPH, 45 + LPH, 46 + LPH, 47 + LPH, 48 + LPH, 49 + LPH, 50 + LPH, 51 + LPH,
-      52 + LPH, 53 + LPH, 54 + LPH, 55 + LPH, 56 + LPH, 57 + LPH, 58 + LPH, 59 + LPH, 60 + LPH, 61 + LPH, 62 + LPH, 63 + LPH, 64 + LPH, 65 + LPH, 66 + LPH,67 + LPH,68 + LPH,69 + LPH,70 + LPH,71 + LPH,72 + LPH, 73
+        // left under glow - 53
+        69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93,
+        94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104,105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115,
+        116, 117, 118, 119, 120, 121,
+
+      // right underglow - 54
+      122, 123, 124, 125,126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143,144, 145,
+      146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169,
+      170, 171, 172, 173, 174, 175
 };
     // clang-format on
 };
