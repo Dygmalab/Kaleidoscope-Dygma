@@ -68,7 +68,7 @@ struct Raise2LEDDriverProps : public kaleidoscope::driver::led::BaseProps {
     static constexpr uint8_t leds_hand_right  = 36;  // BL Right side.
 
     //static constexpr uint8_t leds_hand = underglow_leds + key_matrix_leds;
-    static constexpr uint8_t neuron_led = 1;
+    static constexpr uint8_t neuron_led = 0;
 
     static constexpr uint8_t leds_hand       = underglow_leds_rightSide + underglow_leds_leftSide + leds_hand_right + leds_hand_left;
     //static constexpr uint16_t led_count = leds_hand + neuron_led; //149 This has to be par number that's why the neuron takes 2
@@ -142,10 +142,7 @@ class Raise2LEDDriver : public kaleidoscope::driver::led::Base<Raise2LEDDriverPr
       // right underglow - 54
       122, 123, 124, 125,126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143,144, 145,
       146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169,
-      170, 171, 172, 173, 174, 175,
-
-     // Neuron LED
-      176
+      170, 171, 172, 173, 174, 175
 };
     // clang-format on
 };
