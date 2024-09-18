@@ -27,10 +27,6 @@ namespace device {
 namespace dygma {
 namespace raise2 {
 
-#ifndef RAISE_2_FIRMWARE_VERSION
-#define RAISE_2_FIRMWARE_VERSION "<unknown>"
-#endif
-
 EventHandlerResult Focus::onFocusEvent(const char *command) {
     if (::Focus.handleHelp(command,
                            "hardware.version\n"
@@ -71,7 +67,7 @@ EventHandlerResult Focus::onFocusEvent(const char *command) {
     if (strcmp(command + 9, "firmware") == 0) {
         NRF_LOG_DEBUG("read request: hardware.firmware");
 
-        ::Focus.send<char *>(RAISE_2_FIRMWARE_VERSION);
+        ::Focus.send<char *>(RAISE2_NEURON_FW_VERSION);
 
         return EventHandlerResult::EVENT_CONSUMED;
     }
