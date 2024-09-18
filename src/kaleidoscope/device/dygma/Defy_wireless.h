@@ -42,11 +42,10 @@
 #define DEFY_HANDS_DEBUG                    1
 #define PRINT_KEYSWITCH_EVENT_PARAMETERS    0
 
-#ifndef FIRMWARE_VERSION
-    #define FIRMWARE_VERSION "v1.1.1"
+#ifndef DEFY_NEURON_FW_VERSION
+#error "Firmware version is not specified."
+    #define DEFY_NEURON_FW_VERSION "N/A"
 #endif
-
-#define DEFY_FIRMWARE_VERSION FIRMWARE_VERSION
 
 namespace kaleidoscope {
 namespace device {
