@@ -180,7 +180,15 @@ auto checkBrightness = [](const Packet &)
     auto &keyScanner = Runtime.device().keyScanner();
     auto isRaise2LeftWired = keyScanner.leftSideWiredConnection();
     auto isRaise2RightWired = keyScanner.rightSideWiredConnection();
-    ColormapEffectDefy.updateBrigthness(ColormapEffectDefy.no_led_effect, true, isRaise2LeftWired && isRaise2RightWired && !ble_innited());
+
+    if(isRaise2LeftWired && isRaise2RightWired)
+    {
+            ColormapEffectDefy.updateBrigthness(ColormapEffectDefy.no_led_effect, true, true);
+    }
+    else
+    {
+            ColormapEffectDefy.updateBrigthness(ColormapEffectDefy.no_led_effect, true, false);
+    }
 };
 
 void Raise2Hands::setup()
