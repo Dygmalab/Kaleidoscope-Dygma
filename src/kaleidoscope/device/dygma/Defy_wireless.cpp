@@ -218,6 +218,20 @@ void DefyHands::setup()
                                                         if (p.header.device == KEYSCANNER_DEFY_RIGHT) rightConnection[1] = UNKNOWN;
                                                         if (p.header.device == RF_DEFY_LEFT) leftConnection[2] = UNKNOWN;
                                                         if (p.header.device == RF_DEFY_RIGHT) rightConnection[2] = UNKNOWN;
+
+                                                        if ( leftConnection[0] == UNKNOWN &&
+                                                                leftConnection[1] == UNKNOWN &&
+                                                                leftConnection[2] == UNKNOWN )
+                                                        {
+                                                            leftHand.releaseAllKeys();
+                                                        }
+
+                                                        if ( rightConnection[0] == UNKNOWN &&
+                                                                rightConnection[1] == UNKNOWN &&
+                                                                rightConnection[2] == UNKNOWN )
+                                                        {
+                                                            rightHand.releaseAllKeys();
+                                                        }
                                                     }));
 
     Communications.callbacks.bind(DISCONNECTED, checkBrightness);

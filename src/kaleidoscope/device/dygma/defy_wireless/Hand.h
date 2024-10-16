@@ -60,6 +60,7 @@ class Hand {
    };
   explicit Hand(HandSide side);
   void init();
+  void releaseAllKeys();
 
   HandSide this_device_;
   LEDData_t led_data{};
