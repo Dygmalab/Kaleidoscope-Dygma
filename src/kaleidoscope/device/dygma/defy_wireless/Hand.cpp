@@ -41,6 +41,9 @@ bool inline filterHand(Communications_protocol::Devices incomingDevice,Hand::Han
 
 void Hand::init()
 {
+    /* Initialize the key data */
+    key_data_.all = 0;
+
     auto keyScanFunction = [this](Packet const &packet)
     {
         if (filterHand(packet.header.device, this_device_))
@@ -51,6 +54,19 @@ void Hand::init()
         }
     };
     Communications.callbacks.bind(HAS_KEYS, keyScanFunction);
+}
+
+void Hand::releaseAllKeys()
+{
+    if( key_data_.all == 0 )
+    {
+        /* The keys are released already */
+        return;
+    }
+
+    /* Release all keys */
+    key_data_.all = 0;
+    new_key_ = true;
 }
 
 
