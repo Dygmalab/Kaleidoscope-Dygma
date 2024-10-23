@@ -26,7 +26,7 @@ Twi_master twi_master(TWI_SCL_PIN, TWI_SDA_PIN);
 namespace kaleidoscope {
 namespace device {
 namespace dygma {
-namespace defy_wireless {
+namespace dygma_keyboards {
 
 
 bool TWI::twi_already_init = false;

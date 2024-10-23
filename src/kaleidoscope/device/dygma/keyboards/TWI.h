@@ -41,7 +41,7 @@
 namespace kaleidoscope {
 namespace device {
 namespace dygma {
-namespace defy_wireless {
+namespace dygma_keyboards {
 
 class TWI
 {

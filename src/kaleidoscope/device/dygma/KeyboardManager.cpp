@@ -35,12 +35,12 @@
 #include "Ble_manager.h"
 #include "Colormap-Defy.h"
 #include "Communications.h"
-#include "Defy_wireless.h"
+#include DYGMA_KEYBOARD
 #include "LED-Palette-Theme-Defy.h"
 #include "Radio_manager.h"
 #include "Status_leds.h"
 #include "Wire.h" // Arduino Wire wrapper for the NRF52 chips
-#include "defy_wireless/Focus.h"
+#include "keyboards/Focus.h"
 #include "nrf_gpio.h"
 #include "Battery.h"
 
@@ -59,12 +59,12 @@ namespace device
 namespace dygma
 {
 
-/********* DefyHands *********/
+/********* KeyboardHands *********/
 
-struct DefyHands
+struct KeyboardHands
 {
-    static defy_wireless::Hand leftHand;
-    static defy_wireless::Hand rightHand;
+    static dygma_keyboards::Hand leftHand;
+    static dygma_keyboards::Hand rightHand;
 
     static void setup();
 
@@ -126,15 +126,15 @@ struct DefyHands
     static void setbrightness(const Brightness &data);
 };
 
-defy_wireless::Hand DefyHands::leftHand(defy_wireless::Hand::LEFT);
-defy_wireless::Hand DefyHands::rightHand(defy_wireless::Hand::RIGHT);
-bool DefyHands::side_power_;
-uint16_t DefyHands::settings_interval_;
-uint16_t DefyHands::settings_base;
-DefyHands::Brightness DefyHands::bright;
-uint8_t DefyHands::keyscan_interval_ = 15;
+dygma_keyboards::Hand KeyboardHands::leftHand(dygma_keyboards::Hand::LEFT);
+dygma_keyboards::Hand KeyboardHands::rightHand(dygma_keyboards::Hand::RIGHT);
+bool KeyboardHands::side_power_;
+uint16_t KeyboardHands::settings_interval_;
+uint16_t KeyboardHands::settings_base;
+KeyboardHands::Brightness KeyboardHands::bright;
+uint8_t KeyboardHands::keyscan_interval_ = 15;
 
-void DefyHands::setSidePower(bool power)
+void KeyboardHands::setSidePower(bool power)
 {
     // 0 -> reset keyboard side, 1 -> run keyboard side
     if (power)
@@ -178,12 +178,12 @@ auto checkBrightness = [](const Packet &)
 
     status_leds.static_green(NEURON_LED_BRIGHTNESS);
     auto &keyScanner = Runtime.device().keyScanner();
-    auto isDefyLeftWired = keyScanner.leftSideWiredConnection();
-    auto isDefyRightWired = keyScanner.rightSideWiredConnection();
-    ColormapEffectDefy.updateBrigthness(ColormapEffectDefy.no_led_effect, true, isDefyLeftWired && isDefyRightWired && !ble_innited());
+    auto isKSLeftWired = keyScanner.leftSideWiredConnection();
+    auto isKSRightWired = keyScanner.rightSideWiredConnection();
+    ColormapEffectDefy.updateBrigthness(ColormapEffectDefy.no_led_effect, true, isKSLeftWired && isKSRightWired && !ble_innited());
 };
 
-void DefyHands::setup()
+void KeyboardHands::setup()
 {
     rightHand.init();
     leftHand.init();
@@ -240,7 +240,7 @@ void DefyHands::setup()
 
 
     settings_interval_ = ::EEPROMSettings.requestSlice(sizeof(keyscan_interval_));
-    settings_base = ::EEPROMSettings.requestSlice(sizeof(DefyHands::Brightness));
+    settings_base = ::EEPROMSettings.requestSlice(sizeof(KeyboardHands::Brightness));
     // If keyscan is max, assume that EEPROM is uninitialized, and store the defaults.
     uint16_t interval;
     Runtime.storage().get(settings_interval_, interval);
@@ -251,7 +251,7 @@ void DefyHands::setup()
     }
     Runtime.storage().get(settings_interval_, keyscan_interval_);
 
-    DefyHands::Brightness brightness;
+    KeyboardHands::Brightness brightness;
     Runtime.storage().get(settings_base, brightness);
     if (brightness.flag != 0)
     {
@@ -265,13 +265,13 @@ void DefyHands::setup()
     Runtime.storage().get(settings_base, bright);
 }
 
-void DefyHands::setbrightness(const Brightness &data)
+void KeyboardHands::setbrightness(const Brightness &data)
 {
     Runtime.storage().put(settings_base, data);
     Runtime.storage().commit();
 }
 
-void DefyHands::keyscanInterval(uint8_t interval)
+void KeyboardHands::keyscanInterval(uint8_t interval)
 {
     Communications_protocol::Packet p{};
     p.header.command = Communications_protocol::KEYSCAN_INTERVAL;
@@ -283,40 +283,40 @@ void DefyHands::keyscanInterval(uint8_t interval)
     Runtime.storage().commit();
 }
 
-void DefyHands::ledBrightnessLedDriver(uint8_t brightness)
+void KeyboardHands::ledBrightnessLedDriver(uint8_t brightness)
 {
     bright.led_brightness_ledDriver_ = brightness;
     sendPacketBrightness();
     setbrightness(bright);
 }
 
-void DefyHands::ledBrightnessUG(uint8_t brightnessUG)
+void KeyboardHands::ledBrightnessUG(uint8_t brightnessUG)
 {
     bright.led_brightness_underglow_ = brightnessUG;
     sendPacketBrightness();
     setbrightness(bright);
 }
 
-void DefyHands::ledBrightnessLedDriverWireless(uint8_t brightness)
+void KeyboardHands::ledBrightnessLedDriverWireless(uint8_t brightness)
 {
     bright.led_brightness_ledDriver_wireless_ = brightness;
     sendPacketBrightness();
     setbrightness(bright);
 }
-void DefyHands::ledBrightnessUGWireless(uint8_t brightnessUG)
+void KeyboardHands::ledBrightnessUGWireless(uint8_t brightnessUG)
 {
     bright.led_brightness_underglow_wireless_ = brightnessUG;
     sendPacketBrightness();
     setbrightness(bright);
 }
 
-void DefyHands::sendPacketBrightness()
+void KeyboardHands::sendPacketBrightness()
 {
     Packet p{};
     checkBrightness(p);
 }
 
-void DefyHands::getChipID(char *cstring, uint16_t len)
+void KeyboardHands::getChipID(char *cstring, uint16_t len)
 {
     /*
         Returns the 64 bit unique device identifier.
@@ -329,7 +329,7 @@ void DefyHands::getChipID(char *cstring, uint16_t len)
     snprintf(cstring, len, "%8lx%8lx", NRF_FICR->DEVICEID[1], NRF_FICR->DEVICEID[0]);
 }
 
-void DefyHands::get_chip_info(char *cstring, uint16_t len)
+void KeyboardHands::get_chip_info(char *cstring, uint16_t len)
 {
     /*
         See: FICR - Factory information configuration registers on pag. 30 of the datasheet.
@@ -344,63 +344,63 @@ void DefyHands::get_chip_info(char *cstring, uint16_t len)
 
 /********* LED Driver *********/
 
-bool DefyLEDDriver::isLEDChangedNeuron;
-bool DefyLEDDriver::leds_enabled_ = true;
-uint8_t DefyLEDDriver::isLEDChangedLeft[LED_BANKS];
-uint8_t DefyLEDDriver::isLEDChangedRight[LED_BANKS];
-cRGB DefyLEDDriver::neuronLED;
-constexpr uint8_t DefyLEDDriver::led_map[DefyLEDDriverProps::led_count];
-constexpr uint8_t DefyLEDDriverProps::key_led_map[];
+bool KeyboardLEDDriver::isLEDChangedNeuron;
+bool KeyboardLEDDriver::leds_enabled_ = true;
+uint8_t KeyboardLEDDriver::isLEDChangedLeft[LED_BANKS];
+uint8_t KeyboardLEDDriver::isLEDChangedRight[LED_BANKS];
+cRGB KeyboardLEDDriver::neuronLED;
+constexpr uint8_t KeyboardLEDDriver::led_map[KeyboardLEDDriverProps::led_count];
+constexpr uint8_t KeyboardLEDDriverProps::key_led_map[];
 
 // Wired setters and getters
-void DefyLEDDriver::setBrightness(uint8_t brightness)
+void KeyboardLEDDriver::setBrightness(uint8_t brightness)
 {
-    DefyHands::ledBrightnessLedDriver(brightness);
+    KeyboardHands::ledBrightnessLedDriver(brightness);
 }
 
-uint8_t DefyLEDDriver::getBrightness()
+uint8_t KeyboardLEDDriver::getBrightness()
 {
-    return DefyHands::ledBrightnessLedDriver();
+    return KeyboardHands::ledBrightnessLedDriver();
 }
 
-void DefyLEDDriver::setBrightnessUG(uint8_t brightnessUG)
+void KeyboardLEDDriver::setBrightnessUG(uint8_t brightnessUG)
 {
-    DefyHands::ledBrightnessUG(brightnessUG);
+    KeyboardHands::ledBrightnessUG(brightnessUG);
 }
 
-uint8_t DefyLEDDriver::getBrightnessUG()
+uint8_t KeyboardLEDDriver::getBrightnessUG()
 {
-    return DefyHands::ledBrightnessUG();
+    return KeyboardHands::ledBrightnessUG();
 }
 // Wireless setters and getters
-void DefyLEDDriver::setBrightnessWireless(uint8_t brightness)
+void KeyboardLEDDriver::setBrightnessWireless(uint8_t brightness)
 {
-    DefyHands::ledBrightnessLedDriverWireless(brightness);
+    KeyboardHands::ledBrightnessLedDriverWireless(brightness);
 }
 
-uint8_t DefyLEDDriver::getBrightnessWireless()
+uint8_t KeyboardLEDDriver::getBrightnessWireless()
 {
-    return DefyHands::ledBrightnessLedDriverWireless();
+    return KeyboardHands::ledBrightnessLedDriverWireless();
 }
 
-void DefyLEDDriver::setBrightnessUGWireless(uint8_t brightnessUG)
+void KeyboardLEDDriver::setBrightnessUGWireless(uint8_t brightnessUG)
 {
-    DefyHands::ledBrightnessUGWireless(brightnessUG);
+    KeyboardHands::ledBrightnessUGWireless(brightnessUG);
 }
 
-uint8_t DefyLEDDriver::getBrightnessUGWireless()
+uint8_t KeyboardLEDDriver::getBrightnessUGWireless()
 {
-    return DefyHands::ledBrightnessUGWireless();
+    return KeyboardHands::ledBrightnessUGWireless();
 }
 
-void DefyLEDDriver::syncLeds()
+void KeyboardLEDDriver::syncLeds()
 {
     bool is_enabled = ::LEDControl.isEnabled();
 
     if (leds_enabled_ != is_enabled)
     {
         leds_enabled_ = is_enabled;
-        DefyHands::sendPacketBrightness();
+        KeyboardHands::sendPacketBrightness();
     }
 
     if (isLEDChangedNeuron)
@@ -416,7 +416,7 @@ void DefyLEDDriver::syncLeds()
     }
 }
 
-void DefyLEDDriver::updateNeuronLED()
+void KeyboardLEDDriver::updateNeuronLED()
 {
     // static constexpr struct
     // {
@@ -430,13 +430,13 @@ void DefyLEDDriver::updateNeuronLED()
   analogWrite(pins.b, ((256 - pgm_read_byte(&gamma8[neuronLED.b])) << 8) - 1);*/
 }
 
-void DefyLEDDriver::setCrgbAt(uint8_t i, cRGB crgb)
+void KeyboardLEDDriver::setCrgbAt(uint8_t i, cRGB crgb)
 {
     // prevent reading off the end of the led_map array
-    if (i >= DefyLEDDriverProps::led_count) return;
+    if (i >= KeyboardLEDDriverProps::led_count) return;
 
     // neuron LED
-    if (i == DefyLEDDriverProps::led_count - 2)
+    if (i == KeyboardLEDDriverProps::led_count - 2)
     {
         isLEDChangedNeuron |= !(neuronLED.r == crgb.r && neuronLED.g == crgb.g && neuronLED.b == crgb.b && neuronLED.w == crgb.w);
         neuronLED = crgb;
@@ -447,14 +447,14 @@ void DefyLEDDriver::setCrgbAt(uint8_t i, cRGB crgb)
     uint8_t sled_num = led_map[i];
     if (sled_num < LEDS_PER_HAND)
     {
-        cRGB oldColor = DefyHands::leftHand.led_data.leds[sled_num];
-        DefyHands::leftHand.led_data.leds[sled_num] = crgb;
+        cRGB oldColor = KeyboardHands::leftHand.led_data.leds[sled_num];
+        KeyboardHands::leftHand.led_data.leds[sled_num] = crgb;
         isLEDChangedLeft[uint8_t(sled_num / 8)] |= !(oldColor.r == crgb.r && oldColor.g == crgb.g && oldColor.b == crgb.b && oldColor.w == crgb.w);
     }
     else if (sled_num < 2 * LEDS_PER_HAND)
     {
-        cRGB oldColor = DefyHands::rightHand.led_data.leds[sled_num - LEDS_PER_HAND];
-        DefyHands::rightHand.led_data.leds[sled_num - LEDS_PER_HAND] = crgb;
+        cRGB oldColor = KeyboardHands::rightHand.led_data.leds[sled_num - LEDS_PER_HAND];
+        KeyboardHands::rightHand.led_data.leds[sled_num - LEDS_PER_HAND] = crgb;
         isLEDChangedRight[uint8_t((sled_num - LEDS_PER_HAND) / 8)] |=
             !(oldColor.r == crgb.r && oldColor.g == crgb.g && oldColor.b == crgb.b && oldColor.w == crgb.w);
     }
@@ -471,18 +471,18 @@ void DefyLEDDriver::setCrgbAt(uint8_t i, cRGB crgb)
 //   neuronLED = crgb;
 // }
 
-cRGB DefyLEDDriver::getCrgbAt(uint8_t i)
+cRGB KeyboardLEDDriver::getCrgbAt(uint8_t i)
 {
-    if (i >= DefyLEDDriverProps::led_count) return {0, 0, 0};
+    if (i >= KeyboardLEDDriverProps::led_count) return {0, 0, 0};
 
     uint8_t sled_num = led_map[i];
     if (sled_num < LEDS_PER_HAND)
     {
-        return DefyHands::leftHand.led_data.leds[sled_num];
+        return KeyboardHands::leftHand.led_data.leds[sled_num];
     }
     else if (sled_num < 2 * LEDS_PER_HAND)
     {
-        return DefyHands::rightHand.led_data.leds[sled_num - LEDS_PER_HAND];
+        return KeyboardHands::rightHand.led_data.leds[sled_num - LEDS_PER_HAND];
     }
     else
     {
@@ -490,7 +490,7 @@ cRGB DefyLEDDriver::getCrgbAt(uint8_t i)
     }
 }
 
-void DefyLEDDriver::setup()
+void KeyboardLEDDriver::setup()
 {
     // arduino zero analogWrite(255) isn't fully on as its actually working with a
     // 16bit counter and the mapping is a bit shift.
@@ -502,36 +502,36 @@ void DefyLEDDriver::setup()
 
 /********* Key scanner *********/
 
-defy_wireless::key_data DefyKeyScanner::leftHandState;
-defy_wireless::key_data DefyKeyScanner::rightHandState;
-defy_wireless::key_data DefyKeyScanner::previousLeftHandState;
-defy_wireless::key_data DefyKeyScanner::previousRightHandState;
-defy_wireless::key_data DefyKeyScanner::leftHandMask;
-defy_wireless::key_data DefyKeyScanner::rightHandMask;
+dygma_keyboards::key_data KeyboardKeyScanner::leftHandState;
+dygma_keyboards::key_data KeyboardKeyScanner::rightHandState;
+dygma_keyboards::key_data KeyboardKeyScanner::previousLeftHandState;
+dygma_keyboards::key_data KeyboardKeyScanner::previousRightHandState;
+dygma_keyboards::key_data KeyboardKeyScanner::leftHandMask;
+dygma_keyboards::key_data KeyboardKeyScanner::rightHandMask;
 
-void DefyKeyScanner::scanMatrix()
+void KeyboardKeyScanner::scanMatrix()
 {
     usbConnectionsStateMachine();
     readMatrix();
     actOnMatrixScan();
 }
 
-void DefyKeyScanner::readMatrix()
+void KeyboardKeyScanner::readMatrix()
 {
     previousLeftHandState = leftHandState;
     previousRightHandState = rightHandState;
 
-    if (DefyHands::leftHand.newKey())
+    if (KeyboardHands::leftHand.newKey())
     {
-        leftHandState = DefyHands::leftHand.getKeyData();
+        leftHandState = KeyboardHands::leftHand.getKeyData();
     }
-    if (DefyHands::rightHand.newKey())
+    if (KeyboardHands::rightHand.newKey())
     {
-        rightHandState = DefyHands::rightHand.getKeyData();
+        rightHandState = KeyboardHands::rightHand.getKeyData();
     }
 }
 
-void DefyKeyScanner::actOnMatrixScan()
+void KeyboardKeyScanner::actOnMatrixScan()
 {
     for (uint8_t row = 0; row < Props_::matrix_rows; row++)
     {
@@ -578,7 +578,7 @@ void DefyKeyScanner::actOnMatrixScan()
     }
 }
 
-void DefyKeyScanner::maskKey(KeyAddr key_addr)
+void KeyboardKeyScanner::maskKey(KeyAddr key_addr)
 {
     if (!key_addr.isValid()) return;
 
@@ -595,7 +595,7 @@ void DefyKeyScanner::maskKey(KeyAddr key_addr)
     }
 }
 
-void DefyKeyScanner::unMaskKey(KeyAddr key_addr)
+void KeyboardKeyScanner::unMaskKey(KeyAddr key_addr)
 {
     if (!key_addr.isValid()) return;
 
@@ -612,7 +612,7 @@ void DefyKeyScanner::unMaskKey(KeyAddr key_addr)
     }
 }
 
-bool DefyKeyScanner::isKeyMasked(KeyAddr key_addr)
+bool KeyboardKeyScanner::isKeyMasked(KeyAddr key_addr)
 {
     if (!key_addr.isValid()) return false;
 
@@ -629,13 +629,13 @@ bool DefyKeyScanner::isKeyMasked(KeyAddr key_addr)
     }
 }
 
-void DefyKeyScanner::maskHeldKeys()
+void KeyboardKeyScanner::maskHeldKeys()
 {
     memcpy(leftHandMask.rows, leftHandState.rows, sizeof(leftHandMask));
     memcpy(rightHandMask.rows, rightHandState.rows, sizeof(rightHandMask));
 }
 
-bool DefyKeyScanner::isKeyswitchPressed(KeyAddr key_addr)
+bool KeyboardKeyScanner::isKeyswitchPressed(KeyAddr key_addr)
 {
     auto row = key_addr.row();
     auto col = key_addr.col();
@@ -650,7 +650,7 @@ bool DefyKeyScanner::isKeyswitchPressed(KeyAddr key_addr)
     }
 }
 
-bool DefyKeyScanner::wasKeyswitchPressed(KeyAddr key_addr)
+bool KeyboardKeyScanner::wasKeyswitchPressed(KeyAddr key_addr)
 {
     auto row = key_addr.row();
     auto col = key_addr.col();
@@ -665,17 +665,17 @@ bool DefyKeyScanner::wasKeyswitchPressed(KeyAddr key_addr)
     }
 }
 
-uint8_t DefyKeyScanner::pressedKeyswitchCount()
+uint8_t KeyboardKeyScanner::pressedKeyswitchCount()
 {
     return __builtin_popcountll(leftHandState.all) + __builtin_popcountll(rightHandState.all);
 }
 
-uint8_t DefyKeyScanner::previousPressedKeyswitchCount()
+uint8_t KeyboardKeyScanner::previousPressedKeyswitchCount()
 {
     return __builtin_popcountll(previousLeftHandState.all) + __builtin_popcountll(previousRightHandState.all);
 }
 
-void DefyKeyScanner::setup()
+void KeyboardKeyScanner::setup()
 {
     static constexpr uint8_t keyscanner_pins[] = {2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
                                                   21, 22, 23, 24, 25, 26, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42};
@@ -687,7 +687,7 @@ void DefyKeyScanner::setup()
     }
 }
 
-void DefyKeyScanner::reset(void)
+void KeyboardKeyScanner::reset(void)
 {
     leftHandState.all = 0;
     rightHandState.all = 0;
@@ -695,7 +695,7 @@ void DefyKeyScanner::reset(void)
     Runtime.hid().keyboard().sendReport();
 }
 
-Communications_protocol::Devices DefyKeyScanner::leftHandDevice(void)
+Communications_protocol::Devices KeyboardKeyScanner::leftHandDevice(void)
 {
     for (const auto &connection : leftConnection)
     {
@@ -708,7 +708,7 @@ Communications_protocol::Devices DefyKeyScanner::leftHandDevice(void)
     return UNKNOWN;
 }
 
-Communications_protocol::Devices DefyKeyScanner::rightHandDevice(void)
+Communications_protocol::Devices KeyboardKeyScanner::rightHandDevice(void)
 {
     for (const auto &connection : rightConnection)
     {
@@ -721,7 +721,7 @@ Communications_protocol::Devices DefyKeyScanner::rightHandDevice(void)
     return UNKNOWN;
 }
 
-void DefyKeyScanner::usbConnectionsStateMachine()
+void KeyboardKeyScanner::usbConnectionsStateMachine()
 {
     uint32_t actualTime = millis();
     bool usbMounted = TinyUSBDevice.mounted();
@@ -770,7 +770,7 @@ void DefyKeyScanner::usbConnectionsStateMachine()
                     rightConnection[1] = BLE_DEFY_RIGHT;
                 }
 
-                DefyHands::sendPacketBrightness();
+                KeyboardHands::sendPacketBrightness();
 
                 _BleManager.setForceBle(false);
 
@@ -790,19 +790,19 @@ void DefyKeyScanner::usbConnectionsStateMachine()
     }
 }
 
-bool DefyKeyScanner::rightSideWiredConnection()
+bool KeyboardKeyScanner::rightSideWiredConnection()
 {
     return nrf_gpio_pin_read(SIDE_NRESET_2);
 }
 
-bool DefyKeyScanner::leftSideWiredConnection()
+bool KeyboardKeyScanner::leftSideWiredConnection()
 {
     return nrf_gpio_pin_read(SIDE_NRESET_1);
 }
 
-/********* DefyNrf class (Hardware plugin) *********/
+/********* KeyboardNrf class (Hardware plugin) *********/
 
-void DefyNrf::setup()
+void KeyboardNrf::setup()
 {
     // Check if we can live without this reset sides
     nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
@@ -811,44 +811,44 @@ void DefyNrf::setup()
     status_leds.init();
     status_leds.static_green(NEURON_LED_BRIGHTNESS);
 
-    DefyHands::setup();
-    DefyFocus.init();
+    KeyboardHands::setup();
+    KeyboardFocus.init();
     KeyScanner::setup();
     LEDDriver::setup();
 }
 
-void DefyLEDDriver::setCrgbNeuron(cRGB crgb)
+void KeyboardLEDDriver::setCrgbNeuron(cRGB crgb)
 {
     isLEDChangedNeuron |= !(neuronLED.r == crgb.r && neuronLED.g == crgb.g && neuronLED.b == crgb.b && neuronLED.w == crgb.w);
     neuronLED = crgb;
 }
 
-uint8_t DefyNrf::side::getPower()
+uint8_t KeyboardNrf::side::getPower()
 {
-    return DefyHands::getSidePower();
+    return KeyboardHands::getSidePower();
 }
 
-void DefyNrf::side::setPower(uint8_t power)
+void KeyboardNrf::side::setPower(uint8_t power)
 {
-    DefyHands::setSidePower(power);
+    KeyboardHands::setSidePower(power);
 }
 
-uint8_t DefyNrf::side::leftVersion()
-{
-    // TODO: Versions of keyscanner
-    return 0;
-    //  return DefyHands::hand_spi1.readVersion();
-}
-
-uint8_t DefyNrf::side::rightVersion()
+uint8_t KeyboardNrf::side::leftVersion()
 {
     // TODO: Versions of keyscanner
     return 0;
-
-    //  return DefyHands::hand_spi2.readVersion();
+    //  return KeyboardHands::hand_spi1.readVersion();
 }
 
-void DefyNrf::side::reset_sides()
+uint8_t KeyboardNrf::side::rightVersion()
+{
+    // TODO: Versions of keyscanner
+    return 0;
+
+    //  return KeyboardHands::hand_spi2.readVersion();
+}
+
+void KeyboardNrf::side::reset_sides()
 {
     nrf_gpio_cfg_output(SIDE_NRESET_1);
     nrf_gpio_cfg_output(SIDE_NRESET_2);
@@ -860,29 +860,29 @@ void DefyNrf::side::reset_sides()
     delay(50); // We should give a bit more time but for now lest leave it like this
 }
 
-void DefyNrf::side::prepareForFlash()
+void KeyboardNrf::side::prepareForFlash()
 {
     Wire::begin(100);
 }
 
-uint16_t DefyNrf::settings::keyscanInterval()
+uint16_t KeyboardNrf::settings::keyscanInterval()
 {
-    return DefyHands::keyscanInterval();
+    return KeyboardHands::keyscanInterval();
 }
 
-void DefyNrf::settings::getChipID(char *buff, uint16_t len)
+void KeyboardNrf::settings::getChipID(char *buff, uint16_t len)
 {
-    DefyHands::getChipID(buff, len);
+    KeyboardHands::getChipID(buff, len);
 }
 
-void DefyNrf::settings::get_chip_info(char *buff, uint16_t len)
+void KeyboardNrf::settings::get_chip_info(char *buff, uint16_t len)
 {
-    DefyHands::get_chip_info(buff, len);
+    KeyboardHands::get_chip_info(buff, len);
 }
 
-void DefyNrf::settings::keyscanInterval(uint16_t interval)
+void KeyboardNrf::settings::keyscanInterval(uint16_t interval)
 {
-    DefyHands::keyscanInterval(interval);
+    KeyboardHands::keyscanInterval(interval);
 }
 
 } // namespace dygma
