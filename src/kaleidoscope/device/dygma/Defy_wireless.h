@@ -59,8 +59,20 @@ using kaleidoscope::driver::led::no_led;
 struct DefyLEDDriverProps : public kaleidoscope::driver::led::BaseProps {
     static constexpr uint8_t underglow_leds  = 53;
     static constexpr uint8_t key_matrix_leds = 35;
-    static constexpr uint8_t leds_hand       = underglow_leds + key_matrix_leds;
-    static constexpr uint8_t led_count       = leds_hand * 2 + 2;  //178 This has to be par number that's why the neuron takes 2
+
+    static constexpr uint8_t underglow_leds_leftSide  = 53;  //UG Left side.
+    static constexpr uint8_t leds_hand_left  = 35;  // BL Left side
+
+    static constexpr uint8_t underglow_leds_rightSide  = 53;  // UG Right side.
+    static constexpr uint8_t leds_hand_right  = 35;  // BL Right side.
+
+    //static constexpr uint8_t leds_hand = underglow_leds + key_matrix_leds;
+    static constexpr uint8_t neuron_led = 2;
+
+    static constexpr uint8_t leds_hand       = underglow_leds_rightSide + underglow_leds_leftSide + leds_hand_right + leds_hand_left;
+    //static constexpr uint16_t led_count = leds_hand + neuron_led; //178 This has to be par number that's why the neuron takes 2
+    static constexpr uint8_t led_count = leds_hand + neuron_led; //This number needs to be par so Neuron takes two LEDs
+
 
     // clang-format off
   static constexpr uint8_t key_led_map[] = {
@@ -96,8 +108,10 @@ class DefyLEDDriver : public kaleidoscope::driver::led::Base<DefyLEDDriverProps>
     static void setBrightnessUGWireless(uint8_t brightnessUG);
     static uint8_t getBrightnessUGWireless();
     static void updateNeuronLED();
-    static constexpr uint8_t underglow_leds  = DefyLEDDriverProps::underglow_leds;
-    static constexpr uint8_t key_matrix_leds = DefyLEDDriverProps::key_matrix_leds;
+    static constexpr uint8_t underglow_leds  = DefyLEDDriverProps::underglow_leds_leftSide;
+    static constexpr uint8_t key_matrix_left = DefyLEDDriverProps::leds_hand_left;
+    static constexpr uint8_t key_matrix_right = DefyLEDDriverProps::leds_hand_right;
+    static constexpr uint8_t underglow_leds_right = DefyLEDDriverProps::underglow_leds_rightSide;
    private:
     static bool isLEDChangedNeuron;
     static bool leds_enabled_;
