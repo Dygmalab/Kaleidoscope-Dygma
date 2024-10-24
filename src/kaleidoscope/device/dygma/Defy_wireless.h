@@ -22,7 +22,7 @@
 #ifndef __DEFY_WIRELESS_H__
 #define __DEFY_WIRELESS_H__
 
-#include "kaleidoscope/device/dygma/defy_wireless/Hand.h"
+#include "kaleidoscope/device/dygma/keyboards/Hand.h"
 #include "kaleidoscope/driver/bootloader/nrf/NRF.h"
 #include "Ble_composite_dev.h"
 
@@ -39,12 +39,12 @@
 #include "libraries/KeyboardioHID/src/MultiReport/RawHID.h"
 
 
-#define DEFY_HANDS_DEBUG                    1
+#define KEYBOARD_HANDS_DEBUG                    1
 #define PRINT_KEYSWITCH_EVENT_PARAMETERS    0
 
-#ifndef DEFY_NEURON_FW_VERSION
+#ifndef KEYBOARD_NEURON_FW_VERSION
 #error "Firmware version is not specified."
-    #define DEFY_NEURON_FW_VERSION "N/A"
+    #define KEYBOARD_NEURON_FW_VERSION "N/A"
 #endif
 
 namespace kaleidoscope {
@@ -56,11 +56,23 @@ namespace dygma {
 
 using kaleidoscope::driver::led::no_led;
 
-struct DefyLEDDriverProps : public kaleidoscope::driver::led::BaseProps {
+struct KeyboardLEDDriverProps : public kaleidoscope::driver::led::BaseProps {
     static constexpr uint8_t underglow_leds  = 53;
     static constexpr uint8_t key_matrix_leds = 35;
-    static constexpr uint8_t leds_hand       = underglow_leds + key_matrix_leds;
-    static constexpr uint8_t led_count       = leds_hand * 2 + 2;  //178 This has to be par number that's why the neuron takes 2
+
+    static constexpr uint8_t underglow_leds_leftSide  = 53;  //UG Left side.
+    static constexpr uint8_t leds_hand_left  = 35;  // BL Left side
+
+    static constexpr uint8_t underglow_leds_rightSide  = 53;  // UG Right side.
+    static constexpr uint8_t leds_hand_right  = 35;  // BL Right side.
+
+    //static constexpr uint8_t leds_hand = underglow_leds + key_matrix_leds;
+    static constexpr uint8_t neuron_led = 2;
+
+    static constexpr uint8_t leds_hand       = underglow_leds_rightSide + underglow_leds_leftSide + leds_hand_right + leds_hand_left;
+    //static constexpr uint16_t led_count = leds_hand + neuron_led; //178 This has to be par number that's why the neuron takes 2
+    static constexpr uint8_t led_count = leds_hand + neuron_led; //This number needs to be par so Neuron takes two LEDs
+
 
     // clang-format off
   static constexpr uint8_t key_led_map[] = {
@@ -77,7 +89,7 @@ struct DefyLEDDriverProps : public kaleidoscope::driver::led::BaseProps {
 
 #undef LHK
 
-class DefyLEDDriver : public kaleidoscope::driver::led::Base<DefyLEDDriverProps> {
+class KeyboardLEDDriver : public kaleidoscope::driver::led::Base<KeyboardLEDDriverProps> {
    public:
     static void setup();
 
@@ -96,8 +108,10 @@ class DefyLEDDriver : public kaleidoscope::driver::led::Base<DefyLEDDriverProps>
     static void setBrightnessUGWireless(uint8_t brightnessUG);
     static uint8_t getBrightnessUGWireless();
     static void updateNeuronLED();
-    static constexpr uint8_t underglow_leds  = DefyLEDDriverProps::underglow_leds;
-    static constexpr uint8_t key_matrix_leds = DefyLEDDriverProps::key_matrix_leds;
+    static constexpr uint8_t underglow_leds  = KeyboardLEDDriverProps::underglow_leds_leftSide;
+    static constexpr uint8_t key_matrix_left = KeyboardLEDDriverProps::leds_hand_left;
+    static constexpr uint8_t key_matrix_right = KeyboardLEDDriverProps::leds_hand_right;
+    static constexpr uint8_t underglow_leds_right = KeyboardLEDDriverProps::underglow_leds_rightSide;
    private:
     static bool isLEDChangedNeuron;
     static bool leds_enabled_;
@@ -109,7 +123,7 @@ class DefyLEDDriver : public kaleidoscope::driver::led::Base<DefyLEDDriverProps>
     // led_count + 1, to account for the Neuron's LED. The last one is the
     // Neuron's LED, never send that to SLED.
     // clang-format off
-  static constexpr uint8_t led_map[DefyLEDDriverProps::led_count] = {
+  static constexpr uint8_t led_map[KeyboardLEDDriverProps::led_count] = {
         // left side - 35 keys includes LP
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
         30, 31, 32, 33, 34,
@@ -136,7 +150,7 @@ class DefyLEDDriver : public kaleidoscope::driver::led::Base<DefyLEDDriverProps>
     // clang-format on
 };
 
-struct DefyKeyScannerProps : public kaleidoscope::driver::keyscanner::BaseProps {
+struct KeyboardKeyScannerProps : public kaleidoscope::driver::keyscanner::BaseProps {
     static constexpr uint8_t matrix_rows    = 5;
     static constexpr uint8_t matrix_columns = 16;
     typedef MatrixAddr<matrix_rows, matrix_columns> KeyAddr;
@@ -145,10 +159,10 @@ struct DefyKeyScannerProps : public kaleidoscope::driver::keyscanner::BaseProps 
     static constexpr uint8_t right_columns = matrix_columns - left_columns;
 };
 
-class DefyKeyScanner : public kaleidoscope::driver::keyscanner::Base<DefyKeyScannerProps> {
+class KeyboardKeyScanner : public kaleidoscope::driver::keyscanner::Base<KeyboardKeyScannerProps> {
    private:
-    typedef DefyKeyScanner ThisType;
-    typedef DefyKeyScannerProps Props_;
+    typedef KeyboardKeyScanner ThisType;
+    typedef KeyboardKeyScannerProps Props_;
 
    public:
     static void setup();
@@ -173,35 +187,35 @@ class DefyKeyScanner : public kaleidoscope::driver::keyscanner::Base<DefyKeyScan
     static void reset(void);
 
    protected:
-    static defy_wireless::key_data leftHandState;
-    static defy_wireless::key_data rightHandState;
-    static defy_wireless::key_data previousLeftHandState;
-    static defy_wireless::key_data previousRightHandState;
+    static dygma_keyboards::key_data leftHandState;
+    static dygma_keyboards::key_data rightHandState;
+    static dygma_keyboards::key_data previousLeftHandState;
+    static dygma_keyboards::key_data previousRightHandState;
 
-    static defy_wireless::key_data leftHandMask;
-    static defy_wireless::key_data rightHandMask;
+    static dygma_keyboards::key_data leftHandMask;
+    static dygma_keyboards::key_data rightHandMask;
     static void usbConnectionsStateMachine();
 };
 
-//struct DefySideFlasherProps : public kaleidoscope::util::flasher::BaseProps {};
+//struct KeyboardSideFlasherProps : public kaleidoscope::util::flasher::BaseProps {};
 
-struct DefyProps : kaleidoscope::device::BaseProps {
-    typedef DefyLEDDriverProps LEDDriverProps;
-    typedef DefyLEDDriver LEDDriver;
-    typedef DefyKeyScannerProps KeyScannerProps;
-    typedef DefyKeyScanner KeyScanner;
-    //typedef DefyStorageProps StorageProps;
+struct KeyboardProps : kaleidoscope::device::BaseProps {
+    typedef KeyboardLEDDriverProps LEDDriverProps;
+    typedef KeyboardLEDDriver LEDDriver;
+    typedef KeyboardKeyScannerProps KeyScannerProps;
+    typedef KeyboardKeyScanner KeyScanner;
+    //typedef KeyboardStorageProps StorageProps;
     typedef kaleidoscope::driver::bootloader::nrf::nrfBoot Bootloader;
     typedef kaleidoscope::driver::storage::Flash<StorageProps> Storage;
 
-    //typedef DefySideFlasherProps SideFlasherProps;
+    //typedef KeyboardSideFlasherProps SideFlasherProps;
     //typedef kaleidoscope::util::flasher::KeyboardioI2CBootloader<SideFlasherProps> SideFlasher;
     static constexpr const char *short_name = "defy_wireless";
 };
 
-class DefyNrf : public kaleidoscope::device::Base<DefyProps> {
+class KeyboardNrf : public kaleidoscope::device::Base<KeyboardProps> {
     /*private:
-  static DefyProps::SideFlasher SideFlasher;*/
+  static KeyboardProps::SideFlasher SideFlasher;*/
 
    public:
     static void setup();
@@ -244,7 +258,7 @@ class DefyNrf : public kaleidoscope::device::Base<DefyProps> {
 }  // namespace dygma
 }  // namespace device
 
-typedef kaleidoscope::device::dygma::DefyNrf Device;
+typedef kaleidoscope::device::dygma::KeyboardNrf Device;
 
 }  // namespace kaleidoscope
 

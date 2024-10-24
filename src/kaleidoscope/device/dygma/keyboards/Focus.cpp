@@ -19,13 +19,13 @@
 
 #include "kaleidoscope/Runtime.h"
 #include <Kaleidoscope-FocusSerial.h>
-#include "kaleidoscope/device/dygma/defy_wireless/Focus.h"
+#include "kaleidoscope/device/dygma/keyboards/Focus.h"
 #include "Communications.h"
 
 namespace kaleidoscope {
 namespace device {
 namespace dygma {
-namespace defy_wireless {
+namespace dygma_keyboards {
 
 EventHandlerResult Focus::onFocusEvent(const char *command) {
     if (::Focus.handleHelp(command,
@@ -67,7 +67,7 @@ EventHandlerResult Focus::onFocusEvent(const char *command) {
     if (strcmp(command + 9, "firmware") == 0) {
         NRF_LOG_DEBUG("read request: hardware.firmware");
 
-        ::Focus.send<char *>(DEFY_NEURON_FW_VERSION);
+        ::Focus.send<char *>(KEYBOARD_NEURON_FW_VERSION);
 
         return EventHandlerResult::EVENT_CONSUMED;
     }
@@ -141,10 +141,10 @@ EventHandlerResult Focus::onFocusEvent(const char *command) {
 void Focus::init() {
 }
 
-}  // namespace defy_wireless
+}  // namespace dygma_keyboards
 }  // namespace dygma
 }  // namespace device
 }  // namespace kaleidoscope
 
-kaleidoscope::device::dygma::defy_wireless::Focus DefyFocus;
+kaleidoscope::device::dygma::dygma_keyboards::Focus KeyboardFocus;
 #endif

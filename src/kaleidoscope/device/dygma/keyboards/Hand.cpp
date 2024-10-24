@@ -1,7 +1,7 @@
 #ifdef ARDUINO_ARCH_NRF52
 #include "Hand.h"
 
-#include "Defy_wireless.h"
+#include DYGMA_KEYBOARD
 #include <cstring>
 
 #ifdef __cplusplus
@@ -22,7 +22,7 @@ namespace device
 {
 namespace dygma
 {
-namespace defy_wireless
+namespace dygma_keyboards
 {
 
 Hand::Hand(HandSide side) : this_device_(side)
@@ -70,7 +70,7 @@ void Hand::releaseAllKeys()
 }
 
 
-} // namespace defy_wireless
+} // namespace dygma_keyboards
 } // namespace dygma
 } // namespace device
 } // namespace kaleidoscope

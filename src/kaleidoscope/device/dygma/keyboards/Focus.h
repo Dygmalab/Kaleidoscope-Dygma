@@ -24,7 +24,7 @@
 namespace kaleidoscope {
 namespace device {
 namespace dygma {
-namespace defy_wireless {
+namespace dygma_keyboards {
 
 class Focus : public kaleidoscope::Plugin {
    public:
@@ -32,10 +32,10 @@ class Focus : public kaleidoscope::Plugin {
     EventHandlerResult onFocusEvent(const char *command);
 };
 
-}  // namespace defy_wireless
+}  // namespace dygma_keyboards
 }  // namespace dygma
 }  // namespace device
 }  // namespace kaleidoscope
 
-extern kaleidoscope::device::dygma::defy_wireless::Focus DefyFocus;
+extern kaleidoscope::device::dygma::dygma_keyboards::Focus KeyboardFocus;
 #endif
