@@ -22,7 +22,7 @@
 #ifndef __DEFY_WIRELESS_H__
 #define __DEFY_WIRELESS_H__
 
-#include "kaleidoscope/device/dygma/keyboards/Hand.h"
+#include "kaleidoscope/device/dygma/KeyboardManager/universalModules/Hand.h"
 #include "kaleidoscope/driver/bootloader/nrf/NRF.h"
 #include "Ble_composite_dev.h"
 

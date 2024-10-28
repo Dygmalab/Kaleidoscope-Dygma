@@ -1,7 +1,7 @@
 #ifdef ARDUINO_ARCH_NRF52
 #include "Hand.h"
 
-#include DYGMA_KEYBOARD
+#include "kaleidoscope/device/dygma/keyboardManager/KeyboardManager.h"
 #include <cstring>
 
 #ifdef __cplusplus

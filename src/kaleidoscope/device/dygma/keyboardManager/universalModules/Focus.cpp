@@ -1,5 +1,5 @@
 /* -*- mode: c++ -*-
- * kaleidoscope::device::dygma::raise2 -- Kaleidoscope device plugin for Dygma raise2
+ * kaleidoscope::device::dygma::Defy -- Kaleidoscope device plugin for Dygma Defy
  * Copyright (C) 2017-2019  Keyboard.io, Inc
  * Copyright (C) 2017-2019  Dygma Lab S.L.
  *
@@ -19,13 +19,14 @@
 
 #include "kaleidoscope/Runtime.h"
 #include <Kaleidoscope-FocusSerial.h>
-#include "kaleidoscope/device/dygma/raise2/Focus.h"
+#include "kaleidoscope/device/dygma/KeyboardManager/universalModules/Focus.h"
+
 #include "Communications.h"
 
 namespace kaleidoscope {
 namespace device {
 namespace dygma {
-namespace raise2 {
+namespace dygma_keyboards {
 
 EventHandlerResult Focus::onFocusEvent(const char *command) {
     if (::Focus.handleHelp(command,
@@ -59,7 +60,7 @@ EventHandlerResult Focus::onFocusEvent(const char *command) {
     if (strcmp(command + 9, "version") == 0) {
         NRF_LOG_DEBUG("read request: hardware.version");
 
-        ::Focus.send<char *>("Dygma Raise 2");
+        ::Focus.send<char *>("Dygma Defy Wireless");
 
         return EventHandlerResult::EVENT_CONSUMED;
     }
@@ -67,7 +68,7 @@ EventHandlerResult Focus::onFocusEvent(const char *command) {
     if (strcmp(command + 9, "firmware") == 0) {
         NRF_LOG_DEBUG("read request: hardware.firmware");
 
-        ::Focus.send<char *>(RAISE2_NEURON_FW_VERSION);
+        ::Focus.send<char *>(KEYBOARD_NEURON_FW_VERSION);
 
         return EventHandlerResult::EVENT_CONSUMED;
     }
@@ -141,10 +142,10 @@ EventHandlerResult Focus::onFocusEvent(const char *command) {
 void Focus::init() {
 }
 
-}  // namespace raise2
+}  // namespace dygma_keyboards
 }  // namespace dygma
 }  // namespace device
 }  // namespace kaleidoscope
 
-kaleidoscope::device::dygma::raise2::Focus Raise2Focus;
+kaleidoscope::device::dygma::dygma_keyboards::Focus KeyboardFocus;
 #endif
