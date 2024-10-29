@@ -1,7 +1,7 @@
 #ifndef KEYBOARDMANAGER_H
 #define KEYBOARDMANAGER_H
 /* -*- mode: c++ -*-
- * kaleidoscope::device::dygma::raise2 -- Kaleidoscope device plugin for Dygma raise2
+ * kaleidoscope::device::dygma::keyboard -- Kaleidoscope device plugin for Dygma keyboards
  * Copyright (C) 2017-2020  Keyboard.io, Inc
  * Copyright (C) 2017-2020  Dygma Lab S.L.
  *
@@ -70,11 +70,10 @@ struct KeyboardLEDDriverProps : public kaleidoscope::driver::led::BaseProps {
     static constexpr uint8_t underglow_leds_rightSide  = UNDERGLOW_LEDS_RIGHT_SIDE;  // UG Right side.
     static constexpr uint8_t leds_hand_right  = LEDS_HAND_RIGHT;  // BL Right side.
 
-    //static constexpr uint8_t leds_hand = underglow_leds + key_matrix_leds;
     static constexpr uint8_t neuron_led = NEURON_LED;
 
     static constexpr uint8_t leds_hand       = underglow_leds_rightSide + underglow_leds_leftSide + leds_hand_right + leds_hand_left;
-    //static constexpr uint16_t led_count = leds_hand + neuron_led; //149 This has to be par number that's why the neuron takes 2
+
     static constexpr uint8_t led_count = leds_hand + neuron_led; //This number needs to be par so Neuron takes two LEDs
     // clang-format off
 // clang-format off
@@ -116,10 +115,6 @@ class KeyboardLEDDriver : public kaleidoscope::driver::led::Base<KeyboardLEDDriv
 
     static constexpr uint8_t lph = LEDS_PER_HAND;
     // clang-format off
-    // led_count + 1, to account for the Neuron's LED. The last one is the
-    // Neuron's LED, never send that to SLED.
-    //static constexpr uint8_t led_map[][Raise2LEDDriverProps::led_count + 1] = {
-//constexpr static uint8_t led_mapping_left[]={0,1,2,3,4,5,6,0xff,7,8,9,10,11,12,13,100,14,15,16,17,18,19,100,21,21,22,23,24,25,26,20,28,27,28,29,30,33,31,32,35};
     static constexpr uint8_t led_map[KeyboardLEDDriverProps::led_count] = LED_MAP;
     // clang-format on
 };
@@ -171,25 +166,18 @@ class KeyboardKeyScanner : public kaleidoscope::driver::keyscanner::Base<Keyboar
     static void usbConnectionsStateMachine();
 };
 
-//struct KeyboardSideFlasherProps : public kaleidoscope::util::flasher::BaseProps {};
-
 struct KeyboardProps : kaleidoscope::device::BaseProps {
     typedef KeyboardLEDDriverProps LEDDriverProps;
     typedef KeyboardLEDDriver LEDDriver;
     typedef KeyboardKeyScannerProps KeyScannerProps;
     typedef KeyboardKeyScanner KeyScanner;
-    //typedef KeyboardStorageProps StorageProps;
     typedef kaleidoscope::driver::bootloader::nrf::nrfBoot Bootloader;
     typedef kaleidoscope::driver::storage::Flash<StorageProps> Storage;
 
-    //typedef KeyboardSideFlasherProps SideFlasherProps;
-    //typedef kaleidoscope::util::flasher::KeyboardioI2CBootloader<SideFlasherProps> SideFlasher;
     static constexpr const char *short_name = SHORT_NAME;
 };
 
 class KeyboardNrf : public kaleidoscope::device::Base<KeyboardProps> {
-    /*private:
-  static KeyboardProps::SideFlasher SideFlasher;*/
 
    public:
     static void setup();
@@ -201,9 +189,6 @@ class KeyboardNrf : public kaleidoscope::device::Base<KeyboardProps> {
         return Serial;
     }
 
-    /*auto sideFlasher() -> decltype(SideFlasher) & {
-    return SideFlasher;
-  }*/
     struct side {
         uint8_t getPower();
         void setPower(uint8_t power);
