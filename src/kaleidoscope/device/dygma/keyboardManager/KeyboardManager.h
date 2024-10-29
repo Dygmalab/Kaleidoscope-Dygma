@@ -25,7 +25,7 @@
 #ifndef __RAISE_2_H__
 #define __RAISE_2_H__
 
-#include DYGMA_KEYBOARD
+#include "keyboard_config.h"
 
 #include "kaleidoscope/device/dygma/KeyboardManager/universalModules/Hand.h"
 #include "kaleidoscope/driver/bootloader/nrf/NRF.h"
