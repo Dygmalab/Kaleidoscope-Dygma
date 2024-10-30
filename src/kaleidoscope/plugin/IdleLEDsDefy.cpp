@@ -19,11 +19,7 @@
 
 #include "Communications.h"
 
-#if COMPILE_DEFY_KEYBOARD
-    #include "Defy_wireless.h"
-#elif COMPILE_RAISE2_KEYBOARD
-    #include "Raise2.h"
-#endif
+#include "KeyboardManager.h"
 
 #include <Kaleidoscope-EEPROM-Settings.h>
 #include <Kaleidoscope-FocusSerial.h>

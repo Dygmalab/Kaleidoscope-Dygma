@@ -1,5 +1,5 @@
 /* -*- mode: c++ -*-
- * kaleidoscope::device::dygma::raise2 -- Kaleidoscope device plugin for Dygma raise2
+ * kaleidoscope::device::dygma::Defy -- Kaleidoscope device plugin for Dygma Defy
  * Copyright (C) 2017-2019  Keyboard.io, Inc
  * Copyright (C) 2017-2019  Dygma Lab S.L.
  *
@@ -24,7 +24,7 @@
 namespace kaleidoscope {
 namespace device {
 namespace dygma {
-namespace raise2 {
+namespace dygma_keyboards {
 
 template <typename _Firmware>
 class SideFlash : public kaleidoscope::Plugin {
