@@ -19,7 +19,7 @@
 
 #include "Communications.h"
 
-#include "kaleidoscope/device/dygma/keyboardManager/KeyboardManager.h"
+#include "KeyboardManager.h"
 
 #include <Kaleidoscope-EEPROM-Settings.h>
 #include <Kaleidoscope-FocusSerial.h>
