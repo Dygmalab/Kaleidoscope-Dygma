@@ -22,9 +22,6 @@
 
 #pragma once
 
-#ifndef __RAISE_2_H__
-#define __RAISE_2_H__
-
 #include "keyboard_config.h"
 
 #include "kaleidoscope/device/dygma/KeyboardManager/universalModules/Hand.h"
@@ -220,9 +217,6 @@ class KeyboardNrf : public kaleidoscope::device::Base<KeyboardProps> {
 typedef kaleidoscope::device::dygma::KeyboardNrf Device;
 
 }  // namespace kaleidoscope
-
-
-#endif // __RAISE_2_H__
 
 #endif // ARDUINO_ARCH_NRF52
 #endif //KEYBOARDMANAGER_H
