@@ -19,7 +19,7 @@
 
 #include "kaleidoscope/Runtime.h"
 #include <Kaleidoscope-FocusSerial.h>
-#include "kaleidoscope/device/dygma/KeyboardManager/universalModules/Focus.h"
+#include "Focus.h"
 
 #include "Communications.h"
 
