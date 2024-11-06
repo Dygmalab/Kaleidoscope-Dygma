@@ -60,7 +60,7 @@ EventHandlerResult Focus::onFocusEvent(const char *command) {
     if (strcmp(command + 9, "version") == 0) {
         NRF_LOG_DEBUG("read request: hardware.version");
 
-        ::Focus.send<char *>("Dygma Defy Wireless");
+        ::Focus.send<char *>(HARDWARE_VERSION_NAME);
 
         return EventHandlerResult::EVENT_CONSUMED;
     }
