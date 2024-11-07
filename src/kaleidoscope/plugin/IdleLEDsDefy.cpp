@@ -151,7 +151,7 @@ EventHandlerResult PersistentIdleDefyLEDs::onSetup()
     save_power_save_settings(idle_time);
     Runtime.storage().get(settings_base_, Power_save);
 
-    Power_save.sides_sleep_idle_wired_t_ms = sides_sleep_idle_t_ms_default; // Default value for wired mode 10 minutes.
+    Power_save.sides_sleep_idle_wired_t_ms = sides_sleep_idle_wired_t_ms_default; // Default value for wired mode 20 minutes.
 
     return EventHandlerResult::OK;
 }
