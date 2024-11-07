@@ -31,11 +31,13 @@ namespace kaleidoscope
 namespace plugin
 {
 
+//Deep sleep flag
 bool IdleLEDsDefy::sleep_ = false;
 IdleLEDsDefy::IdleTime IdleLEDsDefy::Power_save;
 uint32_t IdleLEDsDefy::start_time_wired = 0;
 uint32_t IdleLEDsDefy::start_time_wireless = 0;
 uint32_t IdleLEDsDefy::start_time_true_sleep = 0;
+uint32_t IdleLEDsDefy::start_time_true_sleep_wired = 0;
 bool IdleLEDsDefy::idle_ = false; // Initialize with false
 
 uint32_t IdleLEDsDefy::ms_to_seconds(uint32_t time_in_ms)
@@ -62,7 +64,19 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
             Runtime.hasTimeExpired(start_time_wired, Power_save.leds_off_usb_idle_t_ms))
         {
             ::LEDControl.disable();
+            start_time_true_sleep_wired = Runtime.millisAtCycleStart();
+            sleep_ = false;
             idle_ = true;
+        }
+
+        if (!::LEDControl.isEnabled() && 
+            !sleep_ &&
+            Runtime.hasTimeExpired(start_time_true_sleep_wired, Power_save.sides_sleep_idle_wired_t_ms))
+        {
+            Communications_protocol::Packet p{};
+            p.header.command = Communications_protocol::SLEEP;
+            Communications.sendPacket(p);
+            sleep_ = true;
         }
     }
     else
@@ -105,6 +119,7 @@ EventHandlerResult IdleLEDsDefy::onKeyswitchEvent(Key &mapped_key, KeyAddr key_a
     start_time_wired = Runtime.millisAtCycleStart();
     start_time_wireless = Runtime.millisAtCycleStart();
     start_time_true_sleep = Runtime.millisAtCycleStart();
+    start_time_true_sleep_wired = Runtime.millisAtCycleStart();
     sleep_ = false;
     return EventHandlerResult::OK;
 }
@@ -135,6 +150,8 @@ EventHandlerResult PersistentIdleDefyLEDs::onSetup()
     }
     save_power_save_settings(idle_time);
     Runtime.storage().get(settings_base_, Power_save);
+
+    Power_save.sides_sleep_idle_wired_t_ms = sides_sleep_idle_t_ms_default; // Default value for wired mode 10 minutes.
 
     return EventHandlerResult::OK;
 }

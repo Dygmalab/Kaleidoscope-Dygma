@@ -37,13 +37,14 @@ class IdleLEDsDefy : public kaleidoscope::Plugin
             uint32_t sides_sleep_idle_t_ms;     // Timeout to put to sleep the keyboard sides [ms].
             uint32_t leds_off_usb_idle_t_ms;    // Power off time for LEDs, when the n2 is in USB mode [ms].
             uint32_t leds_off_ble_idle_t_ms;    // Power off time for LEDs, when the n2 is in BLE mode [ms].
+            uint32_t sides_sleep_idle_wired_t_ms; // Timeout to put to sleep the keyboard sides when wired [ms].
         };
 
         static IdleTime Power_save;
         static constexpr const uint32_t leds_off_usb_idle_t_ms_default = 600000;  // 600.000 ms = 10 minutes
         static constexpr const uint32_t leds_off_ble_idle_t_ms_default = 300000;  // 300.000 ms = 5 minutes
         static constexpr const uint32_t sides_sleep_idle_t_ms_default = 60000;    // 60.000 ms = 1 minutes
-
+        
         static void save_power_save_settings(const IdleTime& data);
         static uint32_t ms_to_seconds(uint32_t time_in_ms);
 
@@ -57,6 +58,7 @@ class IdleLEDsDefy : public kaleidoscope::Plugin
         static uint32_t start_time_wired;
         static uint32_t start_time_wireless;
         static uint32_t start_time_true_sleep;
+        static uint32_t start_time_true_sleep_wired;
         static bool sleep_;
 };
 
