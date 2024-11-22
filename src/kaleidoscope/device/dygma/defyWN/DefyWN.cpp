@@ -29,27 +29,9 @@
 #include "DefyWN.h"
 #include "Colormap-Defy.h"
 #include "Communications_protocol.h"
-#include "kaleidoscope/device/dygma/defyWN/Hand.h"
+#include "kaleidoscope/device/dygma/defyWN/universalModules/Hand.h"
 
-#define I2C_SDA_PIN         26  // SWe 20220719: I2C1 data out-/in-put, MASTER role
-#define I2C_SCL_PIN         27  // SWe 20220719: I2C1 clock output, MASTER role
-#define WIRE_               Wire1
-#define I2C_CLOCK_KHZ       100
-#define I2C_FLASH_CLOCK_KHZ 100  // flashing doesn't work reliably at higher clock speeds
-//#define SIDE_POWER 1  // side power switch pa10; SWe 20220719: old, used in Neuron
-#define SIDE_nRESET_1 22  //19   // SWe 20220719: nRESET signal OUT to keyboard side 1; HIGH = running, LOW = reset
-#define SIDE_nRESET_2 10  //12   // SWe 20220719: nRESET signal OUT to keyboard side 2; HIGH = running, LOW = reset
-#define nPWR_OK       1   // SWe 20220719: Power nOK IN-PULLUP from the 3.3V LDO, open drain, needs internal pull-up. NOTE: this is not implemented in the Development Board, only in the real WIRED Neuron2.
-// SWe 20220719: LED pins
-#define RGBW_LED_RED   6  // SWe 20220719: RED RGBW led OUT, PWM3 A can be used to control its intensity
-#define RGBW_LED_GREEN 0  // SWe 20220719: GREEN RGBW led OUT, PWM0 A can be used to control its intensity
-#define RGBW_LED_BLUE  2  // SWe 20220719: BLUE RGBW led OUT, PWM1 A can be used to control its intensity
-#define RGBW_LED_WHITE 4  // SWe 20220719: WHITE RGBW led OUT, PWM2 A can be used to control its intensity
-// SWe 20220719: analog pins
-#define USB_CC1 28  // SWe 20220719: USB CC1 pin, can be used to check how much power the host does support by checking its analog value
-#define USB_CC2 29  // SWe 20220719: USB CC2 pin, can be used to check how much power the host does support by checking its analog value
-// SWe 20220719: ADC Vref input, tied to 3.3V with resistor and capacitor for filtering and buffering
-// SWe 20220719: optional pins
+#include "common.h"
 
 namespace kaleidoscope {
 namespace device {
@@ -515,6 +497,15 @@ Devices KeyScannerWN::leftHandDevice() {
 Devices KeyScannerWN::rightHandDevice() {
  return rightConnection[0];
 }
+
+bool KeyScannerWN::rightSideWiredConnection() {
+return gpio_get(SIDE_nRESET_2);
+}
+
+bool KeyScannerWN::leftSideWiredConnection(){
+  return gpio_get(SIDE_nRESET_1);
+}
+
 }  // namespace dygma
 }  // namespace device
 }  // namespace kaleidoscope

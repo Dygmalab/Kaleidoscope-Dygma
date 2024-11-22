@@ -20,6 +20,8 @@
 #ifndef __BOOTLOADER_UTIL_H_
 #define __BOOTLOADER_UTIL_H_
 
+#ifdef ARDUINO_ARCH_NRF52
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -32,5 +34,7 @@ class bldrUtil
 
     private:
 };
+
+#endif /* ARDUINO_ARCH_NRF52 */
 
 #endif /* __BOOTLOADER_UTIL_H_ */

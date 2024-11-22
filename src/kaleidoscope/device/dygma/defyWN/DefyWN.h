@@ -28,7 +28,7 @@
 
 #include <Arduino.h>
 #include <string>
-#include "kaleidoscope/device/dygma/defyWN/Hand.h"
+#include "universalModules/Hand.h"
 
 #define CRGB(r, g, b) \
  (cRGB) {            \
@@ -166,6 +166,10 @@ public:
  static void setKeyscanInterval(uint8_t interval);
 
  static void reset();
+
+ static bool leftSideWiredConnection();
+ static bool rightSideWiredConnection();
+
 
  inline static defyWN::key_data leftHandState;
  inline static defyWN::key_data rightHandState;
