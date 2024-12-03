@@ -31,10 +31,6 @@ namespace device {
 namespace dygma {
 namespace defyWN {
 
-#ifndef WIRED_FIRMWARE_VERSION
-#define WIRED_FIRMWARE_VERSION "<unknown>"
-#endif
-
 EventHandlerResult SettingsConfigurator::onFocusEvent(const char *command) {
   if (::Focus.handleHelp(command,
                          PSTR("hardware.version\n"
@@ -54,7 +50,7 @@ EventHandlerResult SettingsConfigurator::onFocusEvent(const char *command) {
   }
 
   if (strcmp_P(command + 9, PSTR("firmware")) == 0) {
-    ::Focus.send(WIRED_FIRMWARE_VERSION);
+    ::Focus.send(DEFY_FW_VERSION);
     return EventHandlerResult::EVENT_CONSUMED;
   }
 

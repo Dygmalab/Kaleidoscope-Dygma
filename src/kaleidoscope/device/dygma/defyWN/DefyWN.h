@@ -20,12 +20,6 @@
 
 #ifdef ARDUINO_RASPBERRY_PI_PICO
 
-#ifndef FIRMWARE_VERSION
-#define FIRMWARE_VERSION "v1.1.0"
-#endif
-
-#define WIRED_FIRMWARE_VERSION FIRMWARE_VERSION
-
 #include <Arduino.h>
 #include <string>
 #include "universalModules/Hand.h"
