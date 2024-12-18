@@ -16,6 +16,8 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifdef ARDUINO_ARCH_NRF52
+
 #include <string.h>
 #include "bootloader_util.h"
 #include "nrf_dfu_types.h"
@@ -235,3 +237,5 @@ bool bldrUtil::update_request( void )
 {
     return _update_request( &bldr_settings );
 }
+
+#endif /* ARDUINO_ARCH_NRF52 */

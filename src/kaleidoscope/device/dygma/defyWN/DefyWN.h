@@ -20,15 +20,9 @@
 
 #ifdef ARDUINO_RASPBERRY_PI_PICO
 
-#ifndef FIRMWARE_VERSION
-#define FIRMWARE_VERSION "v1.1.0"
-#endif
-
-#define WIRED_FIRMWARE_VERSION FIRMWARE_VERSION
-
 #include <Arduino.h>
 #include <string>
-#include "kaleidoscope/device/dygma/defyWN/Hand.h"
+#include "universalModules/Hand.h"
 
 #define CRGB(r, g, b) \
  (cRGB) {            \
@@ -39,6 +33,14 @@
  (cRGB) {                \
    b, g, r, w            \
  }
+
+// LED definitions
+#define KEY_MATRIX_LEDS 35
+#define UNDERGLOW_LEDS_LEFT_SIDE 53
+#define LEDS_HAND_LEFT 35
+#define UNDERGLOW_LEDS_RIGHT_SIDE 53
+#define LEDS_HAND_RIGHT 35
+#define NEURON_LED 2
 
 #include "kaleidoscope/driver/keyscanner/Base.h"
 #include "kaleidoscope/driver/led/Base.h"
@@ -53,12 +55,30 @@ namespace device::dygma {
 using kaleidoscope::driver::led::no_led;
 
 struct LedDriverProps : public kaleidoscope::driver::led::BaseProps {
+/*
  static constexpr uint8_t underglow_leds  = 53;
  static constexpr uint8_t key_matrix_leds = 35;
  static constexpr uint8_t leds_hand       = underglow_leds + key_matrix_leds;
  static constexpr uint8_t led_count       = leds_hand * 2 + 2;  //178 This has to be par number that's why the neuron takes 2
+*/
 
- // clang-format off
+
+    static constexpr uint8_t key_matrix_leds = KEY_MATRIX_LEDS;  // Per keyboard side. ANSI only.
+
+    static constexpr uint8_t underglow_leds_leftSide  = UNDERGLOW_LEDS_LEFT_SIDE;  //UG Left side.
+    static constexpr uint8_t leds_hand_left  = LEDS_HAND_LEFT;  // BL Left side
+
+    static constexpr uint8_t underglow_leds_rightSide  = UNDERGLOW_LEDS_RIGHT_SIDE;  // UG Right side.
+    static constexpr uint8_t leds_hand_right  = LEDS_HAND_RIGHT;  // BL Right side.
+
+    static constexpr uint8_t neuron_led = NEURON_LED;
+
+    static constexpr uint8_t leds_hand       = underglow_leds_rightSide + underglow_leds_leftSide + leds_hand_right + leds_hand_left;
+
+    static constexpr uint8_t led_count = leds_hand + neuron_led; //This number needs to be par so Neuron takes two LEDs
+
+
+    // clang-format off
  static constexpr uint8_t key_led_map[] = {
          // ISO & ANSI (ANSI has no LED at 20, but this key can never be pressed so we can have just one map).
          0, 1, 2, 3, 4, 5, 6, no_led, no_led, 6 + key_matrix_leds, 5 + key_matrix_leds, 4 + key_matrix_leds, 3 + key_matrix_leds, 2 + key_matrix_leds, 1 + key_matrix_leds, 0 + key_matrix_leds,
@@ -85,8 +105,12 @@ public:
 
  static void updateNeuronLED();
 
- static constexpr uint8_t underglow_leds  = LedDriverProps::underglow_leds;
- static constexpr uint8_t key_matrix_leds = LedDriverProps::key_matrix_leds;
+/* static constexpr uint8_t underglow_leds  = LedDriverProps::underglow_leds;
+ static constexpr uint8_t key_matrix_leds = LedDriverProps::key_matrix_leds;*/
+ static constexpr uint8_t underglow_leds  = LedDriverProps::underglow_leds_leftSide;
+ static constexpr uint8_t key_matrix_left = LedDriverProps::leds_hand_left;
+ static constexpr uint8_t key_matrix_right = LedDriverProps::leds_hand_right;
+ static constexpr uint8_t underglow_leds_right = LedDriverProps::underglow_leds_rightSide;
 
  int getBrightnessWireless();
 
@@ -166,6 +190,10 @@ public:
  static void setKeyscanInterval(uint8_t interval);
 
  static void reset();
+
+ static bool leftSideWiredConnection();
+ static bool rightSideWiredConnection();
+
 
  inline static defyWN::key_data leftHandState;
  inline static defyWN::key_data rightHandState;
