@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License along with
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma GCC optimize ("O0")
+
 
 #ifdef ARDUINO_ARCH_NRF52
 
@@ -255,5 +255,4 @@ EventHandlerResult PersistentIdleDefyLEDs::onFocusEvent(const char *command)
 kaleidoscope::plugin::IdleLEDsDefy IdleLEDsDefy;
 kaleidoscope::plugin::PersistentIdleDefyLEDs PersistentIdleDefyLEDs;
 
-#pragma GCC pop_options
 #endif
