@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU General Public License along with
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#pragma GCC optimize ("O0")
+
 #ifdef ARDUINO_ARCH_NRF52
 
 #include "Communications.h"
@@ -47,7 +49,7 @@ uint32_t IdleLEDsDefy::ms_to_seconds(uint32_t time_in_ms)
 
 EventHandlerResult IdleLEDsDefy::beforeEachCycle()
 {
-    if (Power_save.leds_off_usb_idle_t_ms == 0 || Power_save.leds_off_ble_idle_t_ms == 0)
+    if (Power_save.leds_off_usb_idle_t_ms == 0 && Power_save.leds_off_ble_idle_t_ms == 0)
     {
         return EventHandlerResult::OK;
     }
@@ -61,7 +63,8 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
         !ble_innited())
     {
         if (::LEDControl.isEnabled() &&
-            Runtime.hasTimeExpired(start_time_wired, Power_save.leds_off_usb_idle_t_ms))
+            Runtime.hasTimeExpired(start_time_wired, Power_save.leds_off_usb_idle_t_ms) &&
+            Power_save.leds_off_usb_idle_t_ms != 0)
         {
             ::LEDControl.disable();
             start_time_true_sleep_wired = Runtime.millisAtCycleStart();
@@ -82,7 +85,8 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
     else
     {
         if (::LEDControl.isEnabled() &&
-            Runtime.hasTimeExpired(start_time_wireless, Power_save.leds_off_ble_idle_t_ms))
+            Runtime.hasTimeExpired(start_time_wireless, Power_save.leds_off_ble_idle_t_ms)
+            &&Power_save.leds_off_ble_idle_t_ms != 0)
         {
             ::LEDControl.disable();
             idle_ = true;
@@ -251,4 +255,5 @@ EventHandlerResult PersistentIdleDefyLEDs::onFocusEvent(const char *command)
 kaleidoscope::plugin::IdleLEDsDefy IdleLEDsDefy;
 kaleidoscope::plugin::PersistentIdleDefyLEDs PersistentIdleDefyLEDs;
 
+#pragma GCC pop_options
 #endif
