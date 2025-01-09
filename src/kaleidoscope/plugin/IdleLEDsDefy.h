@@ -49,6 +49,8 @@ class IdleLEDsDefy : public kaleidoscope::Plugin
         static void save_power_save_settings(const IdleTime& data);
         static uint32_t ms_to_seconds(uint32_t time_in_ms);
 
+        void reset_timers();
+
         EventHandlerResult beforeEachCycle();
         EventHandlerResult onKeyswitchEvent(Key &mapped_key, KeyAddr key_addr, uint8_t key_state);
 
