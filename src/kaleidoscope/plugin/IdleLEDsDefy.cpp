@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU General Public License along with
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
+
+
 #ifdef ARDUINO_ARCH_NRF52
 
 #include "Communications.h"
@@ -45,13 +47,17 @@ uint32_t IdleLEDsDefy::ms_to_seconds(uint32_t time_in_ms)
     return time_in_ms / 1000;
 }
 
+void IdleLEDsDefy::reset_timers()
+{
+    start_time_wired = Runtime.millisAtCycleStart();
+    start_time_wireless = Runtime.millisAtCycleStart();
+    start_time_true_sleep = Runtime.millisAtCycleStart();
+    start_time_true_sleep_wired = Runtime.millisAtCycleStart();
+    sleep_ = false;
+}
+
 EventHandlerResult IdleLEDsDefy::beforeEachCycle()
 {
-    if (Power_save.leds_off_usb_idle_t_ms == 0 || Power_save.leds_off_ble_idle_t_ms == 0)
-    {
-        return EventHandlerResult::OK;
-    }
-
     auto const &keyScanner = Runtime.device().keyScanner();
     auto isDefyLeftWired = keyScanner.leftSideWiredConnection();
     auto isDefyRightWired = keyScanner.rightSideWiredConnection();
@@ -60,7 +66,8 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
         isDefyRightWired &&
         !ble_innited())
     {
-        if (::LEDControl.isEnabled() &&
+        if (Power_save.leds_off_usb_idle_t_ms != 0 &&
+            ::LEDControl.isEnabled() &&
             Runtime.hasTimeExpired(start_time_wired, Power_save.leds_off_usb_idle_t_ms))
         {
             ::LEDControl.disable();
@@ -69,19 +76,29 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
             idle_ = true;
         }
 
-        if (!::LEDControl.isEnabled() && 
-            !sleep_ &&
-            Runtime.hasTimeExpired(start_time_true_sleep_wired, Power_save.sides_sleep_idle_wired_t_ms))
+        /* We force the sleep in wired mode. This is usefull when the user turn off the computer with the keyboard in wired mode*/
+        if (!sleep_)
         {
-            Communications_protocol::Packet p{};
-            p.header.command = Communications_protocol::SLEEP;
-            Communications.sendPacket(p);
-            sleep_ = true;
+            if(Runtime.millisAtCycleStart() - start_time_true_sleep_wired > sides_sleep_idle_wired_t_ms_default)
+            {
+                Communications_protocol::Packet p{};
+                p.header.device = Communications_protocol::Devices::KEYSCANNER_DEFY_RIGHT;
+                p.header.command = Communications_protocol::SLEEP;
+                Communications.sendPacket(p);
+
+                p.header.device = Communications_protocol::Devices::KEYSCANNER_DEFY_LEFT;
+                p.header.command = Communications_protocol::SLEEP;
+                Communications.sendPacket(p);
+                sleep_ = true;
+
+                start_time_true_sleep_wired = Runtime.millisAtCycleStart();
+            }
         }
     }
     else
     {
-        if (::LEDControl.isEnabled() &&
+        if (Power_save.leds_off_ble_idle_t_ms != 0
+            && ::LEDControl.isEnabled() &&
             Runtime.hasTimeExpired(start_time_wireless, Power_save.leds_off_ble_idle_t_ms))
         {
             ::LEDControl.disable();
@@ -93,7 +110,6 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
         if (Power_save.activate_keybsides_sleep &&
             !::LEDControl.isEnabled() &&
             !sleep_ &&
-            Power_save.leds_off_usb_idle_t_ms &&
             Runtime.hasTimeExpired(start_time_true_sleep, Power_save.sides_sleep_idle_t_ms))
         {
             Communications_protocol::Packet p{};
@@ -115,12 +131,8 @@ EventHandlerResult IdleLEDsDefy::onKeyswitchEvent(Key &mapped_key, KeyAddr key_a
         ::LEDControl.enable();
         idle_ = false;
     }
+    reset_timers();
 
-    start_time_wired = Runtime.millisAtCycleStart();
-    start_time_wireless = Runtime.millisAtCycleStart();
-    start_time_true_sleep = Runtime.millisAtCycleStart();
-    start_time_true_sleep_wired = Runtime.millisAtCycleStart();
-    sleep_ = false;
     return EventHandlerResult::OK;
 }
 
@@ -134,6 +146,7 @@ EventHandlerResult PersistentIdleDefyLEDs::onSetup()
                                                      start_time_wired = Runtime.millisAtCycleStart();
                                                      start_time_wireless = Runtime.millisAtCycleStart();
                                                      ::LEDControl.enable();
+                                                     reset_timers();
                                                  }));
 
     settings_base_ = ::EEPROMSettings.requestSlice(sizeof(IdleTime));
