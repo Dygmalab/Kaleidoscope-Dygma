@@ -236,7 +236,6 @@ void KeyboardHands::setup()
 
     Communications.callbacks.bind(DISCONNECTED, checkBrightness);
     Communications.callbacks.bind(CONNECTED, checkBrightness);
-    Communications.callbacks.bind(CONNECTED, ([](const Packet &) { ::LEDControl.set_mode(::LEDControl.get_mode_index()); }));
 
 
     settings_interval_ = ::EEPROMSettings.requestSlice(sizeof(keyscan_interval_));
@@ -511,7 +510,7 @@ dygma_keyboards::key_data KeyboardKeyScanner::rightHandMask;
 
 void KeyboardKeyScanner::scanMatrix()
 {
-    usbConnectionsStateMachine();
+   // usbConnectionsStateMachine();
     readMatrix();
     actOnMatrixScan();
 }
