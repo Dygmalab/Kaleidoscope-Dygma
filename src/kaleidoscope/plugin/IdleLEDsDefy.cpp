@@ -41,6 +41,7 @@ uint32_t IdleLEDsDefy::start_time_wireless = 0;
 uint32_t IdleLEDsDefy::start_time_true_sleep = 0;
 uint32_t IdleLEDsDefy::start_time_true_sleep_wired = 0;
 bool IdleLEDsDefy::idle_ = false; // Initialize with false
+bool IdleLEDsDefy::new_connection_ = false; // Initialize with false
 
 uint32_t IdleLEDsDefy::ms_to_seconds(uint32_t time_in_ms)
 {
@@ -54,6 +55,11 @@ void IdleLEDsDefy::reset_timers()
     start_time_true_sleep = Runtime.millisAtCycleStart();
     start_time_true_sleep_wired = Runtime.millisAtCycleStart();
     sleep_ = false;
+}
+
+void IdleLEDsDefy::new_connection_set()
+{
+    new_connection_ = true;
 }
 
 EventHandlerResult IdleLEDsDefy::beforeEachCycle()
@@ -143,10 +149,13 @@ EventHandlerResult PersistentIdleDefyLEDs::onSetup()
     Communications.callbacks.bind(CONNECTED, (
                                                  [this](const Packet &)
                                                  {
-                                                     start_time_wired = Runtime.millisAtCycleStart();
-                                                     start_time_wireless = Runtime.millisAtCycleStart();
-                                                     ::LEDControl.enable();
-                                                     reset_timers();
+                                                     if( new_connection_ == true )
+                                                     {
+                                                         new_connection_ = false;
+
+                                                         ::LEDControl.enable();
+                                                         reset_timers();
+                                                     }
                                                  }));
 
     settings_base_ = ::EEPROMSettings.requestSlice(sizeof(IdleTime));

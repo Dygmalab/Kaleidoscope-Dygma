@@ -50,6 +50,7 @@ class IdleLEDsDefy : public kaleidoscope::Plugin
         static uint32_t ms_to_seconds(uint32_t time_in_ms);
 
         void reset_timers();
+        void new_connection_set();
 
         EventHandlerResult beforeEachCycle();
         EventHandlerResult onKeyswitchEvent(Key &mapped_key, KeyAddr key_addr, uint8_t key_state);
@@ -63,6 +64,7 @@ class IdleLEDsDefy : public kaleidoscope::Plugin
         static uint32_t start_time_true_sleep;
         static uint32_t start_time_true_sleep_wired;
         static bool sleep_;
+        static bool new_connection_;
 };
 
 class PersistentIdleDefyLEDs : public IdleLEDsDefy
