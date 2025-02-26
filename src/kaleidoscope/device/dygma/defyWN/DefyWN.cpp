@@ -99,13 +99,11 @@ void Hands::setup() {
                                             {
                                               if (p.header.device == KEYSCANNER_DEFY_LEFT) leftConnection[0] = KEYSCANNER_DEFY_LEFT;
                                               if (p.header.device == KEYSCANNER_DEFY_RIGHT) rightConnection[0] = KEYSCANNER_DEFY_RIGHT;
-                                              ::LEDControl.enable();
                                             }));
  Communications.callbacks.bind(DISCONNECTED, (
                                                [](const Packet &p){
                                                  if (p.header.device == KEYSCANNER_DEFY_LEFT) leftConnection[0] = UNKNOWN;
                                                  if (p.header.device == KEYSCANNER_DEFY_RIGHT) rightConnection[0] = UNKNOWN;
-                                                 ::LEDControl.enable();
                                                }));
 
  Communications.callbacks.bind(CONNECTED, ([](const Packet &) { ::LEDControl.set_mode(::LEDControl.get_mode_index()); }));
