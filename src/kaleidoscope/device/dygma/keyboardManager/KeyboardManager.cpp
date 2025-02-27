@@ -199,6 +199,7 @@ void KeyboardHands::setup()
                                                          rightConnection[1] = ble_innited() ? BLE_DEFY_RIGHT : KEYSCANNER_DEFY_RIGHT;
                                                      if (p.header.device == RF_DEFY_LEFT) leftConnection[2] = RF_DEFY_LEFT;
                                                      if (p.header.device == RF_DEFY_RIGHT) rightConnection[2] = RF_DEFY_RIGHT;
+                                                     ::LEDControl.enable();
                                                  }));
     Communications.callbacks.bind(DISCONNECTED, (
                                                     [](const Packet &p)
