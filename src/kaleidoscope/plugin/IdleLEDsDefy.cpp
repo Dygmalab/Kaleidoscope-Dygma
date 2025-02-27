@@ -152,10 +152,10 @@ EventHandlerResult PersistentIdleDefyLEDs::onSetup()
                                                      if( new_connection_ == true )
                                                      {
                                                          new_connection_ = false;
-
-                                                         ::LEDControl.enable();
                                                          reset_timers();
                                                      }
+
+                                                     ::LEDControl.enable();
                                                  }));
 
     settings_base_ = ::EEPROMSettings.requestSlice(sizeof(IdleTime));
