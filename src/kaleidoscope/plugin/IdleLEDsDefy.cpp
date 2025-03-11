@@ -96,7 +96,7 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
          * */
         if( was_wired )
         {
-            was_wired =j false;
+            was_wired = false;
             start_time_true_sleep = Runtime.millisAtCycleStart();
         }
 
