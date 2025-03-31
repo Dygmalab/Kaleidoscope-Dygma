@@ -39,8 +39,11 @@ IdleLEDsDefy::IdleTime IdleLEDsDefy::Power_save;
 uint32_t IdleLEDsDefy::start_time_wired = 0;
 uint32_t IdleLEDsDefy::start_time_wireless = 0;
 uint32_t IdleLEDsDefy::start_time_true_sleep = 0;
-uint32_t IdleLEDsDefy::start_time_true_sleep_wired = 0;
+
 bool IdleLEDsDefy::idle_ = false; // Initialize with false
+bool IdleLEDsDefy::new_connection_ = false; // Initialize with false
+
+bool was_wired = false;
 
 uint32_t IdleLEDsDefy::ms_to_seconds(uint32_t time_in_ms)
 {
@@ -52,8 +55,12 @@ void IdleLEDsDefy::reset_timers()
     start_time_wired = Runtime.millisAtCycleStart();
     start_time_wireless = Runtime.millisAtCycleStart();
     start_time_true_sleep = Runtime.millisAtCycleStart();
-    start_time_true_sleep_wired = Runtime.millisAtCycleStart();
     sleep_ = false;
+}
+
+void IdleLEDsDefy::new_connection_set()
+{
+    new_connection_ = true;
 }
 
 EventHandlerResult IdleLEDsDefy::beforeEachCycle()
@@ -66,37 +73,33 @@ EventHandlerResult IdleLEDsDefy::beforeEachCycle()
         isDefyRightWired &&
         !ble_innited())
     {
+        if( !was_wired )
+        {
+            was_wired = true;
+        }
+
         if (Power_save.leds_off_usb_idle_t_ms != 0 &&
             ::LEDControl.isEnabled() &&
             Runtime.hasTimeExpired(start_time_wired, Power_save.leds_off_usb_idle_t_ms))
         {
             ::LEDControl.disable();
-            start_time_true_sleep_wired = Runtime.millisAtCycleStart();
             sleep_ = false;
             idle_ = true;
         }
 
-        /* We force the sleep in wired mode. This is usefull when the user turn off the computer with the keyboard in wired mode*/
-        if (!sleep_)
-        {
-            if(Runtime.millisAtCycleStart() - start_time_true_sleep_wired > sides_sleep_idle_wired_t_ms_default)
-            {
-                Communications_protocol::Packet p{};
-                p.header.device = Communications_protocol::Devices::KEYSCANNER_DEFY_RIGHT;
-                p.header.command = Communications_protocol::SLEEP;
-                Communications.sendPacket(p);
-
-                p.header.device = Communications_protocol::Devices::KEYSCANNER_DEFY_LEFT;
-                p.header.command = Communications_protocol::SLEEP;
-                Communications.sendPacket(p);
-                sleep_ = true;
-
-                start_time_true_sleep_wired = Runtime.millisAtCycleStart();
-            }
-        }
     }
     else
     {
+        /* This block is to fix the case when the keyboard was wired mode, the timer expires and me change to wireless mode, the sleep mode will be
+         * activated instanly.
+         * For that reason we need to check if the keyboard was just connected  we need to reset the SLEEP timer.
+         * */
+        if( was_wired )
+        {
+            was_wired = false;
+            start_time_true_sleep = Runtime.millisAtCycleStart();
+        }
+
         if (Power_save.leds_off_ble_idle_t_ms != 0
             && ::LEDControl.isEnabled() &&
             Runtime.hasTimeExpired(start_time_wireless, Power_save.leds_off_ble_idle_t_ms))
@@ -143,10 +146,13 @@ EventHandlerResult PersistentIdleDefyLEDs::onSetup()
     Communications.callbacks.bind(CONNECTED, (
                                                  [this](const Packet &)
                                                  {
-                                                     start_time_wired = Runtime.millisAtCycleStart();
-                                                     start_time_wireless = Runtime.millisAtCycleStart();
+                                                     if( new_connection_ == true )
+                                                     {
+                                                         new_connection_ = false;
+                                                         reset_timers();
+                                                     }
+
                                                      ::LEDControl.enable();
-                                                     reset_timers();
                                                  }));
 
     settings_base_ = ::EEPROMSettings.requestSlice(sizeof(IdleTime));
@@ -163,8 +169,6 @@ EventHandlerResult PersistentIdleDefyLEDs::onSetup()
     }
     save_power_save_settings(idle_time);
     Runtime.storage().get(settings_base_, Power_save);
-
-    Power_save.sides_sleep_idle_wired_t_ms = sides_sleep_idle_wired_t_ms_default; // Default value for wired mode 20 minutes.
 
     return EventHandlerResult::OK;
 }
