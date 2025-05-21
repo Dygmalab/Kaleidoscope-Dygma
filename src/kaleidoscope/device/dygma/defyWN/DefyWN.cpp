@@ -110,6 +110,8 @@ void Hands::setup() {
 
  Communications.callbacks.bind(CONNECTED, ([](const Packet &) { ::LEDControl.set_mode(::LEDControl.get_mode_index()); }));
 
+ Communications.callbacks.bind(DISCONNECTED, checkBrightness);
+ Communications.callbacks.bind(CONNECTED, checkBrightness);
 
  settings_base_ = ::EEPROMSettings.requestSlice(sizeof(Settings));
  bool edited    = false;
