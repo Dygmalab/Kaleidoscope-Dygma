@@ -240,6 +240,10 @@ public:
 
    static void reset_sides();
 
+   static void reset_right_side();
+
+   static void reset_left_side();
+
    void prepareForFlash();
 
    // Side bootloader addresses

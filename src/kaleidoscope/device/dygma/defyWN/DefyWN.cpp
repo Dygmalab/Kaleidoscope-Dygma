@@ -462,7 +462,8 @@ void DefyWN::side::setPower(bool power) {
 }
 
 
-void DefyWN::side::reset_sides() {
+void DefyWN::side::reset_sides()
+{
  gpio_set_dir(SIDE_nRESET_1, GPIO_OUT);
  gpio_set_dir(SIDE_nRESET_2, GPIO_OUT);
  gpio_put(SIDE_nRESET_1, false);
@@ -473,6 +474,26 @@ void DefyWN::side::reset_sides() {
  gpio_pull_up(SIDE_nRESET_1);
  gpio_pull_up(SIDE_nRESET_2);
  sleep_ms(50);  //Back to 10 ms just in case we dont miss packets //Put this to 50ms once we change the sending of the messages to be the nueron no the keyscanner
+}
+
+void DefyWN::side::reset_right_side()
+{
+    gpio_set_dir(SIDE_nRESET_1, GPIO_OUT);
+    gpio_put(SIDE_nRESET_1, false);
+    sleep_ms(10);
+    gpio_set_dir(SIDE_nRESET_1, GPIO_IN);
+    gpio_pull_up(SIDE_nRESET_1);
+    sleep_ms(50);
+}
+
+void DefyWN::side::reset_left_side()
+{
+    gpio_set_dir(SIDE_nRESET_2, GPIO_OUT);
+    gpio_put(SIDE_nRESET_2, false);
+    sleep_ms(10);
+    gpio_set_dir(SIDE_nRESET_2, GPIO_IN);
+    gpio_pull_up(SIDE_nRESET_2);
+    sleep_ms(50);
 }
 
 std::string DefyWN::getChipID() {
