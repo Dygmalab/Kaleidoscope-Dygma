@@ -24,7 +24,7 @@
 
 #include "keyboard_config.h"
 
-#include "kaleidoscope/device/dygma/KeyboardManager/universalModules/Hand.h"
+#include "kaleidoscope/device/dygma/keyboardManager/universalModules/Hand.h"
 #include "kaleidoscope/driver/bootloader/nrf/NRF.h"
 #include "Ble_composite_dev.h"
 
