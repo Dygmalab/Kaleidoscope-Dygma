@@ -859,7 +859,7 @@ void KeyboardNrf::side::reset_sides()
     delay(50); // We should give a bit more time but for now lest leave it like this
 }
 
-void DefyWN::side::reset_right_side()
+void KeyboardNrf::side::reset_right_side()
 {
     nrf_gpio_cfg_output(SIDE_NRESET_1);
     nrf_gpio_pin_write(SIDE_NRESET_1, 0);
@@ -868,7 +868,7 @@ void DefyWN::side::reset_right_side()
     delay(50); // We should give a bit more time but for now lest leave it like this
 }
 
-void DefyWN::side::reset_left_side()
+void KeyboardNrf::side::reset_left_side()
 {
     nrf_gpio_cfg_output(SIDE_NRESET_2);
     nrf_gpio_pin_write(SIDE_NRESET_2, 0);
