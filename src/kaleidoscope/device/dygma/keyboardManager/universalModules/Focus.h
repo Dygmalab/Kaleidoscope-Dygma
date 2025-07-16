@@ -1,5 +1,5 @@
 /* -*- mode: c++ -*-
- * kaleidoscope::device::dygma::Raise -- Kaleidoscope device plugin for Dygma Raise
+ * kaleidoscope::device::dygma::Defy -- Kaleidoscope device plugin for Dygma Defy
  * Copyright (C) 2017-2019  Keyboard.io, Inc
  * Copyright (C) 2017-2019  Dygma Lab S.L.
  *
@@ -15,7 +15,27 @@
  * You should have received a copy of the GNU General Public License along with
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#ifdef ARDUINO_ARCH_NRF52
 
 #pragma once
 
-#include "kaleidoscope/device/dygma/defyWN/DefyWN.h"
+#include "kaleidoscope/plugin.h"
+
+namespace kaleidoscope {
+namespace device {
+namespace dygma {
+namespace dygma_keyboards {
+
+class Focus : public kaleidoscope::Plugin {
+   public:
+    void init();
+    EventHandlerResult onFocusEvent(const char *command);
+};
+
+}  // namespace dygma_keyboards
+}  // namespace dygma
+}  // namespace device
+}  // namespace kaleidoscope
+
+extern kaleidoscope::device::dygma::dygma_keyboards::Focus KeyboardFocus;
+#endif

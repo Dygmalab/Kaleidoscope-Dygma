@@ -24,7 +24,7 @@
 namespace kaleidoscope {
 namespace device {
 namespace dygma {
-namespace defy_wireless {
+namespace dygma_keyboards {
 
 template <typename _Firmware>
 class SideFlash : public kaleidoscope::Plugin {

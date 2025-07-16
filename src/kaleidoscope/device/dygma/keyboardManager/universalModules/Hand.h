@@ -32,7 +32,7 @@ struct cRGB {
 namespace kaleidoscope {
 namespace device {
 namespace dygma {
-namespace defy_wireless {
+namespace dygma_keyboards {
 
 #define LED_BANKS           11
 
@@ -60,12 +60,13 @@ class Hand {
    };
   explicit Hand(HandSide side);
   void init();
+  void releaseAllKeys();
 
   HandSide this_device_;
   LEDData_t led_data{};
 
  private:
-  defy_wireless::key_data key_data_{};
+  dygma_keyboards::key_data key_data_{};
   bool new_key_;
 
 public:
@@ -79,7 +80,7 @@ public:
   [[nodiscard]] bool newKey() const { return new_key_; }
 };
 
-}  // namespace defy_wireless
+}  // namespace dygma_keyboards
 }  // namespace dygma
 }  // namespace device
 }  // namespace kaleidoscope

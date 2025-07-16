@@ -1,3 +1,4 @@
+
 /* -*- mode: c++ -*-
  * kaleidoscope::device::dygma::Defy -- Kaleidoscope device plugin for Dygma Defy
  * Copyright (C) 2017-2019  Keyboard.io, Inc
@@ -15,27 +16,25 @@
  * You should have received a copy of the GNU General Public License along with
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
+
+#ifndef __BOOTLOADER_UTIL_H_
+#define __BOOTLOADER_UTIL_H_
+
 #ifdef ARDUINO_ARCH_NRF52
 
-#pragma once
+#include <stdbool.h>
+#include <stdint.h>
 
-#include "kaleidoscope/plugin.h"
+class bldrUtil
+{
+    public:
 
-namespace kaleidoscope {
-namespace device {
-namespace dygma {
-namespace defy_wireless {
+        static bool init( void );
+        static bool update_request( void );
 
-class Focus : public kaleidoscope::Plugin {
-   public:
-    void init();
-    EventHandlerResult onFocusEvent(const char *command);
+    private:
 };
 
-}  // namespace defy_wireless
-}  // namespace dygma
-}  // namespace device
-}  // namespace kaleidoscope
+#endif /* ARDUINO_ARCH_NRF52 */
 
-extern kaleidoscope::device::dygma::defy_wireless::Focus DefyFocus;
-#endif
+#endif /* __BOOTLOADER_UTIL_H_ */

@@ -29,27 +29,9 @@
 #include "DefyWN.h"
 #include "Colormap-Defy.h"
 #include "Communications_protocol.h"
-#include "kaleidoscope/device/dygma/defyWN/Hand.h"
+#include "kaleidoscope/device/dygma/defyWN/universalModules/Hand.h"
 
-#define I2C_SDA_PIN         26  // SWe 20220719: I2C1 data out-/in-put, MASTER role
-#define I2C_SCL_PIN         27  // SWe 20220719: I2C1 clock output, MASTER role
-#define WIRE_               Wire1
-#define I2C_CLOCK_KHZ       100
-#define I2C_FLASH_CLOCK_KHZ 100  // flashing doesn't work reliably at higher clock speeds
-//#define SIDE_POWER 1  // side power switch pa10; SWe 20220719: old, used in Neuron
-#define SIDE_nRESET_1 22  //19   // SWe 20220719: nRESET signal OUT to keyboard side 1; HIGH = running, LOW = reset
-#define SIDE_nRESET_2 10  //12   // SWe 20220719: nRESET signal OUT to keyboard side 2; HIGH = running, LOW = reset
-#define nPWR_OK       1   // SWe 20220719: Power nOK IN-PULLUP from the 3.3V LDO, open drain, needs internal pull-up. NOTE: this is not implemented in the Development Board, only in the real WIRED Neuron2.
-// SWe 20220719: LED pins
-#define RGBW_LED_RED   6  // SWe 20220719: RED RGBW led OUT, PWM3 A can be used to control its intensity
-#define RGBW_LED_GREEN 0  // SWe 20220719: GREEN RGBW led OUT, PWM0 A can be used to control its intensity
-#define RGBW_LED_BLUE  2  // SWe 20220719: BLUE RGBW led OUT, PWM1 A can be used to control its intensity
-#define RGBW_LED_WHITE 4  // SWe 20220719: WHITE RGBW led OUT, PWM2 A can be used to control its intensity
-// SWe 20220719: analog pins
-#define USB_CC1 28  // SWe 20220719: USB CC1 pin, can be used to check how much power the host does support by checking its analog value
-#define USB_CC2 29  // SWe 20220719: USB CC2 pin, can be used to check how much power the host does support by checking its analog value
-// SWe 20220719: ADC Vref input, tied to 3.3V with resistor and capacitor for filtering and buffering
-// SWe 20220719: optional pins
+#include "common.h"
 
 namespace kaleidoscope {
 namespace device {
@@ -74,6 +56,8 @@ public:
    return settings_.led_brightness_ungerlow;
  }
 
+ static void sendPacketBrightness();
+
 private:
  struct Settings {
    Settings() {}
@@ -83,6 +67,8 @@ private:
  };
  inline static Settings settings_{};
  inline static uint16_t settings_base_;
+
+ static void setbrightness(const Settings &data);
 };
 
 Communications_protocol::Devices leftConnection[1]{UNKNOWN};
@@ -90,13 +76,16 @@ Communications_protocol::Devices rightConnection[1]{UNKNOWN};
 
 auto checkBrightness = [](const Packet &)
 {
-    if(!::LEDControl.isEnabled()){
+    if(!::LEDControl.isEnabled())
+    {
         Communications_protocol::Packet p{};
         p.header.command = Communications_protocol::BRIGHTNESS;
         p.header.device = UNKNOWN;
         p.data[0] = 0;
         p.data[1] = 0;
-        p.header.size = 2;
+        p.data[2] = static_cast<uint8_t>(ColormapEffectDefy.no_led_effect);
+        p.data[3] = 1;
+        p.header.size = 4;
         Communications.sendPacket(p);
         return;
     }
@@ -121,6 +110,8 @@ void Hands::setup() {
 
  Communications.callbacks.bind(CONNECTED, ([](const Packet &) { ::LEDControl.set_mode(::LEDControl.get_mode_index()); }));
 
+ Communications.callbacks.bind(DISCONNECTED, checkBrightness);
+ Communications.callbacks.bind(CONNECTED, checkBrightness);
 
  settings_base_ = ::EEPROMSettings.requestSlice(sizeof(Settings));
  bool edited    = false;
@@ -143,6 +134,12 @@ void Hands::setup() {
  Runtime.storage().get(settings_base_, settings_);
 }
 
+void Hands::setbrightness(const Settings &data)
+{
+    Runtime.storage().put(settings_base_, data);
+    Runtime.storage().commit();
+}
+
 void Hands::setKeyscanInterval(uint8_t interval) {
  if (interval < 15) return;
  settings_.keyscan_interval = interval;
@@ -157,28 +154,21 @@ void Hands::setKeyscanInterval(uint8_t interval) {
 
 void Hands::setLedBrightnessLedDriver(uint8_t brightness) {
  settings_.led_brightness_ledDriver = brightness;
- Packet p{};
- p.header.command = Communications_protocol::BRIGHTNESS;
- p.header.size    = 2;
- p.data[0]        = settings_.led_brightness_ledDriver;
- p.data[1]        = settings_.led_brightness_ungerlow;
- Communications.sendPacket(p);
- Runtime.storage().put(settings_base_, settings_);
- Runtime.storage().commit();
+ sendPacketBrightness();
+ setbrightness(settings_);
 }
 
 void Hands::setLedBrightnessUG(uint8_t brightnessUG) {
  settings_.led_brightness_ungerlow = brightnessUG;
- Packet p{};
- p.header.command = Communications_protocol::BRIGHTNESS;
- p.header.size    = 2;
- p.data[0]        = settings_.led_brightness_ledDriver;
- p.data[1]        = settings_.led_brightness_ungerlow;
- Communications.sendPacket(p);
- Runtime.storage().put(settings_base_, settings_);
- Runtime.storage().commit();
+ sendPacketBrightness();
+ setbrightness(settings_);
 }
 
+void Hands::sendPacketBrightness()
+{
+ Packet p{};
+ checkBrightness(p);
+}
 
 /********* LED Driver *********/
 
@@ -472,7 +462,8 @@ void DefyWN::side::setPower(bool power) {
 }
 
 
-void DefyWN::side::reset_sides() {
+void DefyWN::side::reset_sides()
+{
  gpio_set_dir(SIDE_nRESET_1, GPIO_OUT);
  gpio_set_dir(SIDE_nRESET_2, GPIO_OUT);
  gpio_put(SIDE_nRESET_1, false);
@@ -483,6 +474,26 @@ void DefyWN::side::reset_sides() {
  gpio_pull_up(SIDE_nRESET_1);
  gpio_pull_up(SIDE_nRESET_2);
  sleep_ms(50);  //Back to 10 ms just in case we dont miss packets //Put this to 50ms once we change the sending of the messages to be the nueron no the keyscanner
+}
+
+void DefyWN::side::reset_right_side()
+{
+    gpio_set_dir(SIDE_nRESET_1, GPIO_OUT);
+    gpio_put(SIDE_nRESET_1, false);
+    sleep_ms(10);
+    gpio_set_dir(SIDE_nRESET_1, GPIO_IN);
+    gpio_pull_up(SIDE_nRESET_1);
+    sleep_ms(50);
+}
+
+void DefyWN::side::reset_left_side()
+{
+    gpio_set_dir(SIDE_nRESET_2, GPIO_OUT);
+    gpio_put(SIDE_nRESET_2, false);
+    sleep_ms(10);
+    gpio_set_dir(SIDE_nRESET_2, GPIO_IN);
+    gpio_pull_up(SIDE_nRESET_2);
+    sleep_ms(50);
 }
 
 std::string DefyWN::getChipID() {
@@ -509,6 +520,15 @@ Devices KeyScannerWN::leftHandDevice() {
 Devices KeyScannerWN::rightHandDevice() {
  return rightConnection[0];
 }
+
+bool KeyScannerWN::rightSideWiredConnection() {
+return gpio_get(SIDE_nRESET_2);
+}
+
+bool KeyScannerWN::leftSideWiredConnection(){
+  return gpio_get(SIDE_nRESET_1);
+}
+
 }  // namespace dygma
 }  // namespace device
 }  // namespace kaleidoscope

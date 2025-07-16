@@ -18,12 +18,18 @@
 
 #include "Colormap-Defy.h"
 #include "EEPROM-Settings.h"
+#include "IdleLEDsDefy.h"
 #include "Kaleidoscope-FocusSerial.h"
 #include "Kaleidoscope-LEDControl.h"
 #include "kaleidoscope/keyswitch_state.h"
 #include "kaleidoscope_internal/LEDModeManager.h"
 
 using namespace kaleidoscope::internal; // NOLINT(build/namespaces)
+
+void keypress_handle(void)
+{
+    IdleLEDsDefy.reset_timers();
+}
 
 namespace kaleidoscope
 {
@@ -202,6 +208,8 @@ kaleidoscope::EventHandlerResult LEDControl::onKeyswitchEvent(Key &mappedKey, Ke
 
     if (keyToggledOn(keyState))
     {
+        keypress_handle();
+
         if (mappedKey == Key_LEDEffectNext || mappedKey == Key_LEDEffectPrevious)
         {
             // Handling of these keys is delayed into `beforeReportingState`

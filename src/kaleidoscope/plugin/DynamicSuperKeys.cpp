@@ -1,18 +1,18 @@
 /* DynamicSuperKeys - Dynamic macro support for Kaleidoscope.
- * Copyright (C) 2019  Keyboard.io, Inc.
- *
- * This program is free software: you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the Free Software
- * Foundation, version 3.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program. If not, see <http://www.gnu.org/licenses/>.
- */
+* Copyright (C) 2019  Keyboard.io, Inc.
+*
+* This program is free software: you can redistribute it and/or modify it under
+* the terms of the GNU General Public License as published by the Free Software
+* Foundation, version 3.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+* FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+* details.
+*
+* You should have received a copy of the GNU General Public License along with
+* this program. If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include "DynamicSuperKeys.h"
 #include "Kaleidoscope-DynamicMacros.h"
@@ -48,7 +48,6 @@ uint8_t DynamicSuperKeys::super_key_index = 0;
 bool DynamicSuperKeys::fast_key_release = false;
 static const uint8_t MAX_SUPER_KEYS_ACTIVE = 50;
 DynamicSuperKeys::KeyValue keys[MAX_SUPER_KEYS_ACTIVE];
-bool released = false;
 uint8_t keys_index;
 uint8_t currentIndex = 0;
 
@@ -202,44 +201,54 @@ void DynamicSuperKeys::updateDynamicSuperKeysCache()
 
 DynamicSuperKeys::SuperType DynamicSuperKeys::ReturnType(DynamicSuperKeys::SuperType previous, DynamicSuperKeys::ActionType action)
 {
-    DynamicSuperKeys::SuperType result;
+    DynamicSuperKeys::SuperType result = DynamicSuperKeys::None;
+
     if (action == Tap)
     {
-        switch (previous)
-        {
-            case DynamicSuperKeys::None:
-                result = DynamicSuperKeys::Tap_Once;
-                break;
-            case DynamicSuperKeys::Tap_Once:
-                result = DynamicSuperKeys::Tap_Twice;
-                break;
-            case DynamicSuperKeys::Tap_Twice:
-                result = DynamicSuperKeys::Tap_Trice;
-                break;
-            default:
-                result = DynamicSuperKeys::Tap_Trice;
-        }
+       switch (previous)
+       {
+           case DynamicSuperKeys::None:
+               result = DynamicSuperKeys::Tap_Once;
+               break;
+
+           case DynamicSuperKeys::Tap_Once:
+               result = DynamicSuperKeys::Tap_Twice;
+               break;
+
+           case DynamicSuperKeys::Tap_Twice:
+               result = DynamicSuperKeys::Tap_Trice;
+               break;
+
+           default:
+               result = DynamicSuperKeys::Tap_Trice;
+       }
     }
+
     if (action == Hold)
     {
-        switch (previous)
-        {
-            case DynamicSuperKeys::None:
-                result = DynamicSuperKeys::None;
-                break;
-            case DynamicSuperKeys::Tap_Once:
-                result = DynamicSuperKeys::Hold_Once;
-                break;
-            case DynamicSuperKeys::Tap_Twice:
-                result = DynamicSuperKeys::Tap_Hold;
-                break;
-            case DynamicSuperKeys::Tap_Trice:
-                result = DynamicSuperKeys::Tap_Twice_Hold;
-                break;
-            default:
-                result = DynamicSuperKeys::Tap_Twice_Hold;
-        }
+       switch (previous)
+       {
+           case DynamicSuperKeys::None:
+               result = DynamicSuperKeys::None;
+               break;
+
+           case DynamicSuperKeys::Tap_Once:
+               result = DynamicSuperKeys::Hold_Once;
+               break;
+
+           case DynamicSuperKeys::Tap_Twice:
+               result = DynamicSuperKeys::Tap_Hold;
+               break;
+
+           case DynamicSuperKeys::Tap_Trice:
+               result = DynamicSuperKeys::Tap_Twice_Hold;
+               break;
+
+           default:
+               result = DynamicSuperKeys::Tap_Twice_Hold;
+       }
     }
+
     return result;
 }
 
@@ -270,6 +279,7 @@ bool DynamicSuperKeys::interrupt(Key key, const KeyAddr &keyAddr)
     }
     updateKey(key, state_[idx]);
     removeKey(key);
+
     return true;
 }
 
@@ -280,6 +290,7 @@ void DynamicSuperKeys::timeout(Key key, const KeyAddr &keyAddr)
     {
         return;
     }
+
     if (!state_[idx].holded)
     {
         SuperKeys(idx, keyAddr, state_[idx].count, Timeout);
@@ -399,22 +410,26 @@ bool DynamicSuperKeys::SuperKeys(uint8_t super_key_index, KeyAddr key_addr, Dyna
                     handleKeyswitchEvent(key2, key_addr, WAS_PRESSED | INJECTED);
                 }
             }
+
             if (key.getRaw() >= LAYER_LOCK_FIRST && key.getRaw() <= LAYER_LOCK_LAST)
             {
                 ::Layer.move(key.getKeyCode() - LAYER_MOVE_OFFSET);
                 break;
             }
+
             if (key.getRaw() >= DynamicSuperKeys::LED_BUTTONS_FIRST && key.getRaw() <= DynamicSuperKeys::LED_BUTTONS_LAST)
             {
                 handleKeyswitchEvent(key, key_addr, IS_PRESSED | INJECTED);
                 // NRF_LOG_DEBUG("LED_BUTTONS_FIRST");
                 break;
             }
+
             if (key.getRaw() >= ranges::DYNAMIC_MACRO_FIRST && key.getRaw() <= ranges::DYNAMIC_MACRO_LAST)
             {
                 ::DynamicMacros.play(key.getRaw() - ranges::DYNAMIC_MACRO_FIRST);
                 break;
             }
+
             if (key.getRaw() >= 256 && key.getRaw() <= 7935)
             {
                 // NRF_LOG_DEBUG("key.getRaw() >= 256");
@@ -423,23 +438,28 @@ bool DynamicSuperKeys::SuperKeys(uint8_t super_key_index, KeyAddr key_addr, Dyna
                     // NRF_LOG_DEBUG("Key_LeftControl");
                     handleKeyswitchEvent(Key_LeftControl, key_addr, IS_PRESSED | INJECTED);
                 }
+
                 if (modif & 0x02)
                 {
                     handleKeyswitchEvent(Key_LeftAlt, key_addr, IS_PRESSED | INJECTED);
                 }
+
                 if (modif & 0x04)
                 {
                     handleKeyswitchEvent(Key_RightAlt, key_addr, IS_PRESSED | INJECTED);
                 }
+
                 if (modif & 0x08)
                 {
                     handleKeyswitchEvent(Key_LeftShift, key_addr, IS_PRESSED | INJECTED);
                 }
+
                 if (modif & 0x10)
                 {
                     handleKeyswitchEvent(Key_LeftGui, key_addr, IS_PRESSED | INJECTED);
                 }
                 handleKeyswitchEvent(key, key_addr, IS_PRESSED | INJECTED);
+
                 break;
             }
             /*If we press a modifier and after that a SK we have to be able to release this SK with the associated modifier*/
@@ -452,25 +472,31 @@ bool DynamicSuperKeys::SuperKeys(uint8_t super_key_index, KeyAddr key_addr, Dyna
                     // NRF_LOG_DEBUG("Key_LeftControl");
                     handleKeyswitchEvent(Key_LeftControl, key_addr, IS_PRESSED | INJECTED);
                 }
+
                 if (modif & 0x02)
                 {
                     handleKeyswitchEvent(Key_LeftAlt, key_addr, IS_PRESSED | INJECTED);
                 }
+
                 if (modif & 0x04)
                 {
                     handleKeyswitchEvent(Key_RightAlt, key_addr, IS_PRESSED | INJECTED);
                 }
+
                 if (modif & 0x08)
                 {
                     handleKeyswitchEvent(Key_LeftShift, key_addr, IS_PRESSED | INJECTED);
                 }
+
                 if (modif & 0x10)
                 {
                     handleKeyswitchEvent(Key_LeftGui, key_addr, IS_PRESSED | INJECTED);
                 }
                 handleKeyswitchEvent(key, key_addr, IS_PRESSED | INJECTED);
+
                 break;
             }
+
             if (tap_count == DynamicSuperKeys::Tap_Trice)
             {
                 Key key2;
@@ -491,8 +517,10 @@ bool DynamicSuperKeys::SuperKeys(uint8_t super_key_index, KeyAddr key_addr, Dyna
             }
             handleKeyswitchEvent(key, key_addr, IS_PRESSED | INJECTED);
             kaleidoscope::Runtime.hid().keyboard().sendReport();
+
             break;
         }
+
         case DynamicSuperKeys::Hold:
         {
 
@@ -508,6 +536,7 @@ bool DynamicSuperKeys::SuperKeys(uint8_t super_key_index, KeyAddr key_addr, Dyna
                     ::Layer.move(key.getKeyCode() - LAYER_MOVE_OFFSET);
                     break;
                 }
+
                 if (key.getRaw() >= LAYER_SHIFT_FIRST && key.getRaw() <= LAYER_SHIFT_LAST)
                 {
                     state_[super_key_index].is_layer_shifting = true;
@@ -516,11 +545,13 @@ bool DynamicSuperKeys::SuperKeys(uint8_t super_key_index, KeyAddr key_addr, Dyna
                     handleKeyswitchEvent(key, key_addr, IS_PRESSED | WAS_PRESSED | INJECTED);
                     break;
                 }
+
                 if (key.getRaw() >= ranges::DYNAMIC_MACRO_FIRST && key.getRaw() <= ranges::DYNAMIC_MACRO_LAST)
                 {
                     ::DynamicMacros.play(key.getRaw() - ranges::DYNAMIC_MACRO_FIRST);
                     break;
                 }
+
                 // superkeys with modifiers.
                 if (key.getRaw() >= 256 && key.getRaw() <= 7935)
                 {
@@ -528,25 +559,31 @@ bool DynamicSuperKeys::SuperKeys(uint8_t super_key_index, KeyAddr key_addr, Dyna
                     {
                         handleKeyswitchEvent(Key_LeftControl, key_addr, IS_PRESSED | WAS_PRESSED | INJECTED);
                     }
+
                     if (modif & 0x02)
                     {
                         handleKeyswitchEvent(Key_LeftAlt, key_addr, IS_PRESSED | WAS_PRESSED | INJECTED);
                     }
+
                     if (modif & 0x04)
                     {
                         handleKeyswitchEvent(Key_RightAlt, key_addr, IS_PRESSED | WAS_PRESSED | INJECTED);
                     }
+
                     if (modif & 0x08)
                     {
                         handleKeyswitchEvent(Key_LeftShift, key_addr, IS_PRESSED | WAS_PRESSED | INJECTED);
                     }
+
                     if (modif & 0x10)
                     {
                         handleKeyswitchEvent(Key_LeftGui, key_addr, IS_PRESSED | WAS_PRESSED | INJECTED);
                     }
                     handleKeyswitchEvent(key, key_addr, IS_PRESSED | WAS_PRESSED | INJECTED);
+
                     break;
                 }
+
                 if (key.getRaw() >= DynamicSuperKeys::LED_BUTTONS_FIRST && key.getRaw() <= DynamicSuperKeys::LED_BUTTONS_LAST)
                 {
                     // NRF_LOG_DEBUG("Handling LED BUTTONS %i", key.getRaw());
@@ -575,6 +612,7 @@ bool DynamicSuperKeys::SuperKeys(uint8_t super_key_index, KeyAddr key_addr, Dyna
                     {
                         break;
                     }
+
                     if (key.getRaw() == 23785 || key.getRaw() == 23786)
                     {
                         // NRF_LOG_DEBUG("key.getRaw() == 23785 || key.getRaw() == 23786");
@@ -587,10 +625,21 @@ bool DynamicSuperKeys::SuperKeys(uint8_t super_key_index, KeyAddr key_addr, Dyna
                         state_[super_key_index].has_already_send = true;
                         updateKey(key, state_[super_key_index]);
                     }
+
                     if (key.getRaw() >= 256 && key.getRaw() <= 7935)
                     {
+                        // NRF_LOG_DEBUG("key.getRaw() >= 256 && key.getRaw() <= 7935");
+                        // This is to send the key only once, and prevent for weird repetitive sending.
+                        /*         if (!state_[super_key_index].has_already_send && !state_[super_key_index].has_modifier_in_action){
+                                   //NRF_LOG_DEBUG("RELEASING SK %i",super_key_index);
+                                   kaleidoscope::Runtime.hid().keyboard().sendReport();
+                                  // release(key,key_addr);
+                                   state_[super_key_index].has_already_send = true;
+                                   updateKey(key,state_[super_key_index]);
+                                 }*/
                         break;
                     }
+
                     if (key.getRaw() >= DynamicSuperKeys::LED_BUTTONS_FIRST && key.getRaw() <= DynamicSuperKeys::LED_BUTTONS_LAST)
                     {
                         break;
@@ -607,16 +656,19 @@ bool DynamicSuperKeys::SuperKeys(uint8_t super_key_index, KeyAddr key_addr, Dyna
             {
                 break;
             }
+
             if (key.getRaw() >= ranges::DYNAMIC_MACRO_FIRST && key.getRaw() <= ranges::DYNAMIC_MACRO_LAST) // Key it's a macro so we dont treat it here
             {
                 break;
             }
+
             if (key.getRaw() >= 17450 && key.getRaw() <= 17459)
             {
                 ::Layer.deactivate(key.getKeyCode() - LAYER_SHIFT_OFFSET);
                 layer_shifted_ = false;
                 break;
             }
+
             if (key.getRaw() >= 256 && key.getRaw() <= 7935)
             {
                 handleKeyswitchEvent(key, key_addr, WAS_PRESSED | INJECTED);
@@ -625,18 +677,22 @@ bool DynamicSuperKeys::SuperKeys(uint8_t super_key_index, KeyAddr key_addr, Dyna
                 {
                     handleKeyswitchEvent(Key_LeftControl, key_addr, WAS_PRESSED | INJECTED);
                 }
+
                 if (modif & 0x02)
                 {
                     handleKeyswitchEvent(Key_LeftAlt, key_addr, WAS_PRESSED | INJECTED);
                 }
+
                 if (modif & 0x04)
                 {
                     handleKeyswitchEvent(Key_RightAlt, key_addr, WAS_PRESSED | INJECTED);
                 }
+
                 if (modif & 0x08)
                 {
                     handleKeyswitchEvent(Key_LeftShift, key_addr, WAS_PRESSED | INJECTED);
                 }
+
                 if (modif & 0x10)
                 {
                     handleKeyswitchEvent(Key_LeftGui, key_addr, WAS_PRESSED | INJECTED);
@@ -663,17 +719,17 @@ EventHandlerResult DynamicSuperKeys::onKeyswitchEvent(Key &mapped_key, KeyAddr k
         return EventHandlerResult::OK;
     }
 
-/*    if (keys_index != 0 )
+    /*if (keys_index != 0 )
     {
         if (checkForCoordIng(mapped_key,key_addr))
         {
             return EventHandlerResult::EVENT_CONSUMED;
         }
     }*/
+
     // If it's not a super-key press , we treat it here.
     if (mapped_key.getRaw() < ranges::DYNAMIC_SUPER_FIRST || mapped_key.getRaw() > ranges::DYNAMIC_SUPER_LAST)
     {
-
         // We detect any previously pressed modifiers to be able to release the configured tap or held key when pressed
         if (mapped_key.getRaw() <= Key_RightGui.getRaw() && mapped_key.getRaw() >= Key_LeftControl.getRaw())
         {
@@ -691,6 +747,7 @@ EventHandlerResult DynamicSuperKeys::onKeyswitchEvent(Key &mapped_key, KeyAddr k
                 }
                 modifier_pressed_ = false;
             }
+
             if (keyToggledOn(keyState))
             {
                 modifier_pressed_ = true;
@@ -718,12 +775,13 @@ EventHandlerResult DynamicSuperKeys::onKeyswitchEvent(Key &mapped_key, KeyAddr k
                         interrupt(keys[i].key, keys[i].keyAddr);
                     }
                 }
+
                 return EventHandlerResult::OK;
             }
         }
+
         return EventHandlerResult::OK;
     }
-
 
     // If it's a super-key press, we treat it here.
     // Get the super-key index of the received super-key.
@@ -753,8 +811,10 @@ EventHandlerResult DynamicSuperKeys::onKeyswitchEvent(Key &mapped_key, KeyAddr k
             state_[super_key_index].is_qukey = false;
             // NRF_LOG_DEBUG("is_qukey = false");
         }
+
         updateKey(mapped_key, state_[super_key_index]);
     }
+
     /************************************************************************************************************************/
     /* This is the point of entry to the function, when pressing the super-key for the fist time of each run.
      * The parameter count tells us how many times a key has been pressed.
@@ -762,9 +822,9 @@ EventHandlerResult DynamicSuperKeys::onKeyswitchEvent(Key &mapped_key, KeyAddr k
      */
     if (state_[super_key_index].count == None)
     {
-
         // If the key is released, this shouldn't happen, so leave it as it is.
         if (keyToggledOff(keyState)) return EventHandlerResult::EVENT_CONSUMED;
+
         if (keyToggledOn(keyState))
         {
             // If the key is just pressed, and we don't have other SK, save the super-key.
@@ -778,40 +838,37 @@ EventHandlerResult DynamicSuperKeys::onKeyswitchEvent(Key &mapped_key, KeyAddr k
         }
     }
 
-    // UPDATE TIMESTAMP
-    for (int i = 0; i < keys_index; ++i)
-    {
-        keys[i].state.timeStamp = Runtime.millisAtCycleStart() - keys[i].state.start_time;
-    }
     /************************************************************************************************************************/
-
     // This if block treats the behavior for the case in witch a different super-key is pressed after the previous one.
     if (last_super_key_ != mapped_key && last_super_key_ != Key_NoKey)
     {
-
         if (!keyToggledOn(keyState))
         {
             uint8_t last_super_index = last_super_key_.getRaw() - ranges::DYNAMIC_SUPER_FIRST;
+
             // At this point, we stop processing the previous key, and analyze the next super-key.
             updateKey(last_super_key_, state_[last_super_index]);
             KeyValue next_super_key = getNextSuperKey();
+            //KeyValue last_supe_key = keys[last_super_index];
+
             if (next_super_key.key != Key_NoKey)
             {
-
                 last_super_key_ = next_super_key.key;
                 last_super_addr_ = next_super_key.keyAddr;
                 if (Runtime.hasTimeExpired(state_[super_key_index].start_time, hold_start_))
                 {
                     hold(mapped_key, key_addr);
+
                     return EventHandlerResult::EVENT_CONSUMED;
                 }
             }
 
-
             return EventHandlerResult::EVENT_CONSUMED;
         }
+
         return EventHandlerResult::EVENT_CONSUMED;
     }
+
     /************************************************************************************************************************/
     // If we receive the same SK, we treated here.
     if (last_super_key_ == mapped_key)
@@ -824,25 +881,67 @@ EventHandlerResult DynamicSuperKeys::onKeyswitchEvent(Key &mapped_key, KeyAddr k
 
         if (keyToggledOff(keyState))
         {
+            // NRF_LOG_DEBUG("*** keyToggledOff(keyState) toggle off: %i ***",super_key_index);
+
+            if (keys_index >= MINIMUM_KEYS_REQUIRES_IN_QUEUE)
+            {
+                for (int i = 0; i < keys_index; ++i)
+                {
+                    auto &actual_super_key = keys[i];
+
+                    if (i + 1 == keys_index) break;
+
+                    auto &next_super_key_ = keys[i + 1];
+                    // NRF_LOG_DEBUG("*** next_super_key.state.start_time: %i   actual_super_key.state.start_time: %i ***", next_super_key_.state.start_time,
+                    // static_cast<int>(actual_super_key.state.start_time * 0.8));
+                    //  Now we know the superkey has been released, but we need to check to see if
+                    //  it's release should continue to be delayed during rollover -- if the
+                    //  subsequent key is released soon enough after the superkey is released, it
+                    //  will meet the maximum overlap requirement to make the superkey take on its
+                    //  alternate state.
+                    uint16_t overlap_start = next_super_key_.state.start_time;
+                    uint16_t overlap_end = actual_super_key.state.start_time;
+                    if (releaseDelayed(overlap_start, overlap_end))
+                    {
+                    // NRF_LOG_DEBUG("*** releasing: %i ***", actual_super_key.index);
+                        fast_key_release = true;
+                        state_[actual_super_key.index].released = true;
+                        state_[actual_super_key.index].has_modifier_in_action = false;
+                        for (int i = 0; i < keys_index; ++i)
+                        {
+                            state_[keys[i].index].holded = false;
+                            timeout(keys[i].key, keys[i].keyAddr);
+                        }
+
+                        return EventHandlerResult::EVENT_CONSUMED;
+                    }
+                }
+            }
+
             // If the printonrelease flag is true, or we only have tap and hold actions set it, release the key
             // modifier_pressed_ = true; This is to release the SK if we have a SHIFT pressed for example.
             // If the SK doesn't have an action on taphold double tap and double tap and hold, it will release like a normal key.
             // More quickly.
             if (modifier_pressed_ || state_[super_key_index].is_qukey)
             {
+                // NRF_LOG_DEBUG("QUICK SUPER-KEY RELEASE: %i", super_key_index);
+                // NRF_LOG_DEBUG("state_[super_key_index].is_qukey: %i", state_[super_key_index].is_qukey);
                 fast_key_release = true;
                 state_[super_key_index].released = true;
                 state_[super_key_index].has_modifier_in_action = false;
                 updateKey(mapped_key, state_[super_key_index]);
+
                 return EventHandlerResult::EVENT_CONSUMED;
             }
             else
             {
+                // NRF_LOG_DEBUG("NORMAL SUPERKEY RELEASE: %i", super_key_index);
                 state_[super_key_index].has_modifier_in_action = false;
                 fast_key_release = false;
                 state_[super_key_index].released = true;
                 updateKey(mapped_key, state_[super_key_index]);
             }
+
             return EventHandlerResult::EVENT_CONSUMED;
         }
 
@@ -850,8 +949,10 @@ EventHandlerResult DynamicSuperKeys::onKeyswitchEvent(Key &mapped_key, KeyAddr k
         if (Runtime.hasTimeExpired(state_[super_key_index].start_time, hold_start_))
         {
             hold(mapped_key, key_addr);
+
             return EventHandlerResult::EVENT_CONSUMED;
         }
+
         return EventHandlerResult::EVENT_CONSUMED;
     }
 
@@ -866,6 +967,7 @@ EventHandlerResult DynamicSuperKeys::beforeReportingState()
         fast_key_release = false;
         return EventHandlerResult::OK;
     }
+
     if (!fast_key_release)
     {
         // If we tap the SK. A time-out has to expire in order to send the Key to the OS.
@@ -884,17 +986,18 @@ EventHandlerResult DynamicSuperKeys::beforeReportingState()
             timeout(keys[i].key, keys[i].keyAddr);
         }
     }
+
     return EventHandlerResult::OK;
 }
 
 EventHandlerResult DynamicSuperKeys::onFocusEvent(const char *command)
 {
-    if (::Focus.handleHelp(command, "tsuperkeys.map\nsuperkeys.waitfor\nsuperkeys.timeout\nsuperkeys.repeat\nsuperkeys.holdstart\nsuperkeys.overlap"))
+    if (::Focus.handleHelp(command, "superkeys.map\nsuperkeys.waitfor\nsuperkeys.timeout\nsuperkeys.repeat\nsuperkeys.holdstart\nsuperkeys.overlap"))
         return EventHandlerResult::OK;
 
-    if (strncmp_P(command, "tsuperkeys.", 10) != 0) return EventHandlerResult::OK;
+    if (strncmp_P(command, "superkeys.", 10) != 0) return EventHandlerResult::OK;
 
-    if (strcmp_P(command + 11, "map") == 0)
+    if (strcmp_P(command + 10, "map") == 0)
     {
         if (::Focus.isEOL())
         {
@@ -921,6 +1024,7 @@ EventHandlerResult DynamicSuperKeys::onFocusEvent(const char *command)
             updateDynamicSuperKeysCache();
         }
     }
+
     if (strcmp_P(command + 10, "waitfor") == 0)
     {
         if (::Focus.isEOL())
@@ -936,6 +1040,7 @@ EventHandlerResult DynamicSuperKeys::onFocusEvent(const char *command)
             updateDynamicSuperKeysCache();
         }
     }
+
     if (strcmp_P(command + 10, "timeout") == 0)
     {
         if (::Focus.isEOL())
@@ -951,6 +1056,7 @@ EventHandlerResult DynamicSuperKeys::onFocusEvent(const char *command)
             updateDynamicSuperKeysCache();
         }
     }
+
     if (strcmp_P(command + 10, "holdstart") == 0)
     {
         if (::Focus.isEOL())
@@ -966,6 +1072,7 @@ EventHandlerResult DynamicSuperKeys::onFocusEvent(const char *command)
             updateDynamicSuperKeysCache();
         }
     }
+
     if (strcmp_P(command + 10, "repeat") == 0)
     {
         if (::Focus.isEOL())
@@ -981,6 +1088,7 @@ EventHandlerResult DynamicSuperKeys::onFocusEvent(const char *command)
             updateDynamicSuperKeysCache();
         }
     }
+
     if (strcmp_P(command + 10, "overlap") == 0)
     {
         if (::Focus.isEOL())
@@ -991,7 +1099,6 @@ EventHandlerResult DynamicSuperKeys::onFocusEvent(const char *command)
         {
             uint8_t overlap = 0;
             ::Focus.read(overlap);
-            if (overlap <= 0) overlap = 1;
             Runtime.storage().put(storage_base_ + 7, overlap);
             Runtime.storage().commit();
             updateDynamicSuperKeysCache();
@@ -1038,8 +1145,6 @@ void DynamicSuperKeys::addKey(Key key, KeyAddr keyAddr, DynamicSuperKeys::SuperK
         keyValue.state.has_already_send = false;
         keyValue.state.released = false;
         keyValue.state.is_layer_shifting = false;
-        keyValue.state.timeStamp = 0;
-        keyValue.state.release_next = false;
         if (keys_index == MAX_SUPER_KEYS_ACTIVE) return;
         keys[keys_index] = keyValue;
         keys_index++;
@@ -1048,13 +1153,14 @@ void DynamicSuperKeys::addKey(Key key, KeyAddr keyAddr, DynamicSuperKeys::SuperK
 
 void DynamicSuperKeys::removeKey(Key key)
 {
-    /*         NRF_LOG_DEBUG("SK list antes del remove");
-             NRF_LOG_DEBUG("*****************");
-             for (const auto &element : keys)
-            {
-             NRF_LOG_DEBUG("[%i]",element.index);
-            }
-             NRF_LOG_DEBUG("*****************");*/
+    /*NRF_LOG_DEBUG("SK list antes del remove");
+    NRF_LOG_DEBUG("*****************");
+    for (const auto &element : keys)
+    {
+        NRF_LOG_DEBUG("[%i]",element.index);
+    }
+    NRF_LOG_DEBUG("*****************");*/
+
     uint8_t index = key.getRaw() - ranges::DYNAMIC_SUPER_FIRST;
     for (int i = 0; i < keys_index; ++i)
     {
@@ -1070,31 +1176,35 @@ void DynamicSuperKeys::removeKey(Key key)
             break;
         }
     }
+
     if (keys_index == 0)
     {
         last_super_key_ = Key_NoKey;
     }
-    released = false;
-    /*         NRF_LOG_DEBUG("SK list DESPUES del remove");
-             NRF_LOG_DEBUG("*****************");
-             for (const auto &element : keys)
-            {
-             NRF_LOG_DEBUG("[%i]",element.index);
-            }
-             NRF_LOG_DEBUG("*****************");
-             NRF_LOG_FLUSH();*/
+
+    /*NRF_LOG_DEBUG("SK list DESPUES del remove");
+    NRF_LOG_DEBUG("*****************");
+    for (const auto &element : keys)
+    {
+        NRF_LOG_DEBUG("[%i]",element.index);
+    }
+    NRF_LOG_DEBUG("*****************");
+    NRF_LOG_FLUSH();*/
 }
 
-bool DynamicSuperKeys::findKey(Key mapped_key)
+__attribute__((unused)) Key DynamicSuperKeys::findKey(uint8_t index)
 {
-    for (int i = 0; i < keys_index; ++i)
+    auto key_index = Key_NoKey;
+
+    for (const auto &element : keys)
     {
-        if (keys[i].key.getRaw() == mapped_key.getRaw())
+        if (element.index == index)
         {
-            return true;
+            key_index = element.key;
         }
     }
-    return false;
+
+    return key_index;
 }
 
 void DynamicSuperKeys::updateKey(Key key, const DynamicSuperKeys::SuperKeyState &new_state)
@@ -1167,61 +1277,19 @@ __attribute__((unused)) void DynamicSuperKeys::flush_superkeys()
     }
 }
 
-bool DynamicSuperKeys::releaseDelayed(uint32_t next_superkey_timestamp, uint32_t actual_superkey_timestamp, uint32_t next_superkey_start_time)
+bool DynamicSuperKeys::releaseDelayed(uint16_t overlap_start, uint16_t overlap_end) const
 {
     // We want to calculate the timeout by dividing the overlap duration by the
     // percentage required to make the superkey take on its alternate state. Since
     // we're doing integer arithmetic, we need to first multiply by 100, then
     // divide by the percentage value (as an integer). We use 32-bit integers
     // here to make sure it doesn't overflow when we multiply by 100.
-
-    //uint32_t overlap_duration = actual_superkey_timestamp - next_superkey_timestamp;
-    //uint32_t release_timeout = (overlap_duration * 100) / overlap_threshold_;
-/*    NRF_LOG_DEBUG("*** overlap_duration %i ***", overlap_duration);
-    NRF_LOG_DEBUG("*** release_timeout %i ***", release_timeout);*/
-    //En esta seccion del codigo obtenemos el tiempo que tomamos
-
-    uint32_t release_timeout = (overlap_threshold_ * hold_start_) / 100;
-    NRF_LOG_DEBUG("*** release_timeout %i ***", release_timeout);
-    NRF_LOG_DEBUG("*** actual_superkey_timestamp %i ***", actual_superkey_timestamp);
-    if (actual_superkey_timestamp > release_timeout){
-        return true;
-    } else {
-        return false;
-    }
-
-    //bool state = Runtime.hasTimeExpired(next_superkey_start_time, uint16_t(release_timeout));
+    uint32_t overlap_duration = overlap_end - overlap_start;
+    uint32_t release_timeout = (overlap_duration * 100) / overlap_threshold_;
+    return !Runtime.hasTimeExpired(overlap_start, uint16_t(release_timeout));
 }
 
-bool DynamicSuperKeys::checkForCoordIng(Key mapped_key,KeyAddr key_addr)
-{
-
-    for (int i = 0; i < keys_index; ++i)
-    {
-        if (keys[i].state.has_modifier_in_action || keys[i].state.is_layer_shifting)
-        {
-            if (i + 1 == keys_index) break;
-
-            auto const &actual_super_key = keys[i];
-            auto &next_super_key_ = keys[i + 1];
-
-            if (releaseDelayed(next_super_key_.state.timeStamp, actual_super_key.state.timeStamp, next_super_key_.state.start_time) && !released)
-            {
-                NRF_LOG_DEBUG("Changing superkey state to HOLD: %i", actual_super_key.index);
-                hold(actual_super_key.key, actual_super_key.keyAddr);
-                if (!findKey(mapped_key)){
-                    //the key is not a superkey.
-                    handleKeyswitchEvent(mapped_key, key_addr, IS_PRESSED | INJECTED);
-                }
-                // interrupt(next_super_key_.key,next_super_key_.keyAddr);
-                released = true;
-                return true;
-            }
-        }
-    }
-    return false;
-}
-} // namespace plugin
-} //  namespace kaleidoscope
+}   // namespace plugin
+}   //  namespace kaleidoscope
 
 kaleidoscope::plugin::DynamicSuperKeys DynamicSuperKeys;

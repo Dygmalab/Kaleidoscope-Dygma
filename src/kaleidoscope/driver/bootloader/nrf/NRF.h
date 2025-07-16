@@ -6,7 +6,7 @@
 #include "Adafruit_TinyUSB.h"
 #include "Arduino.h"
 #include "EEPROM.h"
-#include "bootloader_drv.h"
+#include "bootloader_util.h"
 #include "kaleidoscope/driver/bootloader/Base.h"
 #include "nrf_sdh.h"
 
@@ -21,8 +21,8 @@ class nrfBoot : public kaleidoscope::driver::bootloader::Base {
     static void rebootBootloader() {
         EEPROM.erase();
         TinyUSBDevice.detach();
-        bldrdrv_init();
-        bldrdrv_update_request();
+        bldrUtil::init();
+        bldrUtil::update_request();
         delay(100);
         nrf_sdh_disable_request();
         reset_mcu();
