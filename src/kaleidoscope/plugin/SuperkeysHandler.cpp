@@ -76,9 +76,9 @@ void SuperkeysHandler::set_active_sk()
 {
     active_superkeys = 0;
     uint8_t undefined_actions = 0;
-    for (uint16_t i = 0; i < SUPER_KEY_COUNT; ++i)
+    for (uint16_t i = 0; i < SUPER_KEY_COUNT; ++i) // Iterate through all superkeys
     {
-        for (int j = 0; j < KEYS_IN_SUPERKEY; ++j)
+        for (int j = 0; j < KEYS_IN_SUPERKEY; ++j) // Iterate through all keys in the superkey
         {
             if (configurations.keys[i][j] == 0xFFFF)
             {
@@ -119,7 +119,7 @@ EventHandlerResult SuperkeysHandler::onKeyswitchEvent(Key &mapped_key, KeyAddr k
     if (IS_OUTSIDE_DYNAMIC_SUPER_RANGE(mapped_key.getRaw()))
     {
         // TODO: treat normal, keys.
-        //TODO: treat interruptions
+        // TODO: treat interruptions
         return EventHandlerResult::OK;
     }
 
@@ -130,7 +130,6 @@ EventHandlerResult SuperkeysHandler::onKeyswitchEvent(Key &mapped_key, KeyAddr k
         NRF_LOG_DEBUG("super_key_index %i  ", super_key_index);
         for (uint8_t pos = 0; pos <= get_active_sk(); ++pos)
         {
-
             if (Sk_queue[pos]->get_index() == super_key_index && !Sk_queue[pos]->is_enable())
             {
                 // We want to enable the superkey one time,
@@ -138,10 +137,13 @@ EventHandlerResult SuperkeysHandler::onKeyswitchEvent(Key &mapped_key, KeyAddr k
                 // we enable it, otherwise continue.
                 Sk_queue[pos]->enable();
                 Sk_queue[pos]->init_timer();
-                Sk_queue[pos]->set_key_and_keyAddr(mapped_key,key_addr);
+                Sk_queue[pos]->set_key_and_keyAddr(mapped_key, key_addr);
                 Sk_queue[pos]->key_pressed();
                 return EventHandlerResult::EVENT_CONSUMED;
-            } else if (Sk_queue[pos]->get_index() == super_key_index ){
+            }
+            else if (Sk_queue[pos]->get_index() == super_key_index) // if the index match and the superkey is already enabled
+            {
+                // We want to send the key pressed event to the superkey.
                 Sk_queue[pos]->key_pressed();
                 return EventHandlerResult::EVENT_CONSUMED;
             }
@@ -176,15 +178,15 @@ EventHandlerResult SuperkeysHandler::beforeReportingState()
 {
     static uint8_t pos = 0;
     // Iterate throw every superkey if they are enabled.
-    if (Sk_queue[pos]->is_enable())
+
+    for (uint8_t i = 0; i <= get_active_sk(); i++)
     {
-        Sk_queue[pos]->run();
+        if (Sk_queue[i]->is_enable())
+        {
+            Sk_queue[i]->run();
+        }
     }
-    ++pos;
-    if (pos >= get_active_sk())
-    {
-        pos = 0;
-    }
+    
     return EventHandlerResult::OK;
 }
 
@@ -220,7 +222,7 @@ EventHandlerResult SuperkeysHandler::onFocusEvent(const char *command)
                 pos++;
                 if (pos % 6 == 0)
                 {
-                    pos = (pos / 6) * 6; // Reinicia a la primera columna de la siguiente fila
+                    pos = (pos / 6) * 6; // Reset pos to the next superkey
                 }
             }
             save_configurations();

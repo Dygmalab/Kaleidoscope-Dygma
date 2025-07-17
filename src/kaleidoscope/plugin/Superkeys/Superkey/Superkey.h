@@ -5,6 +5,7 @@
 
 constexpr uint8_t KEYS_IN_SUPERKEY = 6;
 constexpr uint8_t QUKEY_MIN_IDLE_ACTIONS = 3;
+constexpr uint8_t IDLE_KEY = 1;
 
 
 // Forward declarations.
@@ -106,10 +107,23 @@ class Superkey
     void hold();
     void timeout();
     void interrupt();
+    
+    /**
+     * @brief Send the key to the OS.
+     * 
+     */
     void send_key() const;
 
     //Sk Configurations
     void set_up_actions(const Key *act);
+
+    /**
+     * @brief Check if the superkey is a Qukey.
+     * 
+     * Qukey superkeys are superkeys that have only two action configured, so they
+     * are fast to trigger and release.
+     * This method checks if the superkey has only two actions configured, and if so, sets the `is_qukey` state to true.
+     */
     void check_if_sk_qukey();
     void check_if_sk_interruptable(const Key& Action);
 
@@ -118,11 +132,13 @@ class Superkey
     void update_timestamp();
 
   public:
-    Key Actions[6] = {superKeyState.action.tap,
+    Key Actions[6] = {
+                      superKeyState.action.tap,
                       superKeyState.action.hold,
                       superKeyState.action.tap_hold,
                       superKeyState.action.double_tap,
-                      superKeyState.action.double_tap_hold};
+                      superKeyState.action.double_tap_hold
+                     };
 };
 
 #endif // NRF_NEURON_SUPERKEY_H

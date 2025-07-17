@@ -45,11 +45,14 @@ void Superkey::run()
     // Check if the key is being hold enough time.
     // Check if superKeyState.triggered = true, check sk type and send the corresponding key to the OS.
     // Check if the sk has to be interrupted by any external event.
-    if (superKeyState.is_qukey && superKeyState.released){
+    if (superKeyState.is_qukey && superKeyState.released)
+    {
         timeout();
         disable();
     }
-    if (kaleidoscope::Runtime_::hasTimeExpired(superKeyState.timeStamp,time_out_)){
+
+    if (kaleidoscope::Runtime_::hasTimeExpired(superKeyState.timeStamp, time_out_))
+    {
         timeout();
         disable();
     }
@@ -68,7 +71,8 @@ void Superkey::key_released()
 
 void Superkey::key_is_pressed()
 {
-    if (kaleidoscope::Runtime_::hasTimeExpired(superKeyState.hold_start,hold_start_) ){
+    if (kaleidoscope::Runtime_::hasTimeExpired(superKeyState.hold_start, hold_start_))
+    {
         hold();
     }
     update_timestamp();
@@ -79,7 +83,7 @@ void Superkey::key_is_pressed()
 void Superkey::tap()
 {
     superKeyState.released = false;
-    superKeyState.hold_start =  kaleidoscope::Runtime_::millisAtCycleStart();
+    superKeyState.hold_start = kaleidoscope::Runtime_::millisAtCycleStart();
     update_timestamp();
     ++superKeyState.tap_count;
 }
@@ -88,23 +92,26 @@ void Superkey::hold()
 {
     superKeyState.holded = true;
     superKeyState.released = false;
-    if (!superKeyState.triggered){
+    if (!superKeyState.triggered)
+    {
         send_key();
     }
-    superKeyState.triggered = true; //then, if we continue holding the key, we will set ir as pressed, and take the corresponding actions.
+    //! we want to check if the holded key should continue sending the key to the OS. e.g: shift
+    superKeyState.triggered = true; // then, if we continue holding the key, we will set it as pressed, and take the corresponding actions.
 }
 
 void Superkey::release()
 {
     superKeyState.released = true;
     ++superKeyState.tap_count;
-    //Restar timer.
-    superKeyState.hold_start =  kaleidoscope::Runtime_::millisAtCycleStart();
+    // Restar timer.
+    superKeyState.hold_start = kaleidoscope::Runtime_::millisAtCycleStart();
 }
 
 void Superkey::timeout()
 {
-    if (!superKeyState.triggered){
+    if (!superKeyState.triggered)
+    {
         superKeyState.triggered = true;
         send_key();
     }
@@ -132,7 +139,7 @@ void Superkey::check_if_sk_qukey()
     uint8_t idle_actions = 0;
     for (auto Action : Actions)
     {
-        if (Action.getRaw() == 1)
+        if (Action.getRaw() == IDLE_KEY)
         {
             ++idle_actions;
         }
@@ -148,7 +155,7 @@ void Superkey::check_if_sk_qukey()
     }
 }
 
-//TODO: move check_if_sk_interruptable and find_key_type to the ActionDriver. Asi el ActionDriver es el que se encarga de filtrar las teclas y asignar las acciones.
+// TODO: move check_if_sk_interruptable and find_key_type to the ActionDriver. Asi el ActionDriver es el que se encarga de filtrar las teclas y asignar las acciones.
 void Superkey::check_if_sk_interruptable(const Key &Action)
 {
     auto ranges_t = static_cast<KeyRanges>(find_key_type(Action.getRaw()));

@@ -69,6 +69,12 @@ class SuperkeysHandler : public kaleidoscope::Plugin
      * After setting up the storage, it updates the SuperKeys cache to ensure consistency with the stored values.
      */
     static void setup();
+
+    /**
+     * @brief Get the number of active superkeys.
+     *
+     * @return uint8_t The number of active superkeys.
+     */
     static uint8_t get_active_sk();
 
     struct Configurations{
@@ -84,7 +90,7 @@ class SuperkeysHandler : public kaleidoscope::Plugin
         uint8_t overlap_threshold_;
         uint16_t time_out_;
 
-        //Keys
+        // Keys configured in every superkey action.
         Key keys[SUPER_KEY_COUNT][KEYS_IN_SUPERKEY];
 
         void reset(){
@@ -120,6 +126,12 @@ class SuperkeysHandler : public kaleidoscope::Plugin
     static void enable();
     static void disable();
     static void save_configurations();
+
+    /**
+     * @brief Set how many superkeys are active, set by the user in the configuration.
+     * This method iterates through the superkeys and counts how many of them have valid actions configured.
+     * It updates the `active_superkeys` variable accordingly.
+     */
     static void set_active_sk();
     /*
      *  Erase superkeys instances to avoid memory leaks.

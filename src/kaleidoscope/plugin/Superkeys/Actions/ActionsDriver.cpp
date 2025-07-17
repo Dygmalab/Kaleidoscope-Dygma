@@ -39,8 +39,10 @@ Key ActionsDriver::return_type(uint8_t tap_count, const Key *actions)
             return actions[4];
         }
         default:
-            NRF_LOG_DEBUG("Tap_Twice");
+        {
+            NRF_LOG_DEBUG("Tap_Trice or more");
             return actions[3];
+        }
     }
 }
 
