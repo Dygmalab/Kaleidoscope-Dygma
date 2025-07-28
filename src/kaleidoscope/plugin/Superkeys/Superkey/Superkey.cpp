@@ -161,15 +161,15 @@ void Superkey::check_if_sk_interruptable(const Key &Action)
     auto ranges_t = static_cast<KeyRanges>(find_key_type(Action.getRaw()));
     switch (ranges_t)
     {
-        case KeyRanges::LAYER_LOCK:
-        case KeyRanges::DYNAMIC_MACRO:
-        case KeyRanges::LAYER_SHIFT:
-        case KeyRanges::ALPHA_WITH_MODIFIERS:
-            superKeyState.is_interruptable = false;
-            break;
-        default:
-            superKeyState.is_interruptable = true;
-            break;
+    case KeyRanges::LAYER_LOCK:
+    case KeyRanges::DYNAMIC_MACRO:
+    case KeyRanges::LAYER_SHIFT:
+    case KeyRanges::ALPHA_WITH_MODIFIERS:
+        superKeyState.is_interruptable = false;
+        break;
+    default:
+        superKeyState.is_interruptable = true;
+        break;
     }
 
     if (superKeyState.is_interruptable)
