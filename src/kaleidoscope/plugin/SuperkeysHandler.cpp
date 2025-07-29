@@ -1,6 +1,5 @@
-//
-// Created by Urano on 26/12/2023.
-//
+#pragma GCC push_options
+#pragma GCC optimize ("O0")   // Sin optimización
 
 #include "SuperkeysHandler.h"
 
@@ -19,6 +18,7 @@ namespace kaleidoscope
 
         void SuperkeysHandler::setup()
         {
+            settings_base_ = kaleidoscope::plugin::EEPROMSettings::requestSlice(sizeof(SuperkeysHandler::Configurations));
             cleanup();
             config();
             init();
@@ -51,13 +51,11 @@ namespace kaleidoscope
 
         void SuperkeysHandler::config()
         {
-            settings_base_ = kaleidoscope::plugin::EEPROMSettings::requestSlice(sizeof(configurations));
             Runtime.storage().get(settings_base_, configurations);
 
             // if one block is invalid, restart everything
             if (configurations.hold_start_ == 0xFFFF)
             {
-
                 configurations.reset();
                 Runtime.storage().put(settings_base_, configurations);
                 Runtime.storage().commit();
@@ -69,7 +67,9 @@ namespace kaleidoscope
         {
             Runtime.storage().put(settings_base_, configurations);
             Runtime.storage().commit();
-            setup();
+            cleanup();
+            config();
+            init();
         }
 
         void SuperkeysHandler::set_active_sk()
@@ -123,6 +123,7 @@ namespace kaleidoscope
                 return EventHandlerResult::OK;
             }
 
+            // Superkey processing starts here.
             super_key_index = static_cast<uint8_t>(mapped_key.getRaw() - ranges::DYNAMIC_SUPER_FIRST);
 
             if (keyToggledOn(keyState))
@@ -176,16 +177,18 @@ namespace kaleidoscope
 
         EventHandlerResult SuperkeysHandler::beforeReportingState()
         {
-            static uint8_t pos = 0;
             // Iterate throw every superkey if they are enabled.
+            uint8_t configuredSK = get_configured_sk();
 
-            for (uint8_t i = 0; i <= get_configured_sk(); i++)
+            for (uint8_t i = 0; i < configuredSK; i++)
             {
                 if (Sk_queue[i]->is_enable())
                 {
                     Sk_queue[i]->run();
                 }
             }
+            
+            NRF_LOG_FLUSH();
 
             return EventHandlerResult::OK;
         }
@@ -311,3 +314,5 @@ namespace kaleidoscope
     } // namespace plugin
 } // namespace kaleidoscope
 kaleidoscope::plugin::SuperkeysHandler SuperkeysHandler;
+
+#pragma GCC pop_options

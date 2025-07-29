@@ -1,16 +1,5 @@
 #include "Superkey.h"
 /*Variable declarations*/
-static constexpr Superkey::Range ranges[] = {
-    {Superkey::LAYER_LOCK_FIRST, Superkey::LAYER_LOCK_LAST},
-    {Superkey::LED_BUTTONS_FIRST, Superkey::LED_BUTTONS_LAST},
-    {kaleidoscope::ranges::DYNAMIC_MACRO_FIRST, kaleidoscope::ranges::DYNAMIC_MACRO_LAST},
-    {Superkey::ALPHA_WITH_MODIFIERS_FIRST, Superkey::ALPHA_WITH_MODIFIERS_LAST},
-    {0, Superkey::ALPHA_KEYS},
-    {Superkey::LAYER_SHIFT_FIRST, Superkey::LAYER_SHIFT_LAST},
-    {23785, 23786} // maybe these are LEDs buttons.
-};
-
-static constexpr int numRanges = sizeof(ranges) / sizeof(ranges[0]);
 
 /************SUPERKEY CONFIGURATION*************/
 void Superkey::init(const Key *act)
@@ -37,6 +26,7 @@ void Superkey::disable()
     superKeyState.hold_start = 0;
     superKeyState.timeStamp = 0;
     superKeyState.pressed = false;
+    superKeyState.is_repeateable = false;
 }
 
 void Superkey::run()
@@ -103,6 +93,7 @@ void Superkey::hold()
 void Superkey::release()
 {
     superKeyState.released = true;
+    superKeyState.is_repeateable = false; // we stop sending the key to the OS.
     ++superKeyState.tap_count;
     // Restar timer.
     superKeyState.hold_start = kaleidoscope::Runtime_::millisAtCycleStart();
@@ -155,57 +146,11 @@ void Superkey::check_if_sk_qukey()
     }
 }
 
-// TODO: move check_if_sk_interruptable and find_key_type to the ActionDriver. Asi el ActionDriver es el que se encarga de filtrar las teclas y asignar las acciones.
-void Superkey::check_if_sk_interruptable(const Key &Action)
+void Superkey::keep_sending_hold_key(bool holded)
 {
-    auto ranges_t = static_cast<KeyRanges>(find_key_type(Action.getRaw()));
-    switch (ranges_t)
-    {
-    case KeyRanges::LAYER_LOCK:
-    case KeyRanges::DYNAMIC_MACRO:
-    case KeyRanges::LAYER_SHIFT:
-    case KeyRanges::ALPHA_WITH_MODIFIERS:
-        superKeyState.is_interruptable = false;
-        break;
-    default:
-        superKeyState.is_interruptable = true;
-        break;
-    }
-
-    if (superKeyState.is_interruptable)
-    {
-        NRF_LOG_DEBUG("superkey with index %i is interruptable ", index_);
-    }
-    else
-    {
-        NRF_LOG_DEBUG("superkey with index %i is NOT interruptable ", index_);
-    }
+    superKeyState.is_repeateable = holded;
 }
 
-uint16_t Superkey::find_key_type(uint16_t value)
-{
-    int start = 0;
-    int end = numRanges - 1;
-
-    while (start <= end)
-    {
-        int mid = start + (end - start) / 2;
-
-        if (value >= ranges[mid].start && value <= ranges[mid].end)
-        {
-            return mid; // Found the range
-        }
-        else if (value < ranges[mid].start)
-        {
-            end = mid - 1; // Search in the left half
-        }
-        else
-        {
-            start = mid + 1; // Search in the right half
-        }
-    }
-    return -1;
-}
 //*********************************************************************************************
 bool Superkey::is_enable() const
 {
@@ -236,5 +181,5 @@ void Superkey::set_key_and_keyAddr(Key key, KeyAddr keyAddr)
 
 void Superkey::send_key() const
 {
-    ActionsDriver::action_handler(superKeyState.tap_count, Actions, phisical_key_, keyaddr_);
+    ActionsDriver::action_handler(superKeyState.tap_count, Actions, phisical_key_, keyaddr_, superKeyState.is_repeateable);
 }

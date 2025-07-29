@@ -6,33 +6,92 @@
 #define NRF_NEURON_INCLUDES_H
 #include <Kaleidoscope.h>
 #include <Kaleidoscope-Ranges.h>
-namespace Utils{
-struct Actions
+namespace Utils
 {
-    Key tap;
-    Key hold;
-    Key tap_hold;
-    Key double_tap;
-    Key double_tap_hold;
-};
+    struct Actions
+    {
+        Key tap;
+        Key hold;
+        Key tap_hold;
+        Key double_tap;
+        Key double_tap_hold;
+    };
 
-enum class TapType
-{
-    None,
-    Hold_Once,
-    Tap_Once,
-    Tap_Hold,
-    Tap_Twice,
-    Tap_Twice_Hold,
-    Tap_Trice,
-};
+    struct ExtendedActions
+    {
+        Actions action;
+        bool is_repeateable;
+    };
 
-enum class EventType
-{
-    TAP,
-    HOLD,
-    IDLE
-};
+    enum class TapType
+    {
+        None,
+        Hold_Once,
+        Tap_Once,
+        Tap_Hold,
+        Tap_Twice,
+        Tap_Twice_Hold,
+        Tap_Trice,
+    };
+
+    enum class EventType
+    {
+        TAP,
+        HOLD,
+        IDLE
+    };
+
+    enum class RepeatOnHold
+    {
+        NO_REPEAT = 1,
+        HOLD,
+        TAP_HOLD,
+        BOTH_HOLD_ACTIONS
+    };
+
+    enum : uint16_t
+    {
+        ALPHA_KEYS = 255,
+        ALPHA_WITH_MODIFIERS_FIRST = 256,
+        ALPHA_WITH_MODIFIERS_LAST = 7935,
+        LED_BUTTONS_FIRST = 17152,
+        PREVIOUS_LED_EFFECT,
+        LED_BUTTONS_LAST,
+        LAYER_SHIFT_FIRST = 17450,
+        LAYER_SHIFT_LAST = 17459,
+        LAYER_LOCK_FIRST = 17492,
+        LAYER_LOCK_LAST = 17501
+    };
+
+    struct SKRanges
+    {
+        uint16_t start;
+        uint16_t end;
+    };
+
+    static constexpr SKRanges ranges[] = {
+        {LAYER_LOCK_FIRST, LAYER_LOCK_LAST},
+        {LED_BUTTONS_FIRST, LED_BUTTONS_LAST},
+        {kaleidoscope::ranges::DYNAMIC_MACRO_FIRST, kaleidoscope::ranges::DYNAMIC_MACRO_LAST},
+        {ALPHA_WITH_MODIFIERS_FIRST, ALPHA_WITH_MODIFIERS_LAST},
+        {0, ALPHA_KEYS},
+        {LAYER_SHIFT_FIRST, LAYER_SHIFT_LAST},
+        {23785, 23786} // maybe these are LEDs buttons.
+    };
+
+    static constexpr int numRanges = sizeof(ranges) / sizeof(ranges[0]);
+
+    enum class KeyRanges
+    {
+        LAYER_LOCK,
+        LED_BUTTONS,
+        DYNAMIC_MACRO,
+        ALPHA_WITH_MODIFIERS,
+        ALPHA_KEYS,
+        LAYER_SHIFT,
+        UNKNOW
+    };
+
 }
 
 #include "Kaleidoscope/src/kaleidoscope/plugin/Superkeys/Actions/ActionsDriver.h"
