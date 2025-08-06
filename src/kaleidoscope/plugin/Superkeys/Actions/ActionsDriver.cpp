@@ -20,7 +20,6 @@ Utils::ExtendedActions ActionsDriver::return_type(uint8_t tap_count, const Key *
         // NRF_LOG_DEBUG("Tap_Once");
         sk_key_action.key = actions[0];
         sk_key_action.key_is_interruptable = key_can_interrupt(actions[0]);
-        sk_key_action.key.setFlags(kaleidoscope::Runtime.hid().keyboard().isAnyModifierKeyActive());
     }
     break;
 
@@ -93,9 +92,9 @@ bool ActionsDriver::action_handler(uint8_t tap_count, const Key *actions, const 
 
     Utils::ExtendedActions returned_key = return_type(tap_count, actions);
 
-    /*    NRF_LOG_DEBUG("Key released raw=%i flags=%i",
+        NRF_LOG_DEBUG("Key released raw=%i flags=%i",
                       returned_key.key.getRaw(),
-                      returned_key.key.getFlags());*/
+                      returned_key.key.getFlags());
 
     if (returned_key.key_is_interruptable)
     {
