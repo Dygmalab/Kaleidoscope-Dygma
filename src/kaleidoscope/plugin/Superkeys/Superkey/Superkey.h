@@ -17,6 +17,7 @@ public:
   void enable();
   void disable();
   void run();
+  bool interrupt(Key &key, const KeyAddr &keyaddr);
   bool is_enable() const;
   void init_timer();
   uint16_t get_index() const;
@@ -25,6 +26,9 @@ public:
   void key_pressed();
   void key_released();
   void key_is_pressed();
+  bool is_interruptible();
+  Key get_phisical_key() const;
+  KeyAddr get_keyAddr() const;
   void set_key_and_keyAddr(Key key, KeyAddr keyAddr);
 
   // Constructor
@@ -59,6 +63,7 @@ private:
     uint32_t start_time{0};
     uint32_t hold_start{0};
     uint32_t timeStamp{0};
+    uint32_t minimum_hold{0};
 
     // keys in Actions
 
@@ -69,14 +74,13 @@ private:
   uint8_t index_{};
   uint16_t time_out_{255};
   uint16_t hold_start_{255};
-  uint16_t minimum_hold_start_{255};
+  uint16_t minimum_hold_start_{100};
 
   // Superkey States
   void tap();
   void release();
   void hold();
   void timeout();
-  void interrupt();
 
   /**
    * @brief Send the key to the OS.
@@ -115,8 +119,7 @@ public:
       superKeyState.action.hold,
       superKeyState.action.tap_hold,
       superKeyState.action.double_tap,
-      superKeyState.action.double_tap_hold
-    };
+      superKeyState.action.double_tap_hold};
 };
 
 #endif // NRF_NEURON_SUPERKEY_H

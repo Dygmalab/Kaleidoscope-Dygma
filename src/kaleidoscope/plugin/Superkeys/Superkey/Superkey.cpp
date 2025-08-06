@@ -16,6 +16,8 @@ void Superkey::enable()
 
 void Superkey::disable()
 {
+/*    NRF_LOG_DEBUG("Disabling Superkey %i", index_);
+    NRF_LOG_DEBUG("----------------------------------------");*/
     superKeyState.enabled = false;
     superKeyState.tap_count = 0;
     superKeyState.holded = false;
@@ -27,6 +29,7 @@ void Superkey::disable()
     superKeyState.timeStamp = 0;
     superKeyState.pressed = false;
     superKeyState.is_repeateable = false;
+    timeline.remove(this->keyaddr_);
 }
 
 void Superkey::run()
@@ -35,13 +38,13 @@ void Superkey::run()
     // Check if the key is being hold enough time.
     // Check if superKeyState.triggered = true, check sk type and send the corresponding key to the OS.
     // Check if the sk has to be interrupted by any external event.
+    // NRF_LOG_DEBUG("Running Superkey %i", index_);
     if (superKeyState.is_qukey && superKeyState.released)
     {
         timeout();
         disable();
     }
-
-    if (kaleidoscope::Runtime_::hasTimeExpired(superKeyState.timeStamp, time_out_))
+    else if (kaleidoscope::Runtime_::hasTimeExpired(superKeyState.timeStamp, time_out_))
     {
         timeout();
         disable();
@@ -74,10 +77,11 @@ void Superkey::tap()
 {
     superKeyState.released = false;
     superKeyState.hold_start = kaleidoscope::Runtime_::millisAtCycleStart();
+    superKeyState.minimum_hold = superKeyState.hold_start;
     update_timestamp();
     ++superKeyState.tap_count;
 }
-
+//TODO: si presiono shift + una sk y suelto el shift y luego la sk esta no sale shifteada.
 void Superkey::hold()
 {
     superKeyState.holded = true;
@@ -94,8 +98,9 @@ void Superkey::release()
 {
     superKeyState.released = true;
     superKeyState.is_repeateable = false; // we stop sending the key to the OS.
+    superKeyState.holded = false;
     ++superKeyState.tap_count;
-    // Restar timer.
+    // Restart timer.
     superKeyState.hold_start = kaleidoscope::Runtime_::millisAtCycleStart();
 }
 
@@ -108,12 +113,34 @@ void Superkey::timeout()
     }
 }
 
-void Superkey::interrupt()
+bool Superkey::interrupt(Key &regular_key, const KeyAddr &keyaddr_)
 {
-    if (superKeyState.is_interruptable)
+    bool result = false;
+
+    // If the regular key press is a modifier key, we send it as a modifier to the OS so the next superkeys can use it.
+    if (ActionsDriver::isOnlyModifier(regular_key))
     {
-        superKeyState.interrupt = true;
+        ActionsDriver::send_modifier(regular_key, keyaddr_);
+        return false;
     }
+
+    // TODO: aca tenemos que verificar que el minimun hold time out se alla cumplido, para ver si liberamos la tecla con una key u otra.
+    if (!superKeyState.holded && ActionsDriver::key_can_interrupt(regular_key))
+    {
+        //NRF_LOG_DEBUG("Superkey %i is being interrupted by key %i", index_, regular_key.getRaw());
+        if (kaleidoscope::Runtime_::hasTimeExpired(superKeyState.minimum_hold, minimum_hold_start_))
+        {
+            superKeyState.tap_count = (uint8_t)Utils::EventType::HOLD; // Force the action tap count to TAP.
+        }
+        else
+        {
+            superKeyState.tap_count = (uint8_t)Utils::EventType::TAP; // Force the action tap count to TAP.
+        }
+        timeout();
+        disable();
+        result = true;
+    }
+    return result;
 }
 
 void Superkey::set_up_actions(const Key *act)
@@ -123,6 +150,22 @@ void Superkey::set_up_actions(const Key *act)
     {
         Actions[i] = act[i];
     }
+}
+
+bool Superkey::is_interruptible()
+{
+    superKeyState.is_interruptable = ActionsDriver::return_type(superKeyState.tap_count, Actions).key_is_interruptable;
+    return superKeyState.is_interruptable;
+}
+
+Key Superkey::get_phisical_key() const
+{
+    return phisical_key_;
+}
+
+KeyAddr Superkey::get_keyAddr() const
+{
+    return keyaddr_;
 }
 
 void Superkey::check_if_sk_qukey()
@@ -181,5 +224,5 @@ void Superkey::set_key_and_keyAddr(Key key, KeyAddr keyAddr)
 
 void Superkey::send_key() const
 {
-    ActionsDriver::action_handler(superKeyState.tap_count, Actions, phisical_key_, keyaddr_, superKeyState.is_repeateable);
+    ActionsDriver::action_handler(superKeyState.tap_count, Actions, phisical_key_, keyaddr_);
 }
