@@ -117,6 +117,7 @@ namespace kaleidoscope
             static uint16_t settings_base_;
             static Superkey *Sk_queue[MAX_SUPER_KEYS_ACTIVE];
             static uint8_t configured_superkeys;
+
             // keys in Actions
             static Key Actions[KEYS_IN_SUPERKEY];
 
@@ -136,6 +137,12 @@ namespace kaleidoscope
              *  Erase superkeys instances to avoid memory leaks.
              */
             static void cleanup();
+
+            static void superkey_release_event(uint8_t superkey_index);
+
+            static EventHandlerResult handle_superkeys(Key &mapped_key, KeyAddr key_addr, uint8_t keyState);
+
+            static EventHandlerResult handle_regular_keys(Key &mapped_key, KeyAddr key_addr, uint8_t keyState);
         };
     } // namespace plugin
 } // namespace kaleidoscope

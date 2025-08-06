@@ -1,5 +1,5 @@
 #pragma GCC push_options
-#pragma GCC optimize ("O0")   // Sin optimización
+#pragma GCC optimize("O0") // Sin optimización
 
 #include "SuperkeysHandler.h"
 
@@ -107,22 +107,8 @@ namespace kaleidoscope
             }
         }
 
-        EventHandlerResult SuperkeysHandler::onKeyswitchEvent(Key &mapped_key, KeyAddr key_addr, uint8_t keyState)
+        EventHandlerResult SuperkeysHandler::handle_superkeys(kaleidoscope::Key &mapped_key, KeyAddr key_addr, uint8_t keyState)
         {
-            // If k is not a physical key, ignore it; some other plugin injected it.
-            if (keyState & INJECTED)
-            {
-                return EventHandlerResult::OK;
-            }
-
-            // If it's not a super-key press, we treat it here.
-            if (IS_OUTSIDE_DYNAMIC_SUPER_RANGE(mapped_key.getRaw()))
-            {
-                // TODO: treat normal, keys.
-                // TODO: treat interruptions
-                return EventHandlerResult::OK;
-            }
-
             // Superkey processing starts here.
             super_key_index = static_cast<uint8_t>(mapped_key.getRaw() - ranges::DYNAMIC_SUPER_FIRST);
 
@@ -140,6 +126,17 @@ namespace kaleidoscope
                         Sk_queue[pos]->init_timer();
                         Sk_queue[pos]->set_key_and_keyAddr(mapped_key, key_addr);
                         Sk_queue[pos]->key_pressed();
+
+                        Utils::TimelineEntry entry = {
+                            mapped_key,
+                            key_addr,
+                            Runtime.millisAtCycleStart(),
+                            Utils::KeyType::SUPERKEY,
+                            false,
+                            static_cast<void *>(Sk_queue[pos])};
+
+                        timeline.add(entry);
+
                         return EventHandlerResult::EVENT_CONSUMED;
                     }
                     else if (Sk_queue[pos]->get_index() == super_key_index) // if the index match and the superkey is already enabled
@@ -175,6 +172,67 @@ namespace kaleidoscope
             return EventHandlerResult::OK;
         }
 
+        EventHandlerResult SuperkeysHandler::handle_regular_keys(Key &mapped_key, KeyAddr key_addr, uint8_t keyState)
+        {
+            /*            uint8_t configuredSK = get_configured_sk();
+
+                        for (uint8_t i = 0; i < configuredSK; i++)
+                        {
+                            // If we have an active sk we will try to interrupt it, this will depend on the key pressed.
+                            //E.g., if the pressed key is a layer shift we can't interrupt a superkey.
+                            if (Sk_queue[i]->is_enable() && Sk_queue[i]->interrupt(mapped_key, key_addr))
+                            {
+                                return  EventHandlerResult::EVENT_CONSUMED;
+                            }
+                        }*/
+            if (keyToggledOn(keyState))
+            {
+                Utils::TimelineEntry entry = {
+                    mapped_key,
+                    key_addr,
+                    Runtime.millisAtCycleStart(),
+                    Utils::KeyType::NORMAL,
+                    false,
+                    nullptr};
+
+                if (timeline.add(entry))
+                {
+                    return EventHandlerResult::EVENT_CONSUMED;
+                }
+            }
+            else if (keyToggledOff(keyState))
+            {
+                // If the key is toggled off, we remove it from the timeline.
+                timeline.remove(key_addr);
+            }
+            else if (keyIsPressed(keyState))
+            {
+                // If the key is pressed, we do nothing.
+            }
+            return EventHandlerResult::OK;
+        }
+
+        EventHandlerResult SuperkeysHandler::onKeyswitchEvent(Key &mapped_key, KeyAddr key_addr, uint8_t keyState)
+        {
+            EventHandlerResult result = EventHandlerResult::OK;
+            // If k is not a physical key, ignore it; some other plugin injected it.
+            if (keyState & INJECTED)
+            {
+                return EventHandlerResult::OK;
+            }
+
+            // If it's not a super-key press, we treat it here.
+            if (IS_OUTSIDE_DYNAMIC_SUPER_RANGE(mapped_key.getRaw()))
+            {
+                handle_regular_keys(mapped_key, key_addr, keyState);
+                return EventHandlerResult::OK;
+            }
+
+            result = handle_superkeys(mapped_key, key_addr, keyState);
+
+            return result;
+        }
+
         EventHandlerResult SuperkeysHandler::beforeReportingState()
         {
             // Iterate throw every superkey if they are enabled.
@@ -187,7 +245,7 @@ namespace kaleidoscope
                     Sk_queue[i]->run();
                 }
             }
-            
+
             NRF_LOG_FLUSH();
 
             return EventHandlerResult::OK;
