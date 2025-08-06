@@ -1,7 +1,3 @@
-//
-// Created by Urano on 28/12/2023.
-//
-
 #ifndef NRF_NEURON_INCLUDES_H
 #define NRF_NEURON_INCLUDES_H
 #include <Kaleidoscope.h>
@@ -19,8 +15,8 @@ namespace Utils
 
     struct ExtendedActions
     {
-        Actions action;
-        bool is_repeateable;
+        Key key;
+        bool key_is_interruptable;
     };
 
     enum class TapType
@@ -36,17 +32,9 @@ namespace Utils
 
     enum class EventType
     {
-        TAP,
-        HOLD,
-        IDLE
-    };
-
-    enum class RepeatOnHold
-    {
-        NO_REPEAT = 1,
-        HOLD,
-        TAP_HOLD,
-        BOTH_HOLD_ACTIONS
+        IDLE = 0,
+        HOLD = 1,
+        TAP = 2,
     };
 
     enum : uint16_t
@@ -92,8 +80,26 @@ namespace Utils
         UNKNOW
     };
 
-}
+    enum class KeyType {
+        NONE,
+        NORMAL,
+        SUPERKEY,
+        MACRO,
+        SPECIAL,
+        MODIFIER
+    };
 
+    struct TimelineEntry
+    {
+        Key key;
+        KeyAddr addr;
+        uint32_t timestamp;
+        KeyType type;
+        bool is_interruptible; // Solo relevante para Superkeys
+        void* context; // Apunta a la instancia que gestiona esta key (Superkey*, Macro*, etc.)
+    };
+}
+#include "Kaleidoscope/src/kaleidoscope/plugin/Superkeys/Timeline/Timeline.h"
 #include "Kaleidoscope/src/kaleidoscope/plugin/Superkeys/Actions/ActionsDriver.h"
 #include "libraries/Kaleidoscope/src/kaleidoscope/plugin/Superkeys/Superkey/Superkey.h"
 #endif // NRF_NEURON_INCLUDES_H
