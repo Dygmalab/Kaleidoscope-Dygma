@@ -17,6 +17,7 @@ namespace Utils
     {
         Key key;
         bool key_is_interruptable;
+        bool release_two_keys; // This is used if the sk has no key set it in double tap so we will release the tap action twice.
     };
 
     enum class TapType
