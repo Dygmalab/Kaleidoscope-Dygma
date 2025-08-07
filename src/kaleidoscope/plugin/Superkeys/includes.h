@@ -2,6 +2,10 @@
 #define NRF_NEURON_INCLUDES_H
 #include <Kaleidoscope.h>
 #include <Kaleidoscope-Ranges.h>
+
+#define KEY_PRESED 2
+#define KEY_RELEASED 1
+
 namespace Utils
 {
     struct Actions
