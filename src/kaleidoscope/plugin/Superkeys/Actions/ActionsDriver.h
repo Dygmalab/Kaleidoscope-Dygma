@@ -33,6 +33,10 @@ public:
     static void send_modifier(const Key &key, const KeyAddr &key_addr);
 
     static uint16_t find_key_type(uint16_t value);
+
+    static void send_modifiers_from_flags(uint8_t modif_flags, const KeyAddr &key_addr);
+
+    static void send_key_twice(const Key &key, const KeyAddr &keyAddr);
 };
 
 #endif // NRF_NEURON_ACTIONSDRIVER_H

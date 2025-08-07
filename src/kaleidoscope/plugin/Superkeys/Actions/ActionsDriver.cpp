@@ -3,7 +3,7 @@
 
 Utils::ExtendedActions ActionsDriver::return_type(uint8_t tap_count, const Key *actions)
 {
-    Utils::ExtendedActions sk_key_action;
+    Utils::ExtendedActions sk_key_action = {0xFFFF, false, false};
     switch (static_cast<Utils::TapType>(tap_count))
     {
     case Utils::TapType::None:
@@ -44,6 +44,16 @@ Utils::ExtendedActions ActionsDriver::return_type(uint8_t tap_count, const Key *
         // NRF_LOG_DEBUG("Tap_Twice");
         sk_key_action.key = actions[3];
         sk_key_action.key_is_interruptable = key_can_interrupt(actions[3]);
+        if(sk_key_action.key == 1)
+        {
+            // If the tap twice action is not set, we will release the tap action twice.
+            sk_key_action.key = actions[0];
+            sk_key_action.release_two_keys = true;
+        }
+        else
+        {
+            sk_key_action.release_two_keys = false;
+        }
     }
     break;
 
@@ -60,6 +70,16 @@ Utils::ExtendedActions ActionsDriver::return_type(uint8_t tap_count, const Key *
         // NRF_LOG_DEBUG("Tap_Trice or more");
         sk_key_action.key = actions[3];
         sk_key_action.key_is_interruptable = key_can_interrupt(actions[3]);
+        if(sk_key_action.key == 1)
+        {
+            // If the tap twice action is not set, we will release the tap action twice.
+            sk_key_action.key = actions[0];
+            sk_key_action.release_two_keys = true;
+        }
+        else
+        {
+            sk_key_action.release_two_keys = false;
+        }
     }
     break;
     }
@@ -101,10 +121,15 @@ bool ActionsDriver::action_handler(uint8_t tap_count, const Key *actions, const 
         result = true;
     }
 
+    if(returned_key.release_two_keys)
+    {
+        send_key_twice(returned_key.key, keyAddr);
+    }
+    else
+    {
+        handleKeyswitchEvent(returned_key.key, keyAddr, IS_PRESSED | INJECTED);
+    }
     // logKeyModifiers(returned_key.key);
-
-    handleKeyswitchEvent(returned_key.key, keyAddr, IS_PRESSED | INJECTED);
-
     return result;
 }
 
@@ -200,6 +225,22 @@ void ActionsDriver::send_regular_key(const Key &key, const KeyAddr &key_addr)
     }
 }
 
+void ActionsDriver::send_modifiers_from_flags(uint8_t modif_flags, const KeyAddr &key_addr)
+{
+    if (modif_flags & CTRL_HELD)
+        handleKeyswitchEvent(Key_LeftControl, key_addr, IS_PRESSED | INJECTED);
+    if (modif_flags & LALT_HELD)
+        handleKeyswitchEvent(Key_LeftAlt, key_addr, IS_PRESSED | INJECTED);
+    if (modif_flags & RALT_HELD)
+        handleKeyswitchEvent(Key_RightAlt, key_addr, IS_PRESSED | INJECTED);
+    if (modif_flags & SHIFT_HELD)
+        handleKeyswitchEvent(Key_LeftShift, key_addr, IS_PRESSED | INJECTED);
+    if (modif_flags & GUI_HELD)
+        handleKeyswitchEvent(Key_LeftGui, key_addr, IS_PRESSED | INJECTED);
+
+    kaleidoscope::Runtime.hid().keyboard().sendReport();
+}
+
 void ActionsDriver::send_modifier(const Key &key, const KeyAddr &key_addr)
 {
     /* Si presionamos un modificador y luego una SK, debemos poder liberar esta SK con el modificador asociado */
@@ -226,4 +267,15 @@ void ActionsDriver::send_modifier(const Key &key, const KeyAddr &key_addr)
 
         kaleidoscope::Runtime.hid().keyboard().sendReport();
     }
+}
+
+void ActionsDriver::send_key_twice(const Key &key, const KeyAddr &key_addr)
+{
+    handleKeyswitchEvent(key, key_addr, IS_PRESSED | INJECTED);
+    kaleidoscope::Runtime.hid().keyboard().sendReport();
+    handleKeyswitchEvent(key, key_addr, WAS_PRESSED | INJECTED);
+    kaleidoscope::Runtime.hid().keyboard().sendReport();
+    handleKeyswitchEvent(key, key_addr, IS_PRESSED | INJECTED);
+    kaleidoscope::Runtime.hid().keyboard().sendReport();
+    handleKeyswitchEvent(key, key_addr, WAS_PRESSED | INJECTED);
 }
