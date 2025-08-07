@@ -1,5 +1,5 @@
 #pragma GCC push_options
-#pragma GCC optimize("O0") // Sin optimización
+#pragma GCC optimize("O0") // No optimization
 
 #include "SuperkeysHandler.h"
 
@@ -15,6 +15,7 @@ namespace kaleidoscope
         Superkey *SuperkeysHandler::Sk_queue[SuperkeysHandler::MAX_SUPER_KEYS_ACTIVE] = {};
         Key SuperkeysHandler::Actions[6] = {};
         uint8_t super_key_index = 0;
+        uint8_t SuperkeysHandler::cache_modifiers = 0;
 
         void SuperkeysHandler::setup()
         {
@@ -28,7 +29,7 @@ namespace kaleidoscope
         {
             set_active_sk();
             uint16_t sk_index = 0;
-            NRF_LOG_DEBUG("Configured Super-keys %i", get_configured_sk());
+            //NRF_LOG_DEBUG("Configured Super-keys %i", get_configured_sk());
             while (sk_index < get_configured_sk())
             {
                 // Set Super-keys keys.
@@ -37,7 +38,7 @@ namespace kaleidoscope
                     Actions[i] = configurations.keys[sk_index][i];
                 }
                 // Create a new superkey instance giving the position as index, we need to use a C style array and new due to the compatibility with Raise 1.
-                Superkey *superkeyInstance = new Superkey(sk_index, configurations.hold_start_, configurations.time_out_);
+                Superkey *superkeyInstance = new Superkey(sk_index, configurations.hold_start_, configurations.time_out_, configurations.overlap_threshold_);
                 superkeyInstance->init(Actions);
 
                 // Add instance to the queue
@@ -107,6 +108,57 @@ namespace kaleidoscope
             }
         }
 
+        void SuperkeysHandler::log_cache_modifiers()
+        {
+            NRF_LOG_DEBUG("Estado de cache_modifiers: 0x%02X", cache_modifiers);
+
+            if (cache_modifiers & CTRL_HELD)   NRF_LOG_DEBUG("CTRL activo");
+            if (cache_modifiers & LALT_HELD)   NRF_LOG_DEBUG("Left ALT activo");
+            if (cache_modifiers & RALT_HELD)   NRF_LOG_DEBUG("Right ALT activo");
+            if (cache_modifiers & SHIFT_HELD)  NRF_LOG_DEBUG("SHIFT activo");
+            if (cache_modifiers & GUI_HELD)    NRF_LOG_DEBUG("GUI activo");
+            if (cache_modifiers == 0)          NRF_LOG_DEBUG("Sin modificadores");
+        }
+
+        void SuperkeysHandler::save_pressed_modifiers(Key &mapped_key, uint8_t keyState)
+        {
+            uint16_t raw = mapped_key.getRaw() & 0x00FF; // Take only the HID keycode (lower part)
+
+            // If it is a modifier, we update cache_modifiers according to the current state
+            if (keyState == 2)
+            {
+                // Add corresponding flag
+                switch (raw)
+                {
+                    case HID_KEYBOARD_LEFT_CONTROL:   cache_modifiers |= CTRL_HELD;   break;
+                    case HID_KEYBOARD_LEFT_ALT:       cache_modifiers |= LALT_HELD;   break;
+                    case HID_KEYBOARD_RIGHT_ALT:      cache_modifiers |= RALT_HELD;   break;
+                    case HID_KEYBOARD_LEFT_SHIFT:     cache_modifiers |= SHIFT_HELD;  break;
+                    case HID_KEYBOARD_LEFT_GUI:       cache_modifiers |= GUI_HELD;    break;
+                    case HID_KEYBOARD_RIGHT_CONTROL:  cache_modifiers |= CTRL_HELD;  break;
+                    case HID_KEYBOARD_RIGHT_SHIFT:    cache_modifiers |= SHIFT_HELD; break;
+                    case HID_KEYBOARD_RIGHT_GUI:      cache_modifiers |= GUI_HELD;   break;
+                }
+            }
+            else if (keyState == 1)
+            {
+                // Remove flag if not pressed
+                switch (raw)
+                {
+                    case HID_KEYBOARD_LEFT_CONTROL:   cache_modifiers &= ~CTRL_HELD;   break;
+                    case HID_KEYBOARD_LEFT_ALT:       cache_modifiers &= ~LALT_HELD;   break;
+                    case HID_KEYBOARD_RIGHT_ALT:      cache_modifiers &= ~RALT_HELD;   break;
+                    case HID_KEYBOARD_LEFT_SHIFT:     cache_modifiers &= ~SHIFT_HELD;  break;
+                    case HID_KEYBOARD_LEFT_GUI:       cache_modifiers &= ~GUI_HELD;    break;
+                    case HID_KEYBOARD_RIGHT_CONTROL:  cache_modifiers &= ~CTRL_HELD;  break;
+                    case HID_KEYBOARD_RIGHT_SHIFT:    cache_modifiers &= ~SHIFT_HELD; break;
+                    case HID_KEYBOARD_RIGHT_GUI:      cache_modifiers &= ~GUI_HELD;   break;
+                }
+            }
+            // Log after updating
+            //log_cache_modifiers();
+        }
+
         EventHandlerResult SuperkeysHandler::handle_superkeys(kaleidoscope::Key &mapped_key, KeyAddr key_addr, uint8_t keyState)
         {
             // Superkey processing starts here.
@@ -122,7 +174,7 @@ namespace kaleidoscope
                         // We want to enable the superkey one time,
                         // so if the superkey wasn't enabled,
                         // we enable it, otherwise continue.
-                        Sk_queue[pos]->enable();
+                        Sk_queue[pos]->enable( cache_modifiers );
                         Sk_queue[pos]->init_timer();
                         Sk_queue[pos]->set_key_and_keyAddr(mapped_key, key_addr);
                         Sk_queue[pos]->key_pressed();
@@ -187,6 +239,11 @@ namespace kaleidoscope
                         }*/
             if (keyToggledOn(keyState))
             {
+                if(ActionsDriver::isOnlyModifier(mapped_key))
+                {
+                    save_pressed_modifiers(mapped_key, keyState);
+                }
+
                 Utils::TimelineEntry entry = {
                     mapped_key,
                     key_addr,
@@ -199,9 +256,14 @@ namespace kaleidoscope
                 {
                     return EventHandlerResult::EVENT_CONSUMED;
                 }
+
             }
             else if (keyToggledOff(keyState))
             {
+                if(ActionsDriver::isOnlyModifier(mapped_key))
+                {
+                    save_pressed_modifiers(mapped_key, keyState);
+                }
                 // If the key is toggled off, we remove it from the timeline.
                 timeline.remove(key_addr);
             }
@@ -235,7 +297,7 @@ namespace kaleidoscope
 
         EventHandlerResult SuperkeysHandler::beforeReportingState()
         {
-            // Iterate throw every superkey if they are enabled.
+            // Iterate through every superkey if they are enabled.
             uint8_t configuredSK = get_configured_sk();
 
             for (uint8_t i = 0; i < configuredSK; i++)
@@ -253,7 +315,7 @@ namespace kaleidoscope
 
         EventHandlerResult SuperkeysHandler::onFocusEvent(const char *command)
         {
-            if (::Focus.handleHelp(command, "superkeys.map\ntuperkeys.waitfor\ntsuperkeys.timeout\ntsuperkeys.repeat\ntsuperkeys.holdstart\ntsuperkeys.overlap"))
+            if (::Focus.handleHelp(command, "superkeys.map\nsuperkeys.waitfor\nsuperkeys.timeout\nsuperkeys.repeat\nsuperkeys.holdstart\nsuperkeys.overlap"))
                 return EventHandlerResult::OK;
 
             if (strncmp_P(command, "superkeys.", 10) != 0)
@@ -357,11 +419,9 @@ namespace kaleidoscope
                 }
                 else
                 {
-                    uint8_t overlap = 0;
-                    ::Focus.read(overlap);
-                    if (overlap <= 0)
-                        overlap = 1;
-                    configurations.overlap_threshold_ = overlap;
+                    uint16_t overlap_threshold = 0;
+                    ::Focus.read(overlap_threshold);
+                    configurations.overlap_threshold_ = overlap_threshold;
                     save_configurations();
                 }
             }

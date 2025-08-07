@@ -117,6 +117,7 @@ namespace kaleidoscope
             static uint16_t settings_base_;
             static Superkey *Sk_queue[MAX_SUPER_KEYS_ACTIVE];
             static uint8_t configured_superkeys;
+            static uint8_t cache_modifiers;
 
             // keys in Actions
             static Key Actions[KEYS_IN_SUPERKEY];
@@ -138,7 +139,9 @@ namespace kaleidoscope
              */
             static void cleanup();
 
-            static void superkey_release_event(uint8_t superkey_index);
+            static void save_pressed_modifiers(Key &mapped_key, uint8_t keyState);
+
+            static void log_cache_modifiers();
 
             static EventHandlerResult handle_superkeys(Key &mapped_key, KeyAddr key_addr, uint8_t keyState);
 
