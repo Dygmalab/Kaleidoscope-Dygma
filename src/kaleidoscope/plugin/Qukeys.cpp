@@ -24,6 +24,8 @@
 #include "kaleidoscope/progmem_helpers.h"
 #include "kaleidoscope/layers.h"
 
+#include "SuperkeysHandler.h"
+
 
 namespace kaleidoscope {
 namespace plugin {
@@ -505,6 +507,8 @@ EventHandlerResult Qukeys::onFocusEvent(const char *command)
 
       Runtime.storage().update(storage_base_ + 3, minimum);
       Runtime.storage().commit();
+
+      SuperkeysHandler::set_minimum_hold(minimum);
     }
   }
 

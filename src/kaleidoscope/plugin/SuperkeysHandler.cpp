@@ -125,7 +125,7 @@ namespace kaleidoscope
             uint16_t raw = mapped_key.getRaw() & 0x00FF; // Take only the HID keycode (lower part)
 
             // If it is a modifier, we update cache_modifiers according to the current state
-            if (keyState == 2)
+            if (keyState == KEY_PRESED)
             {
                 // Add corresponding flag
                 switch (raw)
@@ -140,7 +140,7 @@ namespace kaleidoscope
                     case HID_KEYBOARD_RIGHT_GUI:      cache_modifiers |= GUI_HELD;   break;
                 }
             }
-            else if (keyState == 1)
+            else if (keyState == KEY_RELEASED)
             {
                 // Remove flag if not pressed
                 switch (raw)
@@ -157,6 +157,12 @@ namespace kaleidoscope
             }
             // Log after updating
             //log_cache_modifiers();
+        }
+
+        void SuperkeysHandler::set_minimum_hold(uint16_t minimum_hold)
+        {
+            configurations.overlap_threshold_ = minimum_hold;
+            save_configurations();
         }
 
         EventHandlerResult SuperkeysHandler::handle_superkeys(kaleidoscope::Key &mapped_key, KeyAddr key_addr, uint8_t keyState)

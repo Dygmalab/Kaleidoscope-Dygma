@@ -112,6 +112,8 @@ namespace kaleidoscope
                 }
             };
 
+           static void set_minimum_hold(uint16_t minimum_hold);
+
         private:
             static Superkey *state_[SUPER_KEY_COUNT];
             static uint16_t settings_base_;
