@@ -1,5 +1,7 @@
 #include "Timeline.h"
 
+#define LOG_TIMELINE 0
+
 Timeline::Timeline() : count(0)
 {
     Utils::TimelineEntry emptyEntry =
@@ -24,11 +26,12 @@ bool Timeline::add(const Utils::TimelineEntry& entry)
     {
        // NRF_LOG_DEBUG("*************Adding Key to timeline: *************");
         entries[count++] = entry;
-
-/*        for (uint8_t i = 0; i < count; i++)
+#if LOG_TIMELINE
+        for (uint8_t i = 0; i < count; i++)
         {
             NRF_LOG_DEBUG("Entry %d: Key: %d, Type: %d", i, entries[i].key.getRaw(), static_cast<int>(entries[i].type));
-        }*/
+        }
+#endif
         return check_interruptions();
     }
     return false;
@@ -48,7 +51,9 @@ bool Timeline::key_is_present( Utils::TimelineEntry entry_key )
 
 void Timeline::remove(const KeyAddr& addr) // We use the address because superkeys can change its key in runtime.
 {
-/*    NRF_LOG_DEBUG("*************Removing Key from timeline: *************:");*/
+#if LOG_TIMELINE
+    NRF_LOG_DEBUG("*************Removing Key from timeline: *************:");
+#endif
     for (uint8_t i = 0; i < count; i++)
     {
         if (entries[i].addr == addr)
@@ -61,58 +66,47 @@ void Timeline::remove(const KeyAddr& addr) // We use the address because superke
             return;
         }
     }
-/*    for (uint8_t i = 0; i < count; i++)
+#if LOG_TIMELINE
+    for (uint8_t i = 0; i < count; i++)
     {
         NRF_LOG_DEBUG("Entry %d: Key: %d, Type: %d", i, entries[i].key.getRaw(), static_cast<int>(entries[i].type));
-    }*/
+    }
+#endif
 }
-// Count 3
-//   q      w    e
-// [ 0 ] [ 1 ] [ 2 ]
-//  prev current next
-// qwe
+
 bool Timeline::check_interruptions()
 {
     if (count < 2) return false;
 
     bool interruptionOccurred = false;
-    constexpr uint8_t previous_key_index = 0;
-    constexpr uint8_t current_key_index = 1;
 
-    while (true)
+    // Empezamos desde el final hacia el principio para respetar el orden de pulsación
+    for (int i = count - 2; i >= 0; i--)
     {
-        if (count < 2) break;  // No hay suficiente para comparar
-
-        Utils::TimelineEntry& curr = entries[current_key_index];
-        bool foundInterruption = false;
-
-        // Buscar una SK previa interrumpible
-        Utils::TimelineEntry& prev = entries[previous_key_index];
+        Utils::TimelineEntry& prev = entries[i];
+        Utils::TimelineEntry& curr = entries[i + 1];
 
         if (prev.type == Utils::KeyType::SUPERKEY)
         {
             Superkey* sk_prev = static_cast<Superkey*>(prev.context);
 
-            if ((curr.type == Utils::KeyType::NORMAL || curr.type == Utils::KeyType::SUPERKEY))
+            if (curr.type == Utils::KeyType::NORMAL || curr.type == Utils::KeyType::SUPERKEY)
             {
-/*                NRF_LOG_DEBUG("Superkey %d is being interrupted by key %d",
-                              sk_prev->get_index(), curr.key.getRaw());*/
                 bool interrupt_result = sk_prev->interrupt(curr.key, curr.addr);
-                if( !interrupt_result ) // If the interrupt is true the superkey will delete itself from the timeline. Otherwise we will need to remove it.
+
+                if (!interrupt_result)
                 {
                     remove(prev.addr);
+                    interruptionOccurred = true;
+                    // Como eliminamos un elemento, volvemos a empezar el análisis
+                    return check_interruptions();
                 }
-                interruptionOccurred = true;
-                foundInterruption = true;
             }
         }
-
-        if (!foundInterruption) break;  // No hay más interrupciones posibles
     }
 
     return interruptionOccurred;
 }
-
 
 void Timeline::process()
 {
