@@ -135,9 +135,9 @@ bool ActionsDriver::action_handler(uint8_t tap_count, const Key *actions, const 
 
 bool ActionsDriver::isOnlyModifier(Key key)
 {
-    uint16_t key_id = key.getRaw() & 0x00FF; // Tomamos sólo el HID keycode (parte baja)
+    uint16_t key_id = key.getRaw() & 0x00FF; // We only take the HID keycode (lower part)
 
-    // Rango HID de modificadores: 224 (0xE0) a 231 (0xE7)
+    // HID modifier range: 224 (0xE0) to 231 (0xE7)
     return (key_id >= 0xE0 && key_id <= 0xE7);
 }
 
@@ -243,7 +243,7 @@ void ActionsDriver::send_modifiers_from_flags(uint8_t modif_flags, const KeyAddr
 
 void ActionsDriver::send_modifier(const Key &key, const KeyAddr &key_addr)
 {
-    /* Si presionamos un modificador y luego una SK, debemos poder liberar esta SK con el modificador asociado */
+    /* If we press a modifier and then a SK, we must be able to release this SK with the associated modifier */
     if (key.getRaw() < Utils::ALPHA_KEYS)
     {
         uint8_t modif = (key.getRaw() & 0xFF00) >> 8;

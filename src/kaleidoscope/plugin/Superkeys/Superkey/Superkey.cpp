@@ -82,7 +82,7 @@ void Superkey::tap()
     update_timestamp();
     ++superKeyState.tap_count;
 }
-//TODO: si presiono shift + una sk y suelto el shift y luego la sk esta no sale shifteada.
+//TODO: if I press shift + a superkey and release shift and then the superkey, it does not come out shifted.
 void Superkey::hold()
 {
     superKeyState.holded = true;
@@ -91,7 +91,7 @@ void Superkey::hold()
     {
         send_key();
     }
-    //! we want to check if the holded key should continue sending the key to the OS. e.g: shift
+    //! we want to check if the held key should continue sending the key to the OS. e.g: shift
     superKeyState.triggered = true; // then, if we continue holding the key, we will set it as pressed, and take the corresponding actions.
 }
 
@@ -125,7 +125,7 @@ bool Superkey::interrupt(Key &regular_key, const KeyAddr &keyaddr_)
         return false;
     }
 
-    // TODO: aca tenemos que verificar que el minimun hold time out se alla cumplido, para ver si liberamos la tecla con una key u otra.
+    // TODO: here we have to check that the minimum hold timeout has been met, to see if we release the key with one key or another.
     if (!superKeyState.holded && ActionsDriver::key_can_interrupt(regular_key))
     {
         //NRF_LOG_DEBUG("Superkey %i is being interrupted by key %i", index_, regular_key.getRaw());
@@ -225,7 +225,7 @@ void Superkey::set_key_and_keyAddr(Key key, KeyAddr keyAddr)
 
 void Superkey::send_key() const
 {
-    // Enviar todos los modificadores cacheados
+    // Send all cached modifiers
     if (superKeyState.cache_modifiers != 0)
     {
         ActionsDriver::send_modifiers_from_flags(superKeyState.cache_modifiers, keyaddr_);

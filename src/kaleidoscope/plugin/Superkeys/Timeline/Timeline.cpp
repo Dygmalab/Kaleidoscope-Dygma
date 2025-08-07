@@ -80,7 +80,7 @@ bool Timeline::check_interruptions()
 
     bool interruptionOccurred = false;
 
-    // Empezamos desde el final hacia el principio para respetar el orden de pulsación
+    // We start from the end towards the beginning to respect the order of key presses
     for (int i = count - 2; i >= 0; i--)
     {
         Utils::TimelineEntry& prev = entries[i];
@@ -98,7 +98,7 @@ bool Timeline::check_interruptions()
                 {
                     remove(prev.addr);
                     interruptionOccurred = true;
-                    // Como eliminamos un elemento, volvemos a empezar el análisis
+                    // Since we removed an element, we start the analysis again
                     return check_interruptions();
                 }
             }
@@ -113,4 +113,4 @@ void Timeline::process()
 
 }
 
-Timeline timeline; // Instancia global de Timeline
+Timeline timeline; // Global instance of Timeline
