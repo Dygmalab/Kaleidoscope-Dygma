@@ -8,10 +8,11 @@ void Superkey::init(const Key *act)
     check_if_sk_qukey();
 }
 
-void Superkey::enable()
+void Superkey::enable(uint8_t modifiers_pressed)
 {
     // This is to tell the SK handler to remove the SK from the list of active sk.
     superKeyState.enabled = true;
+    superKeyState.cache_modifiers = modifiers_pressed;
 }
 
 void Superkey::disable()
@@ -224,5 +225,11 @@ void Superkey::set_key_and_keyAddr(Key key, KeyAddr keyAddr)
 
 void Superkey::send_key() const
 {
+    // Enviar todos los modificadores cacheados
+    if (superKeyState.cache_modifiers != 0)
+    {
+        ActionsDriver::send_modifiers_from_flags(superKeyState.cache_modifiers, keyaddr_);
+    }
+
     ActionsDriver::action_handler(superKeyState.tap_count, Actions, phisical_key_, keyaddr_);
 }

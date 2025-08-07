@@ -14,7 +14,7 @@ class Superkey
 public:
   // Superkeys states
   void init(const Key *act);
-  void enable();
+  void enable( uint8_t modifiers_pressed);
   void disable();
   void run();
   bool interrupt(Key &key, const KeyAddr &keyaddr);
@@ -32,7 +32,7 @@ public:
   void set_key_and_keyAddr(Key key, KeyAddr keyAddr);
 
   // Constructor
-  explicit Superkey(uint16_t index, uint16_t hold_start, uint16_t time_out) : index_(index), time_out_(time_out), hold_start_(hold_start)
+  explicit Superkey(uint16_t index, uint16_t hold_start, uint16_t time_out, uint16_t minimum_hold_start) : index_(index), time_out_(time_out), hold_start_(hold_start), minimum_hold_start_(minimum_hold_start)
   {
   }
 
@@ -66,8 +66,10 @@ private:
     uint32_t minimum_hold{0};
 
     // keys in Actions
-
     Utils::Actions action{};
+
+    // Active external modifiers
+    uint8_t cache_modifiers{0}; // This is used to cache the modifiers that are active when the superkey is pressed.
   };
   SuperKeyState superKeyState{};
 
