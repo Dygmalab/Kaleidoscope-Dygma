@@ -8,7 +8,7 @@
 #include "EEPROM-Settings.h"
 #include "Kaleidoscope-FocusSerial.h"
 
-#include "libraries/Kaleidoscope/src/kaleidoscope/plugin/Superkeys/includes.h"
+#include "kaleidoscope/plugin/Superkeys/includes.h"
 
 using KeyID = uint16_t;
 

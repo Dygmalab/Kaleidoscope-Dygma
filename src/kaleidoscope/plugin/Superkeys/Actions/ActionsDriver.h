@@ -1,6 +1,6 @@
 #ifndef NRF_NEURON_ACTIONSDRIVER_H
 #define NRF_NEURON_ACTIONSDRIVER_H
-#include "libraries/Kaleidoscope/src/kaleidoscope/plugin/Superkeys/includes.h"
+#include "kaleidoscope/plugin/Superkeys/includes.h"
 #include <cstdint>
 
 using EventFunction = uint8_t (*)();

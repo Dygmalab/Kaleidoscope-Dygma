@@ -1,6 +1,6 @@
 #ifndef NRF_NEURON_SUPERKEY_H
 #define NRF_NEURON_SUPERKEY_H
-#include "libraries/Kaleidoscope/src/kaleidoscope/plugin/Superkeys/includes.h"
+#include "kaleidoscope/plugin/Superkeys/includes.h"
 
 constexpr uint8_t KEYS_IN_SUPERKEY = 6;
 constexpr uint8_t QUKEY_MIN_IDLE_ACTIONS = 3;

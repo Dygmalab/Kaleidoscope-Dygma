@@ -104,7 +104,7 @@ namespace Utils
         void* context; // Apunta a la instancia que gestiona esta key (Superkey*, Macro*, etc.)
     };
 }
-#include "Kaleidoscope/src/kaleidoscope/plugin/Superkeys/Timeline/Timeline.h"
-#include "Kaleidoscope/src/kaleidoscope/plugin/Superkeys/Actions/ActionsDriver.h"
-#include "libraries/Kaleidoscope/src/kaleidoscope/plugin/Superkeys/Superkey/Superkey.h"
+#include "Timeline/Timeline.h"
+#include "Actions/ActionsDriver.h"
+#include "Superkey/Superkey.h"
 #endif // NRF_NEURON_INCLUDES_H

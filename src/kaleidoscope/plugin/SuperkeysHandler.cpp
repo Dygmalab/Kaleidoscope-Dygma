@@ -110,14 +110,14 @@ namespace kaleidoscope
 
         void SuperkeysHandler::log_cache_modifiers()
         {
-            NRF_LOG_DEBUG("Estado de cache_modifiers: 0x%02X", cache_modifiers);
+/*            NRF_LOG_DEBUG("Estado de cache_modifiers: 0x%02X", cache_modifiers);
 
             if (cache_modifiers & CTRL_HELD)   NRF_LOG_DEBUG("CTRL activo");
             if (cache_modifiers & LALT_HELD)   NRF_LOG_DEBUG("Left ALT activo");
             if (cache_modifiers & RALT_HELD)   NRF_LOG_DEBUG("Right ALT activo");
             if (cache_modifiers & SHIFT_HELD)  NRF_LOG_DEBUG("SHIFT activo");
             if (cache_modifiers & GUI_HELD)    NRF_LOG_DEBUG("GUI activo");
-            if (cache_modifiers == 0)          NRF_LOG_DEBUG("Sin modificadores");
+            if (cache_modifiers == 0)          NRF_LOG_DEBUG("Sin modificadores");*/
         }
 
         void SuperkeysHandler::save_pressed_modifiers(Key &mapped_key, uint8_t keyState)
@@ -172,7 +172,7 @@ namespace kaleidoscope
 
             if (keyToggledOn(keyState))
             {
-                NRF_LOG_DEBUG("super_key_index %i  ", super_key_index);
+                //NRF_LOG_DEBUG("super_key_index %i  ", super_key_index);
                 for (uint8_t pos = 0; pos <= get_configured_sk(); ++pos)
                 {
                     if (Sk_queue[pos]->get_index() == super_key_index && !Sk_queue[pos]->is_enable())
@@ -314,7 +314,7 @@ namespace kaleidoscope
                 }
             }
 
-            NRF_LOG_FLUSH();
+            //NRF_LOG_FLUSH();
 
             return EventHandlerResult::OK;
         }

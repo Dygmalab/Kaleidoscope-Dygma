@@ -88,7 +88,7 @@ Utils::ExtendedActions ActionsDriver::return_type(uint8_t tap_count, const Key *
 
 void logKeyModifiers(Key key)
 {
-    uint8_t flags = key.getFlags();
+/*    uint8_t flags = key.getFlags();
 
     if (flags & CTRL_HELD)
         NRF_LOG_DEBUG("CTRL held");
@@ -101,7 +101,7 @@ void logKeyModifiers(Key key)
     if (flags & GUI_HELD)
         NRF_LOG_DEBUG("GUI/Win held");
     if (flags == 0)
-        NRF_LOG_DEBUG("No modifiers");
+        NRF_LOG_DEBUG("No modifiers");*/
 }
 
 bool ActionsDriver::action_handler(uint8_t tap_count, const Key *actions, const Key &key, const KeyAddr &keyAddr)
@@ -112,9 +112,11 @@ bool ActionsDriver::action_handler(uint8_t tap_count, const Key *actions, const 
 
     Utils::ExtendedActions returned_key = return_type(tap_count, actions);
 
+/*
         NRF_LOG_DEBUG("Key released raw=%i flags=%i",
                       returned_key.key.getRaw(),
                       returned_key.key.getFlags());
+*/
 
     if (returned_key.key_is_interruptable)
     {
@@ -214,7 +216,7 @@ void ActionsDriver::send_regular_key(const Key &key, const KeyAddr &key_addr)
         if (modif & 0x08)
         {
             handleKeyswitchEvent(Key_LeftShift, key_addr, IS_PRESSED | WAS_PRESSED | INJECTED);
-            NRF_LOG_DEBUG("Left Shift pressed");
+            //NRF_LOG_DEBUG("Left Shift pressed");
         }
 
         if (modif & 0x10)
