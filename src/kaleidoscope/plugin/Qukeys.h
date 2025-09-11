@@ -248,7 +248,7 @@ bool isModifierKey(Key key);
 } // namespace plugin {
 } // namespace kaleidoscope {
 
-extern kaleidoscope::plugin::Qukeys Qukeys;
+extern kaleidoscope::plugin::Qukeys qukeys;
 
 // Macro for use in sketch file to simplify definition of the qukeys array and
 // guarantee that the count is set correctly. This is considerably less

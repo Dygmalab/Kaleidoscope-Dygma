@@ -112,7 +112,11 @@ namespace kaleidoscope
                 }
             };
 
-           static void set_minimum_hold(uint16_t minimum_hold);
+            static void set_minimum_hold(uint16_t minimum_hold);
+
+            static void send_sk_map();
+            
+            static void save_superkey_map();
 
         private:
             static Superkey *state_[SUPER_KEY_COUNT];
@@ -151,6 +155,6 @@ namespace kaleidoscope
         };
     } // namespace plugin
 } // namespace kaleidoscope
-extern kaleidoscope::plugin::SuperkeysHandler SuperkeysHandler;
+extern kaleidoscope::plugin::SuperkeysHandler superkeysHandler;
 
 #endif // NRF_NEURON_SUPERKEYSHANDLER_H

@@ -370,6 +370,7 @@ bool Qukeys::isDualUseKey(Key key) {
     queue_head_.primary_key.setFlags(0);
 
     queue_head_.alternate_key.setRaw(key.getFlags() + Key_LeftControl.getKeyCode());
+    //queue_head_.alternate_key.setFlags(3);
     return true;
   }
   // Test for DualUse layer shifts:
@@ -575,4 +576,4 @@ EventHandlerResult Qukeys::onSetup()
 } // namespace plugin {
 } // namespace kaleidoscope {
 
-kaleidoscope::plugin::Qukeys Qukeys;
+kaleidoscope::plugin::Qukeys qukeys;
