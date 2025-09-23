@@ -18,7 +18,6 @@ namespace kaleidoscope
     {
         class SuperkeysHandler : public kaleidoscope::Plugin
         {
-            static constexpr uint8_t SUPER_KEY_COUNT = kaleidoscope::ranges::DYNAMIC_SUPER_LAST - kaleidoscope::ranges::DYNAMIC_SUPER_FIRST + 2;
             static constexpr uint8_t MAX_SUPER_KEYS_ACTIVE = 50;
             static constexpr uint8_t KEYS_IN_SUPERKEY = 6;
             static constexpr uint8_t offset = 8;
@@ -90,7 +89,7 @@ namespace kaleidoscope
                 uint16_t time_out_;
 
                 // Keys configured in every superkey action.
-                Key keys[SUPER_KEY_COUNT][KEYS_IN_SUPERKEY];
+                Key keys[Utils::SUPER_KEY_COUNT][KEYS_IN_SUPERKEY];
 
                 void reset()
                 {
@@ -102,7 +101,7 @@ namespace kaleidoscope
                     time_out_ = 144;
                     static Key IDLE_KEY;
                     IDLE_KEY.setRaw(0xFFFF);
-                    for (uint16_t i = 0; i < SUPER_KEY_COUNT; ++i)
+                    for (uint16_t i = 0; i < Utils::SUPER_KEY_COUNT; ++i)
                     {
                         for (int j = 0; j < KEYS_IN_SUPERKEY; ++j)
                         {
@@ -115,11 +114,13 @@ namespace kaleidoscope
             static void set_minimum_hold(uint16_t minimum_hold);
 
             static void send_sk_map();
-            
+
+            void save_superkey_map_from(const Key (*src)[KEYS_IN_SUPERKEY], uint16_t src_count);
+
             static void save_superkey_map();
 
         private:
-            static Superkey *state_[SUPER_KEY_COUNT];
+            static Superkey *state_[Utils::SUPER_KEY_COUNT];
             static uint16_t settings_base_;
             static Superkey *Sk_queue[MAX_SUPER_KEYS_ACTIVE];
             static uint8_t configured_superkeys;
