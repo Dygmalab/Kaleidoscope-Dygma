@@ -8,6 +8,8 @@
 
 namespace Utils
 {
+    static constexpr uint8_t SUPER_KEY_COUNT = kaleidoscope::ranges::DYNAMIC_SUPER_LAST - kaleidoscope::ranges::DYNAMIC_SUPER_FIRST + 2;
+    
     struct Actions
     {
         Key tap;
