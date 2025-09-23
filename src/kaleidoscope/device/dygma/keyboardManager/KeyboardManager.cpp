@@ -757,7 +757,7 @@ void KeyboardKeyScanner::usbConnectionsStateMachine()
             if (flag_ble_mode_allowed)
             {
                 //Force connnect again just in case it was set as a device and not a host
-                _BleManager.init();
+                _BleManager.enable();
 
                 if (leftConnection[1] == KEYSCANNER_DEFY_LEFT)
                 {
