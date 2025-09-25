@@ -19,6 +19,7 @@
 #include <Kaleidoscope-EEPROM-Keymap.h>
 #include <Kaleidoscope-FocusSerial.h>
 #include "kaleidoscope/layers.h"
+#include "kaleidoscope/plugin/KeyRoleManager.h"
 
 namespace kaleidoscope {
 namespace plugin {
@@ -141,6 +142,8 @@ EventHandlerResult EEPROMKeymap::onFocusEvent(const char *command) {
       Key k;
 
       ::Focus.read(k);
+      //TODO: Aca transformamos la tecla del keymap si es una qukey, en caso de superkey normal no hacemos nada.
+      Key key = keyRoleManager.search_and_replace(k);
       updateKey(i, k);
       i++;
     }

@@ -62,6 +62,8 @@ class KeyRoleManager : public kaleidoscope::Plugin
      */
     static void setup_superkeys(uint8_t _max_layers);
 
+    Key search_and_replace(Key key);
+
   private:
     static constexpr uint8_t KEYS_IN_SUPERKEY = 6;
     static constexpr uint8_t IDLE_KEY = 1;
@@ -126,9 +128,9 @@ class KeyRoleManager : public kaleidoscope::Plugin
 
     void dumpKeymap();
 
-    bool replace_superkey_with_qukey(const Key *action_0, const Key *action_1);
+    uint16_t replace_superkey_with_qukey(const Key *action_0, const Key *action_1);
 
-    uint32_t calculate_qukey_code(uint32_t base_raw, uint16_t selected_keycode);
+    uint16_t calculate_qukey_code(uint32_t base_raw, uint16_t selected_keycode);
 
     void save_sk(const Key *action_0, const Key *action_1, const Key *action_2, const Key *action_3, const Key *action_4);
 };
@@ -136,6 +138,6 @@ class KeyRoleManager : public kaleidoscope::Plugin
 } // namespace plugin
 } // namespace kaleidoscope
 
-extern kaleidoscope::plugin::KeyRoleManager KeyRoleManager;
+extern kaleidoscope::plugin::KeyRoleManager keyRoleManager;
 
 #endif // KEY_ROLE_MANAGER_H

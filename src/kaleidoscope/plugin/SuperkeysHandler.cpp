@@ -5,8 +5,6 @@
 #include "SuperkeysHandler.h"
 #include "kaleidoscope/plugin/Qukeys.h"
 
-#define IS_OUTSIDE_DYNAMIC_SUPER_RANGE(key) ((key) < ranges::DYNAMIC_SUPER_FIRST || (key) > ranges::DYNAMIC_SUPER_LAST)
-
 namespace kaleidoscope
 {
 namespace plugin

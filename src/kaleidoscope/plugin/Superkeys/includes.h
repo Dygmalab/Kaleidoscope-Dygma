@@ -5,11 +5,12 @@
 
 #define KEY_PRESED 2
 #define KEY_RELEASED 1
+#define IS_OUTSIDE_DYNAMIC_SUPER_RANGE(key) ((key) < ranges::DYNAMIC_SUPER_FIRST || (key) > ranges::DYNAMIC_SUPER_LAST)
 
 namespace Utils
 {
     static constexpr uint8_t SUPER_KEY_COUNT = kaleidoscope::ranges::DYNAMIC_SUPER_LAST - kaleidoscope::ranges::DYNAMIC_SUPER_FIRST + 2;
-    
+
     struct Actions
     {
         Key tap;

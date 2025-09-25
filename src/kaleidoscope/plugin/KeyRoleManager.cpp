@@ -25,6 +25,8 @@ KeyRoleManager::KeyRoleManager()
     sk_index = 0;
 }
 
+auto is_idle = [](const Key &k) { return k.getRaw() == 1; };
+
 void KeyRoleManager::dumpKeymap()
 {
     for (uint8_t layer = 0; layer < max_layers; layer++)
@@ -62,7 +64,7 @@ static inline int hidModToDumIndex(uint16_t hid)
     }
 }
 
-uint32_t KeyRoleManager::calculate_qukey_code(uint32_t hold_action_raw, uint16_t tap_action_raw)
+uint16_t KeyRoleManager::calculate_qukey_code(uint32_t hold_action_raw, uint16_t tap_action_raw)
 {
     // 1) HID puro de la tecla TAP
     const uint16_t tap_hid = static_cast<uint16_t>(tap_action_raw & 0x00FF);
@@ -100,25 +102,68 @@ void KeyRoleManager::save_sk(const Key *a0, const Key *a1, const Key *a2, const 
     ++sk_index;
 }
 
+Key KeyRoleManager::search_and_replace(Key key)
+{
+    if (IS_OUTSIDE_DYNAMIC_SUPER_RANGE(key)) return key;
+    
+      NRF_LOG_DEBUG("%d",key.getRaw())
 
-bool KeyRoleManager::replace_superkey_with_qukey(const Key *action_0, const Key *action_1)
+    for (size_t i = 0; i < Utils::SUPER_KEY_COUNT; i++)
+    {
+        Key action_0 = key_storage.keys[i][0];
+        Key action_1 = key_storage.keys[i][1];
+        Key action_2 = key_storage.keys[i][2];
+        Key action_3 = key_storage.keys[i][3];
+        Key action_4 = key_storage.keys[i][4];
+
+        if (!is_idle(action_0) && !is_idle(action_1) && is_idle(action_2) && is_idle(action_3) && is_idle(action_4))
+        {
+            // This is a fast Superkey, we need to check if it should be a Qukey or a Superkey,
+            // The desition will depend if the action 1 is only a modifier.
+            if (is_only_modifier(action_1))
+            {
+                // QUKEY
+                if (replace_superkey_with_qukey(&action_0, &action_1))
+                {
+                    NRF_LOG_DEBUG("Qukey DETECTED");
+                    return replace_superkey_with_qukey(&action_0, &action_1);
+                }
+            }
+            else
+            {
+                // SUPERKEY
+                NRF_LOG_DEBUG("Superkey DETECTED");
+                return key;
+            }
+        }
+        else
+        {
+            // SUPERKEY FOUND
+            // Cualquier otra combinacion sera una superkey normal.
+            NRF_LOG_DEBUG("Superkey DETECTED");
+            return key;
+        }
+
+        NRF_LOG_FLUSH();
+    }
+}
+
+
+uint16_t KeyRoleManager::replace_superkey_with_qukey(const Key *action_0, const Key *action_1)
 {
     if (!action_0 || !action_1) return false;
 
     const uint16_t tap_raw = static_cast<uint16_t>(action_0->getRaw());
     const uint16_t hold_raw = static_cast<uint16_t>(action_1->getRaw()); // esperado: 0xE0..0xE7
 
-    const uint32_t qukey_code = calculate_qukey_code(hold_raw, tap_raw);
+    const uint16_t qukey_code = calculate_qukey_code(hold_raw, tap_raw);
     if (qukey_code == 0u)
     {
         NRF_LOG_DEBUG("ERROR: Qukey base no válida (hold_raw=%u)", (unsigned)hold_raw);
         NRF_LOG_FLUSH();
-        return false;
+        return 0;
     }
-
-    NRF_LOG_DEBUG("Qukey calculada: %lu (tap_hid=%u, hold_raw=%u)", (unsigned long)qukey_code, (unsigned)(tap_raw & 0x00FF), (unsigned)hold_raw);
-    NRF_LOG_FLUSH();
-    return true;
+    return qukey_code;
 }
 
 
@@ -144,8 +189,6 @@ bool KeyRoleManager::is_only_modifier(Key key)
     return (key_id >= 0xE0 && key_id <= 0xE7);
 }
 
-auto is_idle = [](const Key &k) { return k.getRaw() == 1; };
-
 void KeyRoleManager::determine_key_role()
 {
     key_roles_t result = key_roles_t::NONE;
@@ -169,7 +212,7 @@ void KeyRoleManager::determine_key_role()
                 if (replace_superkey_with_qukey(&action_0, &action_1))
                 {
                     NRF_LOG_DEBUG("Qukey DETECTED");
-                    // TODO: guardar Qukey en la EEPROM.
+                    // TODO: Guardar un indice de las qukeys y superkeys para depues poder buscar y reemplazar.
                 }
             }
             else
@@ -313,5 +356,5 @@ EventHandlerResult KeyRoleManager::beforeReportingState()
 
 } // namespace plugin
 } // namespace kaleidoscope
-kaleidoscope::plugin::KeyRoleManager KeyRoleManager;
+kaleidoscope::plugin::KeyRoleManager keyRoleManager;
 #pragma GCC pop_options
