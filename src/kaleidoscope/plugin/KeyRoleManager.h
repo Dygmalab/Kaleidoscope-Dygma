@@ -6,6 +6,7 @@
 #include "Kaleidoscope-Ranges.h"
 #include "kaleidoscope/plugin/Superkeys/includes.h"
 #include <Kaleidoscope.h>
+#include <cstdint>
 
 namespace kaleidoscope
 {
@@ -60,9 +61,13 @@ class KeyRoleManager : public kaleidoscope::Plugin
      * It allocates a storage slice in EEPROM to store the KeyRoleManager settings, including size and offset.
      * After setting up the storage, it updates the KeyRoleManager cache to ensure consistency with the stored values.
      */
-    static void setup_superkeys(uint8_t _max_layers);
+    void setup_superkeys(uint8_t _max_layers);
 
     Key search_and_replace(Key key);
+
+    bool is_qukey(Key key);
+
+    void get_superkey(Key* key);
 
   private:
     static constexpr uint8_t KEYS_IN_SUPERKEY = 6;
@@ -109,7 +114,17 @@ class KeyRoleManager : public kaleidoscope::Plugin
     };
     key_storage_t key_storage;
     key_storage_t sk_storage;
+
+    struct modified_keys_t
+    {
+        uint8_t sk_id;
+        uint8_t qukey_id;
+    };
+    modified_keys_t modified_keys[Utils::MAX_SUPER_KEYS_ACTIVE];
+    uint8_t modified_keys_count;
+    
     uint8_t sk_index;
+    uint8_t configured_superkeys;
 
     enum class key_roles_t
     {
@@ -117,6 +132,12 @@ class KeyRoleManager : public kaleidoscope::Plugin
         QUKEY,
         SUPERKEY
     };
+
+    struct superkey_storage_t
+    { 
+      Key actions[6];
+    };
+    superkey_storage_t superkey_storage[Utils::MAX_SUPER_KEYS_ACTIVE];
 
     void determine_key_role();
 
@@ -131,6 +152,12 @@ class KeyRoleManager : public kaleidoscope::Plugin
     uint16_t replace_superkey_with_qukey(const Key *action_0, const Key *action_1);
 
     uint16_t calculate_qukey_code(uint32_t base_raw, uint16_t selected_keycode);
+
+    void init_sk();
+
+    void save_configurations();
+
+    void set_active_sk();
 
     void save_sk(const Key *action_0, const Key *action_1, const Key *action_2, const Key *action_3, const Key *action_4);
 };

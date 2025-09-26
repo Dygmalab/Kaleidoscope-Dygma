@@ -1,9 +1,12 @@
 #include "KeyRoleManager.h"
 
+#include "Kaleidoscope-Ranges.h"
+#include "kaleidoscope/key_defs.h"
 #include "kaleidoscope/layers.h"
 #include <Kaleidoscope-EEPROM-Keymap.h>
 #include <Kaleidoscope-EEPROM-Settings.h>
 #include <Kaleidoscope-FocusSerial.h>
+#include <cstdint>
 
 #include "Qukeys.h"
 #include "SuperkeysHandler.h"
@@ -23,22 +26,30 @@ uint16_t settings_base_ = 0;
 KeyRoleManager::KeyRoleManager()
 {
     sk_index = 0;
+    modified_keys_count = 0;
 }
 
 auto is_idle = [](const Key &k) { return k.getRaw() == 1; };
 
-void KeyRoleManager::dumpKeymap()
+bool KeyRoleManager::is_qukey(Key key)
 {
-    for (uint8_t layer = 0; layer < max_layers; layer++)
+    bool result = false;
+
+    if (key >= ranges::DUM_FIRST && key <= ranges::DUM_LAST) result = true;
+    if (key >= ranges::DUL_FIRST && key <= ranges::DUL_LAST) result = true;
+
+    return result;
+}
+
+void KeyRoleManager::get_superkey(Key* mapped_key)
+{
+    for (modified_keys_t key : this->modified_keys) 
     {
-        for (auto key_addr : KeyAddr::all())
+        if (key.qukey_id == mapped_key->getRaw())
         {
-            Key k = EEPROMKeymap::getKey(layer, key_addr);
-
-            NRF_LOG_DEBUG("%d", k.getRaw());
-
-            NRF_LOG_FLUSH();
-        }
+            *mapped_key = Key(key.sk_id);
+            return;
+        }    
     }
 }
 
@@ -105,53 +116,54 @@ void KeyRoleManager::save_sk(const Key *a0, const Key *a1, const Key *a2, const 
 Key KeyRoleManager::search_and_replace(Key key)
 {
     if (IS_OUTSIDE_DYNAMIC_SUPER_RANGE(key)) return key;
-    
-      NRF_LOG_DEBUG("%d",key.getRaw())
 
-    for (size_t i = 0; i < Utils::SUPER_KEY_COUNT; i++)
+    uint8_t super_key_index = static_cast<uint8_t>(key.getRaw() - ranges::DYNAMIC_SUPER_FIRST);
+      
+    Key action_0 = superkey_storage[super_key_index].actions[0];
+    Key action_1 = superkey_storage[super_key_index].actions[1];
+    Key action_2 = superkey_storage[super_key_index].actions[2];
+    Key action_3 = superkey_storage[super_key_index].actions[3];
+    Key action_4 = superkey_storage[super_key_index].actions[4];
+
+    if (!is_idle(action_0) && !is_idle(action_1) && is_idle(action_2) && is_idle(action_3) && is_idle(action_4))
     {
-        Key action_0 = key_storage.keys[i][0];
-        Key action_1 = key_storage.keys[i][1];
-        Key action_2 = key_storage.keys[i][2];
-        Key action_3 = key_storage.keys[i][3];
-        Key action_4 = key_storage.keys[i][4];
-
-        if (!is_idle(action_0) && !is_idle(action_1) && is_idle(action_2) && is_idle(action_3) && is_idle(action_4))
+        // This is a fast Superkey, we need to check if it should be a Qukey or a Superkey,
+        // The desition will depend if the action 1 is only a modifier.
+        if (is_only_modifier(action_1))
         {
-            // This is a fast Superkey, we need to check if it should be a Qukey or a Superkey,
-            // The desition will depend if the action 1 is only a modifier.
-            if (is_only_modifier(action_1))
-            {
-                // QUKEY
-                if (replace_superkey_with_qukey(&action_0, &action_1))
-                {
-                    NRF_LOG_DEBUG("Qukey DETECTED");
-                    return replace_superkey_with_qukey(&action_0, &action_1);
-                }
-            }
-            else
-            {
-                // SUPERKEY
-                NRF_LOG_DEBUG("Superkey DETECTED");
-                return key;
-            }
+            this->modified_keys[modified_keys_count].sk_id = key.getRaw(); // Save the superkey ID
+            // QUKEY
+            NRF_LOG_DEBUG("Qukey DETECTED");
+            uint16_t qukey_code = replace_superkey_with_qukey(&action_0, &action_1);
+            NRF_LOG_DEBUG("Qukey CODE: %u", (unsigned)qukey_code);
+
+            this->modified_keys[modified_keys_count].qukey_id = qukey_code; // Save the qukey ID.
+            ++modified_keys_count;
+
+            return Key(qukey_code);
         }
         else
         {
-            // SUPERKEY FOUND
-            // Cualquier otra combinacion sera una superkey normal.
-            NRF_LOG_DEBUG("Superkey DETECTED");
+            // SUPERKEY
+            NRF_LOG_DEBUG("Superkey DETECTED CODE: %u", (unsigned)key.getRaw());
             return key;
         }
-
-        NRF_LOG_FLUSH();
     }
-}
+    else
+    {
+        // SUPERKEY FOUND
+        // Cualquier otra combinacion sera una superkey normal.
+        NRF_LOG_DEBUG("Superkey DETECTED CODE: %u", (unsigned)key.getRaw());
+        return key;
+    }
 
+    NRF_LOG_FLUSH();
+    
+}
 
 uint16_t KeyRoleManager::replace_superkey_with_qukey(const Key *action_0, const Key *action_1)
 {
-    if (!action_0 || !action_1) return false;
+    if (!action_0 || !action_1) return 0;
 
     const uint16_t tap_raw = static_cast<uint16_t>(action_0->getRaw());
     const uint16_t hold_raw = static_cast<uint16_t>(action_1->getRaw()); // esperado: 0xE0..0xE7
@@ -166,11 +178,35 @@ uint16_t KeyRoleManager::replace_superkey_with_qukey(const Key *action_0, const 
     return qukey_code;
 }
 
+void KeyRoleManager::init_sk()
+{
+    uint16_t sk_index = 0;
+    while (sk_index <= this->configured_superkeys)
+    {
+        for (int i = 0; i < KEYS_IN_SUPERKEY; ++i)
+        {
+            superkey_storage[sk_index].actions[i] = key_storage.keys[sk_index][i];
+        }
+        sk_index++;
+    }
+}
+
+void KeyRoleManager::save_configurations()
+{
+    Runtime.storage().put(settings_base_, key_storage);
+    Runtime.storage().commit();
+    config();
+    // From now on we have the superkeys configured. So we will have it store in the sk_storage.
+    set_active_sk();
+    init_sk();
+}
 
 EventHandlerResult KeyRoleManager::onSetup()
 {
     settings_base_ = kaleidoscope::plugin::EEPROMSettings::requestSlice(sizeof(KeyRoleManager::key_storage_t));
     config();
+    set_active_sk();
+    init_sk();
     return EventHandlerResult::OK;
 }
 
@@ -178,7 +214,7 @@ void KeyRoleManager::setup_superkeys(uint8_t _max_layers)
 {
     max_layers = _max_layers;
     qukeys.onSetup();         // Initialize the Qukeys plugin.
-    superkeysHandler.setup(); // Initialize the SuperkeysHandler plugin.
+    SuperkeysHandler::setup(configured_superkeys,key_storage.keys); // Initialize the SuperkeysHandler plugin.
 }
 
 bool KeyRoleManager::is_only_modifier(Key key)
@@ -189,8 +225,31 @@ bool KeyRoleManager::is_only_modifier(Key key)
     return (key_id >= 0xE0 && key_id <= 0xE7);
 }
 
+void KeyRoleManager::set_active_sk()
+{
+    this->configured_superkeys = 0;
+    uint8_t undefined_actions = 0;
+
+    for (uint16_t i = 0; i < Utils::SUPER_KEY_COUNT; ++i) // Iterate through all superkeys
+    {
+        for (int j = 0; j < KEYS_IN_SUPERKEY; ++j) // Iterate through all keys in the superkey
+        {
+            if (key_storage.keys[i][j] == 0xFFFF)
+            {
+                undefined_actions++;
+            }
+            if (undefined_actions == 5)
+            {
+                return;
+            }
+        }
+        this->configured_superkeys++;
+    }
+}
+
 void KeyRoleManager::determine_key_role()
 {
+    NRF_LOG_DEBUG("Determine key role");
     key_roles_t result = key_roles_t::NONE;
     uint8_t idle_actions = 0;
     for (size_t i = 0; i < Utils::SUPER_KEY_COUNT; i++)
@@ -209,7 +268,7 @@ void KeyRoleManager::determine_key_role()
             if (is_only_modifier(action_1))
             {
                 // QUKEY
-                if (replace_superkey_with_qukey(&action_0, &action_1))
+                if (replace_superkey_with_qukey(&action_0, &action_1) != 0)
                 {
                     NRF_LOG_DEBUG("Qukey DETECTED");
                     // TODO: Guardar un indice de las qukeys y superkeys para depues poder buscar y reemplazar.
@@ -267,6 +326,8 @@ void KeyRoleManager::config()
         Runtime.storage().commit();
     }
     Runtime.storage().get(settings_base_, key_storage);
+
+    determine_key_role();
 }
 
 void KeyRoleManager::send_sk_map()
@@ -330,12 +391,9 @@ EventHandlerResult KeyRoleManager::onFocusEvent(const char *command)
                 key_storage.keys[pos / KEYS_IN_SUPERKEY][pos % KEYS_IN_SUPERKEY] = key;
                 pos++;
             }
-            Runtime.storage().put(settings_base_, key_storage);
-            Runtime.storage().commit();
+            save_configurations();
 
-            determine_key_role();
-
-            superkeysHandler.save_superkey_map_from(sk_storage.keys, sk_index);
+            superkeysHandler.save_superkey_map_from(key_storage.keys, sk_index, this->configured_superkeys);
 
             this->sk_index = 0;
         }

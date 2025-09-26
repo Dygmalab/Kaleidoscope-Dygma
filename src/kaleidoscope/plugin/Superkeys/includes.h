@@ -10,7 +10,7 @@
 namespace Utils
 {
     static constexpr uint8_t SUPER_KEY_COUNT = kaleidoscope::ranges::DYNAMIC_SUPER_LAST - kaleidoscope::ranges::DYNAMIC_SUPER_FIRST + 2;
-
+    static constexpr uint8_t MAX_SUPER_KEYS_ACTIVE = 50;
     struct Actions
     {
         Key tap;

@@ -4,6 +4,7 @@
 #define NRF_NEURON_SUPERKEYSHANDLER_H
 
 #include <Kaleidoscope.h>
+#include <cstdint>
 #include "Kaleidoscope-Ranges.h"
 #include "EEPROM-Settings.h"
 #include "Kaleidoscope-FocusSerial.h"
@@ -18,7 +19,6 @@ namespace kaleidoscope
     {
         class SuperkeysHandler : public kaleidoscope::Plugin
         {
-            static constexpr uint8_t MAX_SUPER_KEYS_ACTIVE = 50;
             static constexpr uint8_t KEYS_IN_SUPERKEY = 6;
             static constexpr uint8_t offset = 8;
 
@@ -65,7 +65,7 @@ namespace kaleidoscope
              * It allocates a storage slice in EEPROM to store the DynamicSuperKeys settings, including size and offset.
              * After setting up the storage, it updates the SuperKeys cache to ensure consistency with the stored values.
              */
-            static void setup();
+            static void setup(uint8_t active_superkeys, const Key (*sk_map)[KEYS_IN_SUPERKEY]);
 
             /**
              * @brief Get the number of active superkeys.
@@ -115,32 +115,26 @@ namespace kaleidoscope
 
             static void send_sk_map();
 
-            void save_superkey_map_from(const Key (*src)[KEYS_IN_SUPERKEY], uint16_t src_count);
+            void save_superkey_map_from(const Key (*sk_map)[KEYS_IN_SUPERKEY], uint16_t src_count, uint8_t active_superkeys);
 
             static void save_superkey_map();
 
         private:
             static Superkey *state_[Utils::SUPER_KEY_COUNT];
             static uint16_t settings_base_;
-            static Superkey *Sk_queue[MAX_SUPER_KEYS_ACTIVE];
+            static Superkey *Sk_queue[Utils::MAX_SUPER_KEYS_ACTIVE];
             static uint8_t configured_superkeys;
             static uint8_t cache_modifiers;
 
             // keys in Actions
             static Key Actions[KEYS_IN_SUPERKEY];
 
-            static void init();
+            static void init(const Key (*sk_map)[KEYS_IN_SUPERKEY]);
             static void config();
             static void enable();
             static void disable();
-            static void save_configurations();
+            static void save_configurations(const Key (*sk_map)[KEYS_IN_SUPERKEY]);
 
-            /**
-             * @brief Set how many superkeys are active, set by the user in the configuration.
-             * This method iterates through the superkeys and counts how many of them have valid actions configured.
-             * It updates the `active_superkeys` variable accordingly.
-             */
-            static void set_active_sk();
             /*
              *  Erase superkeys instances to avoid memory leaks.
              */

@@ -1,3 +1,4 @@
+#include <cstdint>
 #pragma GCC push_options
 #pragma GCC optimize("O0") // No optimization
 
@@ -12,22 +13,22 @@ namespace plugin
 SuperkeysHandler::Configurations configurations;
 uint16_t SuperkeysHandler::settings_base_ = 0;
 uint8_t SuperkeysHandler::configured_superkeys = 0;
-Superkey *SuperkeysHandler::Sk_queue[SuperkeysHandler::MAX_SUPER_KEYS_ACTIVE] = {};
+Superkey *SuperkeysHandler::Sk_queue[Utils::MAX_SUPER_KEYS_ACTIVE] = {};
 Key SuperkeysHandler::Actions[6] = {};
 uint8_t super_key_index = 0;
 uint8_t SuperkeysHandler::cache_modifiers = 0;
 
-void SuperkeysHandler::setup()
+void SuperkeysHandler::setup(uint8_t active_superkeys, const Key (*sk_map)[KEYS_IN_SUPERKEY])
 {
+    configured_superkeys = active_superkeys;
     settings_base_ = kaleidoscope::plugin::EEPROMSettings::requestSlice(sizeof(SuperkeysHandler::Configurations));
     cleanup();
     config();
-    init();
+    init(sk_map);
 }
 
-void SuperkeysHandler::init()
+void SuperkeysHandler::init(const Key (*sk_map)[KEYS_IN_SUPERKEY])
 {
-    set_active_sk();
     uint16_t sk_index = 0;
     // NRF_LOG_DEBUG("Configured Super-keys %i", get_configured_sk());
     while (sk_index < get_configured_sk())
@@ -35,7 +36,7 @@ void SuperkeysHandler::init()
         // Set Super-keys keys.
         for (int i = 0; i < KEYS_IN_SUPERKEY; ++i)
         {
-            Actions[i] = configurations.keys[sk_index][i];
+            Actions[i] = sk_map[sk_index][i];
         }
         // Create a new superkey instance giving the position as index, we need to use a C style array and new due to the compatibility with Raise 1.
         Superkey *superkeyInstance = new Superkey(sk_index, configurations.hold_start_, configurations.time_out_, configurations.overlap_threshold_);
@@ -64,13 +65,17 @@ void SuperkeysHandler::config()
     Runtime.storage().get(settings_base_, configurations);
 }
 
-void SuperkeysHandler::save_configurations()
+void SuperkeysHandler::save_configurations(const Key (*sk_map)[KEYS_IN_SUPERKEY])
 {
     Runtime.storage().put(settings_base_, configurations);
     Runtime.storage().commit();
-    cleanup();
     config();
-    init();
+    
+    if(sk_map != nullptr)
+    {
+        cleanup();
+        init(sk_map);
+    }
 }
 
 void SuperkeysHandler::send_sk_map()
@@ -85,16 +90,17 @@ void SuperkeysHandler::send_sk_map()
     }
 }
 
-void SuperkeysHandler::save_superkey_map_from(const Key (*src)[KEYS_IN_SUPERKEY], uint16_t src_count)
+void SuperkeysHandler::save_superkey_map_from(const Key (*sk_map)[KEYS_IN_SUPERKEY], uint16_t src_count, uint8_t active_superkeys)
 {
-    // 1) calcular filas a copiar
+    this->configured_superkeys = active_superkeys;
+    // 1) calculate rows to copy
     const uint16_t rows = (src_count < Utils::SUPER_KEY_COUNT) ? src_count : Utils::SUPER_KEY_COUNT;
 
-    // 2) preparar IDLE destino (según tu reset() aquí es 0xFFFF)
+    // 2) prepare IDLE destination (according to your reset() here it is 0xFFFF)
     Key idle_dst;
     idle_dst.setRaw(1);
 
-    // 3) limpiar todo el destino
+    // 3) clear all the destination
     for (uint16_t i = 0; i < Utils::SUPER_KEY_COUNT; ++i)
     {
         for (uint8_t j = 0; j < KEYS_IN_SUPERKEY; ++j)
@@ -103,67 +109,23 @@ void SuperkeysHandler::save_superkey_map_from(const Key (*src)[KEYS_IN_SUPERKEY]
         }
     }
 
-    // 4) copiar con mapeo de IDLE (1 -> 0xFFFF)
-    NRF_LOG_DEBUG("Keys in superkeys (rows=%u)", (unsigned)rows);
     for (uint16_t i = 0; i < rows; ++i)
     {
         for (uint8_t j = 0; j < KEYS_IN_SUPERKEY; ++j)
         {
-            Key k = src[i][j];
+            Key k = sk_map[i][j];
             if (k.getRaw() == 1)
-            { // IDLE de KeyRoleManager
+            { // IDLE of KeyRoleManager
                 configurations.keys[i][j] = idle_dst;
             }
             else
             {
                 configurations.keys[i][j] = k;
             }
-            NRF_LOG_DEBUG("%u ,", (unsigned)configurations.keys[i][j].getRaw());
-        }
-        NRF_LOG_DEBUG("\n");
-        NRF_LOG_FLUSH();
-    }
-
-    save_configurations();
-}
-
-void SuperkeysHandler::save_superkey_map()
-{
-    static uint16_t pos = 0;
-
-    while (!::Focus.isEOL())
-    {
-        Key key;
-        ::Focus.read(key);
-        configurations.keys[pos / 6][pos % 6] = key;
-        pos++;
-        if (pos % 6 == 0)
-        {
-            pos = (pos / 6) * 6; // Reset pos to the next superkey
         }
     }
-    save_configurations();
-}
 
-void SuperkeysHandler::set_active_sk()
-{
-    configured_superkeys = 0;
-    uint8_t undefined_actions = 0;
-    for (uint16_t i = 0; i < Utils::SUPER_KEY_COUNT; ++i) // Iterate through all superkeys
-    {
-        for (int j = 0; j < KEYS_IN_SUPERKEY; ++j) // Iterate through all keys in the superkey
-        {
-            if (configurations.keys[i][j] == 0xFFFF)
-            {
-                undefined_actions++;
-            }
-            if (undefined_actions == 5)
-            {
-                return;
-            }
-        }
-        configured_superkeys++;
-    }
+    save_configurations(sk_map);
 }
 
 uint8_t SuperkeysHandler::get_configured_sk()
@@ -266,7 +228,7 @@ void SuperkeysHandler::save_pressed_modifiers(Key &mapped_key, uint8_t keyState)
 void SuperkeysHandler::set_minimum_hold(uint16_t minimum_hold)
 {
     configurations.overlap_threshold_ = minimum_hold;
-    save_configurations();
+    save_configurations(nullptr);
 }
 
 EventHandlerResult SuperkeysHandler::handle_superkeys(kaleidoscope::Key &mapped_key, KeyAddr key_addr, uint8_t keyState)
@@ -396,8 +358,6 @@ EventHandlerResult SuperkeysHandler::beforeReportingState()
         }
     }
 
-    NRF_LOG_FLUSH();
-
     return EventHandlerResult::OK;
 }
 
@@ -432,7 +392,7 @@ EventHandlerResult SuperkeysHandler::onFocusEvent(const char *command)
             if (configurations.wait_for_ < 2000)
             {
                 configurations.wait_for_ = wait;
-                save_configurations();
+                save_configurations(nullptr);
             }
         }
     }
@@ -447,7 +407,7 @@ EventHandlerResult SuperkeysHandler::onFocusEvent(const char *command)
             uint16_t time = 0;
             ::Focus.read(time);
             configurations.time_out_ = time;
-            save_configurations();
+            save_configurations(nullptr);
         }
     }
     if (strcmp_P(command + 10, "holdstart") == 0)
@@ -461,7 +421,7 @@ EventHandlerResult SuperkeysHandler::onFocusEvent(const char *command)
             uint16_t hold = 0;
             ::Focus.read(hold);
             configurations.hold_start_ = hold;
-            save_configurations();
+            save_configurations(nullptr);
         }
     }
     if (strcmp_P(command + 10, "repeat") == 0)
@@ -475,7 +435,7 @@ EventHandlerResult SuperkeysHandler::onFocusEvent(const char *command)
             uint8_t repeat = 0;
             ::Focus.read(repeat);
             configurations.repeat_interval_ = repeat;
-            save_configurations();
+            save_configurations(nullptr);
         }
     }
     if (strcmp_P(command + 10, "overlap") == 0)
@@ -489,7 +449,7 @@ EventHandlerResult SuperkeysHandler::onFocusEvent(const char *command)
             uint16_t overlap_threshold = 0;
             ::Focus.read(overlap_threshold);
             configurations.overlap_threshold_ = overlap_threshold;
-            save_configurations();
+            save_configurations(nullptr);
         }
     }
 
