@@ -725,7 +725,7 @@ void KeyboardKeyScanner::usbConnectionsStateMachine()
     uint32_t actualTime = millis();
     bool usbMounted = TinyUSBDevice.mounted();
     bool bleInitiated = ble_innited();
-    bool radioInited = kaleidoscope::plugin::RadioManager::isInited();
+    bool radioInited = _RadioManager.isInited();
     bool forceBle = _BleManager.getForceBle();
     static bool flag_ble_mode_allowed = true;
 
@@ -750,7 +750,7 @@ void KeyboardKeyScanner::usbConnectionsStateMachine()
     {
         if (usbMounted && !forceBle)
         {
-            kaleidoscope::plugin::RadioManager::enable();
+            _RadioManager.enable();
         }
         else
         {
