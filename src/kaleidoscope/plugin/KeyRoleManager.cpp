@@ -132,12 +132,15 @@ Key KeyRoleManager::search_and_replace(Key key)
         if (is_only_modifier(action_1))
         {
             this->modified_keys[modified_keys_count].sk_id = key.getRaw(); // Save the superkey ID
+            NRF_LOG_DEBUG("Superkey CODE: %u", (unsigned)this->modified_keys[modified_keys_count].sk_id);
+
             // QUKEY
             NRF_LOG_DEBUG("Qukey DETECTED");
             uint16_t qukey_code = replace_superkey_with_qukey(&action_0, &action_1);
-            NRF_LOG_DEBUG("Qukey CODE: %u", (unsigned)qukey_code);
 
             this->modified_keys[modified_keys_count].qukey_id = qukey_code; // Save the qukey ID.
+            NRF_LOG_DEBUG("Qukey CODE: %u", (unsigned)this->modified_keys[modified_keys_count].qukey_id);
+            
             ++modified_keys_count;
 
             return Key(qukey_code);

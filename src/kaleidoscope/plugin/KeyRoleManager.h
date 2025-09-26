@@ -117,8 +117,8 @@ class KeyRoleManager : public kaleidoscope::Plugin
 
     struct modified_keys_t
     {
-        uint8_t sk_id;
-        uint8_t qukey_id;
+        uint16_t sk_id;
+        uint16_t qukey_id;
     };
     modified_keys_t modified_keys[Utils::MAX_SUPER_KEYS_ACTIVE];
     uint8_t modified_keys_count;
