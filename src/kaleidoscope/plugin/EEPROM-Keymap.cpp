@@ -154,6 +154,8 @@ EventHandlerResult EEPROMKeymap::onFocusEvent(const char *command) {
       i++;
     }
     Runtime.storage().commit();
+    
+    keyRoleManager.setup_keys();
   }
 
   return EventHandlerResult::EVENT_CONSUMED;
