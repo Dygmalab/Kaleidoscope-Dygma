@@ -29,6 +29,14 @@ KeyRoleManager::KeyRoleManager()
 {
     sk_index = 0;
     modified_keys_count = 0;
+    // Initialize the modified_keys array
+    for (auto & modified_key : modified_keys)
+    {
+        modified_key.qukey_id = 0;
+        modified_key.sk_id = 0;
+        modified_key.flags_action_1 = 0;
+        modified_key.flags_action_2 = 0;
+    }
 }
 
 /* HELPER FUNCTIONS */
@@ -51,6 +59,7 @@ static inline int layerIndexFromRaw(uint32_t raw)
     {
         return static_cast<int>((raw - Utils::LAYER_SHIFT_FIRST ) << 8); // múltiplos de 256   
     }
+    return -1;
 }
 
 static inline int hidModToDumIndex(uint16_t hid)
@@ -330,10 +339,6 @@ void KeyRoleManager::determine_key_role()
             tap_action.setFlags(0);
             hold_action.setFlags(0);
 
-            NRF_LOG_DEBUG("Tap action: %u", (unsigned)tap_action.getRaw());
-            NRF_LOG_DEBUG("Hold action: %u", (unsigned)hold_action.getRaw());
-            NRF_LOG_FLUSH();
-
             if (is_only_modifier(hold_action) || has_layer_change(hold_action))
             {
                 // QUKEY
@@ -346,10 +351,6 @@ void KeyRoleManager::determine_key_role()
                 this->modified_keys[modified_keys_count].flags_action_1 = action_0.getFlags();
                 this->modified_keys[modified_keys_count].flags_action_2 = action_1.getFlags();
 
-                NRF_LOG_DEBUG("Flags action 1: %u", (unsigned)action_0.getFlags());
-                NRF_LOG_DEBUG("Flags action 2: %u", (unsigned)action_1.getFlags());
-                NRF_LOG_FLUSH();
-
                 // NRF_LOG_DEBUG("Qukey ID: %d", qukey_code);
                 // NRF_LOG_DEBUG("Superkey ID: %d", ranges::DYNAMIC_SUPER_FIRST + i);
                 // NRF_LOG_FLUSH();
@@ -357,6 +358,7 @@ void KeyRoleManager::determine_key_role()
             }
         }
     }
+    modified_keys_count = 0;
 }
 
 void KeyRoleManager::send_sk_map()
