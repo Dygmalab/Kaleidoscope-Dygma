@@ -70,67 +70,20 @@ void SuperkeysHandler::save_configurations(const Key (*sk_map)[KEYS_IN_SUPERKEY]
     Runtime.storage().put(settings_base_, configurations);
     Runtime.storage().commit();
     config();
-    
-    if(sk_map != nullptr)
-    {
-        cleanup();
-        init(sk_map);
-    }
+    cleanup();
+    init(sk_map);   
 }
 
-void SuperkeysHandler::send_sk_map()
+void SuperkeysHandler::save_superkey_map_from(const Key (*sk_map)[KEYS_IN_SUPERKEY], uint8_t active_superkeys)
 {
-    Kaleidoscope.storage().get(settings_base_, configurations);
-    for (uint16_t i = 0; i < Utils::SUPER_KEY_COUNT; ++i)
-    {
-        for (int j = 0; j < KEYS_IN_SUPERKEY; ++j)
-        {
-            ::Focus.send(configurations.keys[i][j]);
-        }
-    }
-}
-
-void SuperkeysHandler::save_superkey_map_from(const Key (*sk_map)[KEYS_IN_SUPERKEY], uint16_t src_count, uint8_t active_superkeys)
-{
-    this->configured_superkeys = active_superkeys;
-    // 1) calculate rows to copy
-    const uint16_t rows = (src_count < Utils::SUPER_KEY_COUNT) ? src_count : Utils::SUPER_KEY_COUNT;
-
-    // 2) prepare IDLE destination (according to your reset() here it is 0xFFFF)
-    Key idle_dst;
-    idle_dst.setRaw(1);
-
-    // 3) clear all the destination
-    for (uint16_t i = 0; i < Utils::SUPER_KEY_COUNT; ++i)
-    {
-        for (uint8_t j = 0; j < KEYS_IN_SUPERKEY; ++j)
-        {
-            configurations.keys[i][j] = idle_dst;
-        }
-    }
-
-    for (uint16_t i = 0; i < rows; ++i)
-    {
-        for (uint8_t j = 0; j < KEYS_IN_SUPERKEY; ++j)
-        {
-            Key k = sk_map[i][j];
-            if (k.getRaw() == 1)
-            { // IDLE of KeyRoleManager
-                configurations.keys[i][j] = idle_dst;
-            }
-            else
-            {
-                configurations.keys[i][j] = k;
-            }
-        }
-    }
-
-    save_configurations(sk_map);
+    configured_superkeys = active_superkeys;
+    cleanup();
+    init(sk_map);   
 }
 
 uint8_t SuperkeysHandler::get_configured_sk()
 {
-    return SuperkeysHandler::configured_superkeys;
+    return configured_superkeys;
 }
 
 void SuperkeysHandler::cleanup()
@@ -347,6 +300,7 @@ EventHandlerResult SuperkeysHandler::onKeyswitchEvent(Key &mapped_key, KeyAddr k
 
 EventHandlerResult SuperkeysHandler::beforeReportingState()
 {
+
     // Iterate through every superkey if they are enabled.
     uint8_t configuredSK = get_configured_sk();
 

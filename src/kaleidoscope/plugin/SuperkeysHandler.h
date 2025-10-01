@@ -88,9 +88,6 @@ namespace kaleidoscope
                 uint8_t overlap_threshold_;
                 uint16_t time_out_;
 
-                // Keys configured in every superkey action.
-                Key keys[Utils::SUPER_KEY_COUNT][KEYS_IN_SUPERKEY];
-
                 void reset()
                 {
                     delayed_time_ = 0;
@@ -99,27 +96,16 @@ namespace kaleidoscope
                     repeat_interval_ = 20;
                     overlap_threshold_ = 80;
                     time_out_ = 144;
-                    static Key IDLE_KEY;
-                    IDLE_KEY.setRaw(0xFFFF);
-                    for (uint16_t i = 0; i < Utils::SUPER_KEY_COUNT; ++i)
-                    {
-                        for (int j = 0; j < KEYS_IN_SUPERKEY; ++j)
-                        {
-                            keys[i][j] = IDLE_KEY;
-                        }
-                    }
                 }
             };
 
             static void set_minimum_hold(uint16_t minimum_hold);
 
-            static void send_sk_map();
-
-            void save_superkey_map_from(const Key (*sk_map)[KEYS_IN_SUPERKEY], uint16_t src_count, uint8_t active_superkeys);
+            static void save_superkey_map_from(const Key (*sk_map)[KEYS_IN_SUPERKEY], uint8_t active_superkeys);
 
             static void save_superkey_map();
 
-        private:
+            private:
             static Superkey *state_[Utils::SUPER_KEY_COUNT];
             static uint16_t settings_base_;
             static Superkey *Sk_queue[Utils::MAX_SUPER_KEYS_ACTIVE];
