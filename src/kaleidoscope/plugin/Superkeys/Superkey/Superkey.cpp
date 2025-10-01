@@ -128,7 +128,7 @@ bool Superkey::interrupt(Key &regular_key, const KeyAddr &keyaddr_)
     if (!superKeyState.holded && ActionsDriver::key_can_interrupt(regular_key))
     {
         //NRF_LOG_DEBUG("Superkey %i is being interrupted by key %i", index_, regular_key.getRaw());
-        if (kaleidoscope::Runtime_::hasTimeExpired(superKeyState.minimum_hold, minimum_hold_start_))
+        if (kaleidoscope::Runtime_::hasTimeExpired(superKeyState.minimum_hold, minimum_hold_start_) && !superKeyState.is_qukey)
         {
             superKeyState.tap_count = (uint8_t)Utils::EventType::HOLD; // Force the action tap count to TAP.
         }
