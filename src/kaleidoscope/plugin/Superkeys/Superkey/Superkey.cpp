@@ -125,7 +125,6 @@ bool Superkey::interrupt(Key &regular_key, const KeyAddr &keyaddr_)
         return false;
     }
 
-    // TODO: here we have to check that the minimum hold timeout has been met, to see if we release the key with one key or another.
     if (!superKeyState.holded && ActionsDriver::key_can_interrupt(regular_key))
     {
         //NRF_LOG_DEBUG("Superkey %i is being interrupted by key %i", index_, regular_key.getRaw());
@@ -171,16 +170,11 @@ KeyAddr Superkey::get_keyAddr() const
 
 void Superkey::check_if_sk_qukey()
 {
-    uint8_t idle_actions = 0;
-    for (auto Action : Actions)
-    {
-        if (Action.getRaw() == IDLE_KEY)
-        {
-            ++idle_actions;
-        }
-    }
-    // If we have three idle actions or in other words, if we only have two actions set in this SK, we know this is a qukey.
-    if (idle_actions >= QUKEY_MIN_IDLE_ACTIONS)
+    // Check if Actions[0] and Actions[1] are configured (not idle) and Actions[2] to Actions[5] are not configured (idle)
+    bool first_two_configured = (Actions[0].getRaw() != IDLE_KEY) && (Actions[1].getRaw() != IDLE_KEY);
+    bool rest_idle = (Actions[2].getRaw() == IDLE_KEY) && (Actions[3].getRaw() == IDLE_KEY) && (Actions[4].getRaw() == IDLE_KEY);
+
+    if (first_two_configured && rest_idle)
     {
         superKeyState.is_qukey = true;
     }
