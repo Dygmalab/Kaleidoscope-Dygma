@@ -726,7 +726,7 @@ void KeyboardKeyScanner::usbConnectionsStateMachine()
     bool usbMounted = TinyUSBDevice.mounted();
     bool bleInitiated = ble_innited();
     bool radioInited = _RadioManager.isInited();
-    bool forceBle = _BleManager.getForceBle();
+    bool forceBle = BleManager.getForceBle();
     static bool flag_ble_mode_allowed = true;
 
     uint8_t bat_status_l = kaleidoscope::Battery::get_battery_status_left();
@@ -757,7 +757,7 @@ void KeyboardKeyScanner::usbConnectionsStateMachine()
             if (flag_ble_mode_allowed)
             {
                 //Force connnect again just in case it was set as a device and not a host
-                _BleManager.enable();
+                BleManager.enable();
 
                 if (leftConnection[1] == KEYSCANNER_DEFY_LEFT)
                 {
@@ -771,7 +771,7 @@ void KeyboardKeyScanner::usbConnectionsStateMachine()
 
                 KeyboardHands::sendPacketBrightness();
 
-                _BleManager.setForceBle(false);
+                BleManager.setForceBle(false);
 
                 Packet p{};
                 p.header.command = CONNECTED;
