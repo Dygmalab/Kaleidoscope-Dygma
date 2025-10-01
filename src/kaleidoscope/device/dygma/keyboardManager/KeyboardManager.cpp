@@ -729,8 +729,8 @@ void KeyboardKeyScanner::usbConnectionsStateMachine()
     bool forceBle = BleManager.getForceBle();
     static bool flag_ble_mode_allowed = true;
 
-    uint8_t bat_status_l = kaleidoscope::Battery::get_battery_status_left();
-    uint8_t bat_status_r = kaleidoscope::Battery::get_battery_status_right();
+    uint8_t bat_status_l = Battery::get_battery_status_left();
+    uint8_t bat_status_r = Battery::get_battery_status_right();
     /*
         0 -> Side connected and powered from its battery or the other side's battery.
         1 o 2 -> Side connected and powered from the N2 while it is connected to the PC via USB.
