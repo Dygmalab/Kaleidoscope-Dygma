@@ -75,27 +75,6 @@ class KeyRoleManager : public kaleidoscope::Plugin
     static constexpr uint8_t KEYS_IN_SUPERKEY = 6;
     static constexpr uint8_t IDLE_KEY = 1;
 
-    const uint32_t ModKeys[6] = {
-        0,     //"None",
-        49425, //"Dual Shift",
-        49169, //"Dual Control"
-        49937, // "Dual OS"
-        49681, //"Dual Alt"
-        50705  //"Dual Alt Gr"
-    };
-
-    const uint32_t LayerKeys[9] = {
-        0,     //"None"
-        51218, // "Dual Layer 1"
-        51474, // "Dual Layer 2"
-        51730, // "Dual Layer 3"
-        51986, // "Dual Layer 4"
-        52242, // "Dual Layer 5",
-        52498, //"Dual Layer 6"
-        52754, //"Dual Layer 7"
-        53010  // "Dual Layer 8"
-    };
-
     struct key_storage_t
     {
         // Keys configured in every superkey action.4

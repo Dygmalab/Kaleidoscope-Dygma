@@ -2,7 +2,7 @@
 
 #include "Kaleidoscope-Ranges.h"
 #include "kaleidoscope/key_defs.h"
-#include "kaleidoscope/layers.h"
+
 #include <Kaleidoscope-EEPROM-Keymap.h>
 #include <Kaleidoscope-EEPROM-Settings.h>
 #include <Kaleidoscope-FocusSerial.h>
@@ -98,7 +98,6 @@ void KeyRoleManager::get_superkey(Key* mapped_key)
         }    
     }
 }
-
 
 bool KeyRoleManager::has_layer_change(Key Action)
 {
@@ -299,8 +298,6 @@ void KeyRoleManager::set_active_sk()
 
 void KeyRoleManager::determine_key_role()
 {
-    NRF_LOG_DEBUG("Determine key role");
-
     for (size_t i = 0; i < this->configured_superkeys; i++)
     {
         Key action_0 = key_storage.keys[i][0];
@@ -317,40 +314,19 @@ void KeyRoleManager::determine_key_role()
             {
                 // QUKEY
                 uint16_t qukey_code = replace_superkey_with_qukey(&action_0, &action_1);
-                NRF_LOG_DEBUG("Qukey DETECTED");
+                // NRF_LOG_DEBUG("Qukey DETECTED");
 
                 // Here we save the qukey and superkey id for later use.
                 this->modified_keys[modified_keys_count].sk_id = ranges::DYNAMIC_SUPER_FIRST + i;
                 this->modified_keys[modified_keys_count].qukey_id = qukey_code;
-                NRF_LOG_DEBUG("Qukey ID: %d", qukey_code);
-                NRF_LOG_DEBUG("Superkey ID: %d", ranges::DYNAMIC_SUPER_FIRST + i);
-                NRF_LOG_FLUSH();
+                // NRF_LOG_DEBUG("Qukey ID: %d", qukey_code);
+                // NRF_LOG_DEBUG("Superkey ID: %d", ranges::DYNAMIC_SUPER_FIRST + i);
+                // NRF_LOG_FLUSH();
                 modified_keys_count++;
             }
-            else
-            {
-                // SUPERKEY
-                NRF_LOG_DEBUG("Superkey DETECTED");
-                NRF_LOG_FLUSH();
-            }
         }
-        else if (is_idle(action_0) && is_idle(action_1) && is_idle(action_2) && is_idle(action_3) && is_idle(action_4))
-        {
-            // En este caso la tecla enviada en el superkey.map es todos 1 y no debe ser tratada.
-            NRF_LOG_DEBUG("ERROR: No Key FOUND");
-        }
-        else
-        {
-            // SUPERKEY FOUND
-            // Cualquier otra combinacion sera una superkey normal.
-            NRF_LOG_DEBUG("Superkey DETECTED");
-            NRF_LOG_FLUSH();
-        }
-
-        NRF_LOG_FLUSH();
     }
 }
-
 
 void KeyRoleManager::send_sk_map()
 {
