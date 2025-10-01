@@ -21,10 +21,13 @@
 
 #include "kaleidoscope/Runtime.h"
 #include <Kaleidoscope-Ranges.h>
+#include <cstdint>
 #include "kaleidoscope/progmem_helpers.h"
 #include "kaleidoscope/layers.h"
 
 #include "SuperkeysHandler.h"
+
+#include "KeyRoleManager.h"
 
 
 namespace kaleidoscope {
@@ -364,21 +367,36 @@ bool Qukeys::isQukey(KeyAddr k) {
 bool Qukeys::isDualUseKey(Key key) {
   // Test for DualUse modifiers:
   if (key >= ranges::DUM_FIRST && key <= ranges::DUM_LAST) {
+
+    KeyRoleManager::modified_keys_t* action_flags = keyRoleManager.get_configured_qukeys(key.getRaw());
+    
+    if (action_flags == nullptr) 
+    {
+      return false;
+    }
+
     key.setRaw(key.getRaw() - ranges::DUM_FIRST);
 
     queue_head_.primary_key = key;
-    queue_head_.primary_key.setFlags(0);
+    queue_head_.primary_key.setFlags(action_flags->flags_action_1);
 
     queue_head_.alternate_key.setRaw(key.getFlags() + Key_LeftControl.getKeyCode());
-    //queue_head_.alternate_key.setFlags(3);
+    queue_head_.alternate_key.setFlags(action_flags->flags_action_2);
     return true;
   }
   // Test for DualUse layer shifts:
   if (key >= ranges::DUL_FIRST && key <= ranges::DUL_LAST) {
+    KeyRoleManager::modified_keys_t* action_flags = keyRoleManager.get_configured_qukeys(key.getRaw());
+    
+    if (action_flags == nullptr) 
+    {
+      return false;
+    }
+    
     key.setRaw(key.getRaw() - ranges::DUL_FIRST);
 
     queue_head_.primary_key = key;
-    queue_head_.primary_key.setFlags(0);
+    queue_head_.primary_key.setFlags(action_flags->flags_action_1);
 
     int8_t layer = key.getFlags();
     queue_head_.alternate_key = ShiftToLayer(layer);

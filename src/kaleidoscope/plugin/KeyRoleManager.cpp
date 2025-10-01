@@ -87,6 +87,18 @@ bool KeyRoleManager::is_qukey(Key key)
     return result;
 }
 
+KeyRoleManager::modified_keys_t* KeyRoleManager::get_configured_qukeys(uint16_t qukey_id)
+{
+    for (modified_keys_t& key : this->modified_keys) 
+    {
+        if (key.qukey_id == qukey_id)
+        {
+            return &key;
+        }    
+    }
+    return nullptr;
+}
+
 void KeyRoleManager::get_superkey(Key* mapped_key)
 {
     for (modified_keys_t key : this->modified_keys) 
@@ -191,7 +203,7 @@ uint16_t KeyRoleManager::replace_superkey_with_qukey(const Key *action_0, const 
     if (!action_0 || !action_1) return 0;
 
     const uint16_t tap_raw = static_cast<uint16_t>(action_0->getRaw());
-    const uint16_t hold_raw = static_cast<uint16_t>(action_1->getRaw()); // esperado: 0xE0..0xE7
+    const uint16_t hold_raw = static_cast<uint16_t>(action_1->getRaw());
 
     const uint16_t qukey_code = calculate_qukey_code(hold_raw, tap_raw);
     if (qukey_code == 0u)
@@ -310,15 +322,34 @@ void KeyRoleManager::determine_key_role()
         {
             // This is a fast Superkey, we need to check if it should be a Qukey or a Superkey,
             // The desition will depend if the action 1 is only a modifier.
-            if (is_only_modifier(action_1) || has_layer_change(action_1))
+
+            Key tap_action = action_0;
+            Key hold_action = action_1;
+            // Limpiamos los flags de estas keys para poder calcular correctamente el valor de la qukey.
+            // SHIFT + F da 49434 o 0xC04E
+            tap_action.setFlags(0);
+            hold_action.setFlags(0);
+
+            NRF_LOG_DEBUG("Tap action: %u", (unsigned)tap_action.getRaw());
+            NRF_LOG_DEBUG("Hold action: %u", (unsigned)hold_action.getRaw());
+            NRF_LOG_FLUSH();
+
+            if (is_only_modifier(hold_action) || has_layer_change(hold_action))
             {
                 // QUKEY
                 uint16_t qukey_code = replace_superkey_with_qukey(&action_0, &action_1);
-                // NRF_LOG_DEBUG("Qukey DETECTED");
+                 NRF_LOG_DEBUG("Qukey DETECTED");
 
                 // Here we save the qukey and superkey id for later use.
                 this->modified_keys[modified_keys_count].sk_id = ranges::DYNAMIC_SUPER_FIRST + i;
                 this->modified_keys[modified_keys_count].qukey_id = qukey_code;
+                this->modified_keys[modified_keys_count].flags_action_1 = action_0.getFlags();
+                this->modified_keys[modified_keys_count].flags_action_2 = action_1.getFlags();
+
+                NRF_LOG_DEBUG("Flags action 1: %u", (unsigned)action_0.getFlags());
+                NRF_LOG_DEBUG("Flags action 2: %u", (unsigned)action_1.getFlags());
+                NRF_LOG_FLUSH();
+
                 // NRF_LOG_DEBUG("Qukey ID: %d", qukey_code);
                 // NRF_LOG_DEBUG("Superkey ID: %d", ranges::DYNAMIC_SUPER_FIRST + i);
                 // NRF_LOG_FLUSH();

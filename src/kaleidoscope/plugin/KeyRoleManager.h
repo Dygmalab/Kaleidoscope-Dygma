@@ -16,6 +16,15 @@ namespace plugin
 class KeyRoleManager : public kaleidoscope::Plugin
 {
   public:
+
+    struct modified_keys_t
+    {
+        uint16_t sk_id;
+        uint16_t qukey_id;
+        uint8_t flags_action_1;
+        uint8_t flags_action_2;
+    };
+    
     KeyRoleManager();
 
     /**
@@ -71,6 +80,8 @@ class KeyRoleManager : public kaleidoscope::Plugin
 
     void setup_keys();
 
+    modified_keys_t* get_configured_qukeys(uint16_t qukey_id);
+
   private:
     static constexpr uint8_t KEYS_IN_SUPERKEY = 6;
     static constexpr uint8_t IDLE_KEY = 1;
@@ -96,12 +107,10 @@ class KeyRoleManager : public kaleidoscope::Plugin
     key_storage_t key_storage;
     key_storage_t sk_storage;
 
-    struct modified_keys_t
-    {
-        uint16_t sk_id;
-        uint16_t qukey_id;
-    };
     modified_keys_t modified_keys[Utils::MAX_SUPER_KEYS_ACTIVE];
+
+    modified_keys_t* configured_qukeys;
+
     uint8_t modified_keys_count;
     
     uint8_t sk_index;
