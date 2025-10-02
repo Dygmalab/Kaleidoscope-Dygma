@@ -28,7 +28,7 @@ uint16_t settings_base_ = 0;
 KeyRoleManager::KeyRoleManager()
 {
     sk_index = 0;
-    modified_keys_count = 0;
+    this->modified_keys_count = 0;
     // Initialize the modified_keys array
     for (auto & modified_key : modified_keys)
     {
@@ -184,14 +184,14 @@ Key KeyRoleManager::search_and_replace(Key key)
         if (is_only_modifier(action_1)|| has_layer_change(action_1))
         {
             // QUKEY
-            NRF_LOG_DEBUG("Qukey DETECTED Replacing it");
+            NRF_LOG_DEBUG("search_and_replace:Qukey DETECTED Replacing it");
             uint16_t qukey_code = replace_superkey_with_qukey(&action_0, &action_1);
             return Key(qukey_code);
         }
         else
         {
             // SUPERKEY
-            NRF_LOG_DEBUG("Superkey DETECTED CODE: %u", (unsigned)key.getRaw());
+            NRF_LOG_DEBUG("search_and_replace:Superkey DETECTED CODE: %u", (unsigned)key.getRaw());
             return key;
         }
     }
@@ -199,7 +199,7 @@ Key KeyRoleManager::search_and_replace(Key key)
     {
         // SUPERKEY FOUND
         // Cualquier otra combinacion sera una superkey normal.
-        NRF_LOG_DEBUG("Superkey DETECTED CODE: %u", (unsigned)key.getRaw());
+        NRF_LOG_DEBUG("search_and_replace:Superkey DETECTED CODE: %u", (unsigned)key.getRaw());
         return key;
     }
 
@@ -339,26 +339,33 @@ void KeyRoleManager::determine_key_role()
             tap_action.setFlags(0);
             hold_action.setFlags(0);
 
-            if (is_only_modifier(hold_action) || has_layer_change(hold_action))
+            if (is_only_modifier(hold_action) || has_layer_change(action_1))
             {
                 // QUKEY
                 uint16_t qukey_code = replace_superkey_with_qukey(&action_0, &action_1);
-                 NRF_LOG_DEBUG("Qukey DETECTED");
+                if(qukey_code != 0 || (qukey_code < ranges::DUL_FIRST || qukey_code > ranges::DUL_LAST))
+                {
+                    NRF_LOG_DEBUG("Qukey DETECTED");
+                    // Here we save the qukey and superkey id for later use.
+                    this->modified_keys[this->modified_keys_count].sk_id = ranges::DYNAMIC_SUPER_FIRST + i;
+                    this->modified_keys[this->modified_keys_count].qukey_id = qukey_code;
+                    this->modified_keys[this->modified_keys_count].flags_action_1 = action_0.getFlags();
+                    this->modified_keys[this->modified_keys_count].flags_action_2 = action_1.getFlags();
 
-                // Here we save the qukey and superkey id for later use.
-                this->modified_keys[modified_keys_count].sk_id = ranges::DYNAMIC_SUPER_FIRST + i;
-                this->modified_keys[modified_keys_count].qukey_id = qukey_code;
-                this->modified_keys[modified_keys_count].flags_action_1 = action_0.getFlags();
-                this->modified_keys[modified_keys_count].flags_action_2 = action_1.getFlags();
-
-                // NRF_LOG_DEBUG("Qukey ID: %d", qukey_code);
-                // NRF_LOG_DEBUG("Superkey ID: %d", ranges::DYNAMIC_SUPER_FIRST + i);
-                // NRF_LOG_FLUSH();
-                modified_keys_count++;
+                    // NRF_LOG_DEBUG("Qukey ID: %d", qukey_code);
+                    // NRF_LOG_DEBUG("Superkey ID: %d", ranges::DYNAMIC_SUPER_FIRST + i);
+                    // NRF_LOG_FLUSH();
+                    this->modified_keys_count++;
+                }
+                else
+                {
+                    NRF_LOG_DEBUG("Qukey NOT DETECTED");
+                    NRF_LOG_FLUSH();
+                }
             }
         }
     }
-    modified_keys_count = 0;
+    this->modified_keys_count = 0;
 }
 
 void KeyRoleManager::send_sk_map()
@@ -415,7 +422,8 @@ EventHandlerResult KeyRoleManager::onFocusEvent(const char *command)
             }
             save_configurations();
 
-            SuperkeysHandler::save_superkey_map_from(key_storage.keys, this->configured_superkeys);
+            //TODO: Eliminar esta llamada ya que se esta repitiendo. En save_configurations() se llama a SuperkeysHandler::save_superkey_map_from(key_storage.keys, this->configured_superkeys);
+            //SuperkeysHandler::save_superkey_map_from(key_storage.keys, this->configured_superkeys);
         }
         result = EventHandlerResult::EVENT_CONSUMED;
     }
