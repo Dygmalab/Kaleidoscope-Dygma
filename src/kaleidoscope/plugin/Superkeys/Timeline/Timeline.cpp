@@ -94,7 +94,10 @@ bool Timeline::check_interruptions()
             {
                 bool interrupt_result = sk_prev->interrupt(curr.key, curr.addr);
 
-                if (!interrupt_result)
+                // Only when the previous superkey DID handle the interruption
+                // (i.e. it finalized itself), we remove it from the timeline
+                // and restart the analysis to keep references valid.
+                if (interrupt_result)
                 {
                     remove(prev.addr);
                     interruptionOccurred = true;
@@ -111,6 +114,37 @@ bool Timeline::check_interruptions()
 void Timeline::process()
 {
 
+}
+
+bool Timeline::has_previous_superkey_pending(const KeyAddr& addr) const
+{
+    // Find the index of the entry with the given address
+    int8_t idx = -1;
+    for (uint8_t i = 0; i < count; ++i)
+    {
+        if (entries[i].addr == addr)
+        {
+            idx = static_cast<int8_t>(i);
+            break;
+        }
+    }
+
+    if (idx <= 0) return false;
+
+    // Scan backwards to see if there is any earlier SUPERKEY still enabled
+    for (int j = idx - 1; j >= 0; --j)
+    {
+        if (entries[j].type == Utils::KeyType::SUPERKEY)
+        {
+            Superkey* sk = static_cast<Superkey*>(entries[j].context);
+            if (sk != nullptr && sk->is_enable())
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 Timeline timeline; // Global instance of Timeline

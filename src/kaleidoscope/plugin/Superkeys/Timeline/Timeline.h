@@ -11,6 +11,10 @@ public:
     bool add(const  Utils::TimelineEntry& entry);
     void remove(const KeyAddr& addr);
     void process();
+    
+    // Returns true if there is any SUPERKEY entry in the timeline that
+    // appears before the entry at the provided address, and is still active.
+    bool has_previous_superkey_pending(const KeyAddr& addr) const;
 
 private:
 

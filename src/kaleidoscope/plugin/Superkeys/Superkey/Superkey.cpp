@@ -29,6 +29,7 @@ void Superkey::disable()
     superKeyState.hold_start = 0;
     superKeyState.timeStamp = 0;
     superKeyState.pressed = false;
+    superKeyState.released = false;
     superKeyState.is_repeateable = false;
     timeline.remove(this->keyaddr_);
 }
@@ -40,10 +41,19 @@ void Superkey::run()
     // Check if superKeyState.triggered = true, check sk type and send the corresponding key to the OS.
     // Check if the sk has to be interrupted by any external event.
     // NRF_LOG_DEBUG("Running Superkey %i", index_);
-    if (superKeyState.is_qukey && superKeyState.released)
+    if (superKeyState.is_qukey)
     {
-        timeout();
-        disable();
+        if (superKeyState.released)
+        {
+            // Preserve ordering: if there is an earlier superkey still pending,
+            // defer qukey finalization until it completes.
+            if (!timeline.has_previous_superkey_pending(this->keyaddr_))
+            {
+                timeout();
+                disable();
+            }
+        }
+        // For qukeys, do not apply the generic timeout path while release ordering is constrained.
     }
     else if (kaleidoscope::Runtime_::hasTimeExpired(superKeyState.timeStamp, time_out_))
     {
@@ -60,7 +70,27 @@ void Superkey::key_pressed()
 
 void Superkey::key_released()
 {
+    // Capture whether this cycle was a hold before release() resets flags
+    bool was_hold = superKeyState.holded;
     release();
+    // For qukeys: if there's no earlier superkey pending, finalize immediately
+    // on release to ensure the instance is disabled before a rapid next press.
+    if (superKeyState.is_qukey)
+    {
+        if (!timeline.has_previous_superkey_pending(this->keyaddr_))
+        {
+            timeout();
+            disable();
+            return;
+        }
+    }
+    // If it was a hold (already triggered) and not a qukey, we can safely
+    // finalize immediately on release to avoid blocking the next press.
+    if (was_hold && !superKeyState.is_qukey)
+    {
+        timeout();
+        disable();
+    }
 }
 
 void Superkey::key_is_pressed()
@@ -127,15 +157,18 @@ bool Superkey::interrupt(Key &regular_key, const KeyAddr &keyaddr_)
 
     if (!superKeyState.holded && ActionsDriver::key_can_interrupt(regular_key))
     {
-        //NRF_LOG_DEBUG("Superkey %i is being interrupted by key %i", index_, regular_key.getRaw());
-        if (kaleidoscope::Runtime_::hasTimeExpired(superKeyState.minimum_hold, minimum_hold_start_) && !superKeyState.is_qukey)
-        {
-            superKeyState.tap_count = (uint8_t)Utils::EventType::HOLD; // Force the action tap count to TAP.
-        }
-        else
-        {
-            superKeyState.tap_count = (uint8_t)Utils::EventType::TAP; // Force the action tap count to TAP.
-        }
+        // Decide whether this interruption should finalize as HOLD or TAP.
+        // If we've already passed the minimum hold threshold and this is not a qukey,
+        // treat it as HOLD; otherwise treat it as TAP.
+        superKeyState.tap_count = (uint8_t)Utils::EventType::TAP;
+        // if (kaleidoscope::Runtime_::hasTimeExpired(superKeyState.minimum_hold, minimum_hold_start_) && !superKeyState.is_qukey)
+        // {
+        //     superKeyState.tap_count = (uint8_t)Utils::EventType::HOLD;
+        // }
+        // else
+        // {
+        //     superKeyState.tap_count = (uint8_t)Utils::EventType::TAP;
+        // }
         timeout();
         disable();
         result = true;
@@ -172,7 +205,10 @@ void Superkey::check_if_sk_qukey()
 {
     // Check if Actions[0] and Actions[1] are configured (not idle) and Actions[2] to Actions[5] are not configured (idle)
     bool first_two_configured = (Actions[0].getRaw() != IDLE_KEY) && (Actions[1].getRaw() != IDLE_KEY);
-    bool rest_idle = (Actions[2].getRaw() == IDLE_KEY) && (Actions[3].getRaw() == IDLE_KEY) && (Actions[4].getRaw() == IDLE_KEY);
+    bool rest_idle = (Actions[2].getRaw() == IDLE_KEY) &&
+                     (Actions[3].getRaw() == IDLE_KEY) &&
+                     (Actions[4].getRaw() == IDLE_KEY) &&
+                     (Actions[5].getRaw() == IDLE_KEY);
 
     if (first_two_configured && rest_idle)
     {

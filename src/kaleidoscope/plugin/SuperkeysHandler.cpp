@@ -70,15 +70,21 @@ void SuperkeysHandler::save_configurations(const Key (*sk_map)[KEYS_IN_SUPERKEY]
     Runtime.storage().put(settings_base_, configurations);
     Runtime.storage().commit();
     config();
-    cleanup();
-    init(sk_map);   
+    if(sk_map != nullptr)
+    {
+        cleanup();
+        init(sk_map);   
+    }
 }
 
 void SuperkeysHandler::save_superkey_map_from(const Key (*sk_map)[KEYS_IN_SUPERKEY], uint8_t active_superkeys)
 {
     configured_superkeys = active_superkeys;
-    cleanup();
-    init(sk_map);   
+    if(sk_map != nullptr)
+    {
+        cleanup();
+        init(sk_map);   
+    }
 }
 
 uint8_t SuperkeysHandler::get_configured_sk()
@@ -184,7 +190,7 @@ void SuperkeysHandler::set_minimum_hold(uint16_t minimum_hold)
     save_configurations(nullptr);
 }
 
-EventHandlerResult SuperkeysHandler::handle_superkeys(kaleidoscope::Key &mapped_key, KeyAddr key_addr, uint8_t keyState)
+EventHandlerResult SuperkeysHandler::handle_superkeys(Key &mapped_key, KeyAddr key_addr, uint8_t keyState)
 {
     // Superkey processing starts here.
     super_key_index = static_cast<uint8_t>(mapped_key.getRaw() - ranges::DYNAMIC_SUPER_FIRST);
@@ -192,37 +198,41 @@ EventHandlerResult SuperkeysHandler::handle_superkeys(kaleidoscope::Key &mapped_
     if (keyToggledOn(keyState))
     {
         NRF_LOG_DEBUG("super_key_index %i  ", super_key_index);
-        for (uint8_t pos = 0; pos <= get_configured_sk(); ++pos)
+        for (uint8_t pos = 0; pos < get_configured_sk(); ++pos)
         {
-            if (Sk_queue[pos]->get_index() == super_key_index && !Sk_queue[pos]->is_enable())
+            if (Sk_queue[pos] == nullptr) continue;
+
+            if (Sk_queue[pos]->get_index() == super_key_index)
             {
-                // We want to enable the superkey one time,
-                // so if the superkey wasn't enabled,
-                // we enable it, otherwise continue.
-                Sk_queue[pos]->enable(cache_modifiers);
-                Sk_queue[pos]->init_timer();
-                Sk_queue[pos]->set_key_and_keyAddr(mapped_key, key_addr);
-                Sk_queue[pos]->key_pressed();
+                if (!Sk_queue[pos]->is_enable())
+                {
+                    // Normal arm path
+                    Sk_queue[pos]->enable(cache_modifiers);
+                    Sk_queue[pos]->init_timer();
+                    Sk_queue[pos]->set_key_and_keyAddr(mapped_key, key_addr);
+                    Sk_queue[pos]->key_pressed();
 
-                Utils::TimelineEntry entry = {
-                    mapped_key, key_addr, Runtime.millisAtCycleStart(), Utils::KeyType::SUPERKEY, false, static_cast<void *>(Sk_queue[pos])};
+                    Utils::TimelineEntry entry = {
+                        mapped_key, key_addr, Runtime.millisAtCycleStart(), Utils::KeyType::SUPERKEY, false, static_cast<void *>(Sk_queue[pos])};
 
-                timeline.add(entry);
-
-                return EventHandlerResult::EVENT_CONSUMED;
-            }
-            else if (Sk_queue[pos]->get_index() == super_key_index) // if the index match and the superkey is already enabled
-            {
-                // We want to send the key pressed event to the superkey.
-                Sk_queue[pos]->key_pressed();
-                return EventHandlerResult::EVENT_CONSUMED;
+                    timeline.add(entry);
+                    return EventHandlerResult::EVENT_CONSUMED;
+                }
+                else
+                {
+                    // Already enabled: forward the press to accumulate tap_count
+                    // without resetting state or duplicating the timeline entry.
+                    Sk_queue[pos]->key_pressed();
+                    return EventHandlerResult::EVENT_CONSUMED;
+                }
             }
         }
     }
     else if (keyToggledOff(keyState))
     {
-        for (uint8_t pos = 0; pos <= get_configured_sk(); ++pos)
+        for (uint8_t pos = 0; pos < get_configured_sk(); ++pos)
         {
+            if (Sk_queue[pos] == nullptr) continue;
             if (Sk_queue[pos]->get_index() == super_key_index)
             {
                 Sk_queue[pos]->key_released();
@@ -232,10 +242,11 @@ EventHandlerResult SuperkeysHandler::handle_superkeys(kaleidoscope::Key &mapped_
     }
     else if (keyIsPressed(keyState))
     {
-        for (uint8_t pos = 0; pos <= get_configured_sk(); ++pos)
+        for (uint8_t pos = 0; pos < get_configured_sk(); ++pos)
         {
+            if (Sk_queue[pos] == nullptr) continue;
             if (Sk_queue[pos]->get_index() == super_key_index)
-            { // We want to enable the superkey one time, so if the superkey wasn't enabled, we enable it, otherwise continue.
+            {
                 Sk_queue[pos]->key_is_pressed();
                 return EventHandlerResult::EVENT_CONSUMED;
             }
@@ -306,7 +317,7 @@ EventHandlerResult SuperkeysHandler::beforeReportingState()
 
     for (uint8_t i = 0; i < configuredSK; i++)
     {
-        if (Sk_queue[i]->is_enable())
+        if (Sk_queue[i] != nullptr && Sk_queue[i]->is_enable())
         {
             Sk_queue[i]->run();
         }
@@ -322,17 +333,7 @@ EventHandlerResult SuperkeysHandler::onFocusEvent(const char *command)
 
     if (strncmp_P(command, "superkeys.", 10) != 0) return EventHandlerResult::OK;
 
-    // if (strcmp_P(command + 10, "map") == 0)
-    // {
-    //     if (::Focus.isEOL())
-    //     {
-    //         send_sk_map();
-    //     }
-    //     else
-    //     {
-    //         save_superkey_map();
-    //     }
-    // }
+
     if (strcmp_P(command + 10, "waitfor") == 0)
     {
         if (::Focus.isEOL())
