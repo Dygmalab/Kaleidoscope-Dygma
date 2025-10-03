@@ -84,7 +84,33 @@ static inline int hidModToDumIndex(uint16_t hid)
     }
 }
 
-/* END HELPER FUNCTIONS */
+bool KeyRoleManager::is_only_modifier(Key key)
+{
+    uint16_t key_id = key.getRaw() & 0x00FF; // We only take the HID keycode (lower part)
+
+    // HID modifier range: 224 (0xE0) to 231 (0xE7)
+    return (key_id >= 0xE0 && key_id <= 0xE7);
+}
+
+bool KeyRoleManager::has_layer_change(Key Action)
+{
+    auto ranges_t = static_cast<Utils::KeyRanges>(ActionsDriver::find_key_type(Action.getRaw()));
+    switch (ranges_t)
+    {
+    case Utils::KeyRanges::LAYER_LOCK:
+    case Utils::KeyRanges::LAYER_SHIFT:
+    {
+        return true;
+    }
+    break;
+    
+    default:
+    {
+        return false;
+    }
+    break;
+    }
+}
 
 bool KeyRoleManager::is_qukey(Key key)
 {
@@ -95,6 +121,7 @@ bool KeyRoleManager::is_qukey(Key key)
 
     return result;
 }
+/* END HELPER FUNCTIONS */
 
 KeyRoleManager::modified_keys_t* KeyRoleManager::get_configured_qukeys(uint16_t qukey_id)
 {
@@ -120,32 +147,12 @@ void KeyRoleManager::get_superkey(Key* mapped_key)
     }
 }
 
-bool KeyRoleManager::has_layer_change(Key Action)
-{
-    auto ranges_t = static_cast<Utils::KeyRanges>(ActionsDriver::find_key_type(Action.getRaw()));
-    switch (ranges_t)
-    {
-    case Utils::KeyRanges::LAYER_LOCK:
-    case Utils::KeyRanges::LAYER_SHIFT:
-    {
-        return true;
-    }
-    break;
-    
-    default:
-    {
-        return false;
-    }
-    break;
-    }
-}
-
 uint16_t KeyRoleManager::calculate_qukey_code(uint32_t hold_action_raw, uint16_t tap_action_raw)
 {
     const uint16_t tap_hid  = static_cast<uint16_t>(tap_action_raw  & 0x00FF);
     const uint16_t hold_hid = static_cast<uint16_t>(hold_action_raw & 0x00FF);
 
-    // Caso A: modificadores HID (Ctrl/Shift/Alt/OS/AltGr)
+    // Case A: modifiers HID (Ctrl/Shift/Alt/OS/AltGr)
     if (hold_hid >= 0xE0 && hold_hid <= 0xE7) 
     {
         const int idx = hidModToDumIndex(hold_hid);
@@ -155,15 +162,14 @@ uint16_t KeyRoleManager::calculate_qukey_code(uint32_t hold_action_raw, uint16_t
     }
     else 
     {
-    // Caso B: cambio de capa (OSL / DUL)
+    // Case B: layer change (OSL / DUL)
         const uint32_t base = ranges::DUL_FIRST + layerIndexFromRaw(hold_action_raw);
         return static_cast<uint16_t>(base + tap_hid);
     }
 
-    // No es ni mod HID ni layer change
+    // Not a modifier or layer change
     return 0;
 }
-
 
 Key KeyRoleManager::search_and_replace(Key key)
 {
@@ -183,28 +189,21 @@ Key KeyRoleManager::search_and_replace(Key key)
         // The desition will depend if the action 1 is only a modifier.
         if (is_only_modifier(action_1)|| has_layer_change(action_1))
         {
-            // QUKEY
-            NRF_LOG_DEBUG("search_and_replace:Qukey DETECTED Replacing it");
+            // QUKEY detected replacing it.
             uint16_t qukey_code = replace_superkey_with_qukey(&action_0, &action_1);
             return Key(qukey_code);
         }
         else
         {
-            // SUPERKEY
-            NRF_LOG_DEBUG("search_and_replace:Superkey DETECTED CODE: %u", (unsigned)key.getRaw());
+            // SUPERKEY detected
             return key;
         }
     }
     else
     {
-        // SUPERKEY FOUND
-        // Cualquier otra combinacion sera una superkey normal.
-        NRF_LOG_DEBUG("search_and_replace:Superkey DETECTED CODE: %u", (unsigned)key.getRaw());
+        // SUPERKEY found. Any other combination will be a normal superkey.
         return key;
-    }
-
-    NRF_LOG_FLUSH();
-    
+    }    
 }
 
 uint16_t KeyRoleManager::replace_superkey_with_qukey(const Key *action_0, const Key *action_1)
@@ -217,8 +216,7 @@ uint16_t KeyRoleManager::replace_superkey_with_qukey(const Key *action_0, const 
     const uint16_t qukey_code = calculate_qukey_code(hold_raw, tap_raw);
     if (qukey_code == 0u)
     {
-        NRF_LOG_DEBUG("ERROR: Qukey base no válida (hold_raw=%u)", (unsigned)hold_raw);
-        NRF_LOG_FLUSH();
+        // ERROR: Quekey base not valid.
         return 0;
     }
     return qukey_code;
@@ -244,14 +242,13 @@ void KeyRoleManager::config()
 
     if (reset_storage)
     {
-        NRF_LOG_DEBUG("Restarting key_storage");
+        // Restart key_storage.
         key_storage.reset();
         Runtime.storage().put(settings_base_, key_storage);
         Runtime.storage().commit();
     }
     Runtime.storage().get(settings_base_, key_storage);
 }
-
 
 void KeyRoleManager::setup_keys()
 {
@@ -284,14 +281,6 @@ void KeyRoleManager::setup_superkeys(uint8_t _max_layers)
     SuperkeysHandler::setup(configured_superkeys,key_storage.keys); // Initialize the SuperkeysHandler plugin.
 }
 
-bool KeyRoleManager::is_only_modifier(Key key)
-{
-    uint16_t key_id = key.getRaw() & 0x00FF; // We only take the HID keycode (lower part)
-
-    // HID modifier range: 224 (0xE0) to 231 (0xE7)
-    return (key_id >= 0xE0 && key_id <= 0xE7);
-}
-
 void KeyRoleManager::set_active_sk() 
 {
     this->configured_superkeys = 0;
@@ -310,7 +299,7 @@ void KeyRoleManager::set_active_sk()
   
       if (_undefined_actions == KEYS_IN_SUPERKEY) 
       {
-        break; // primera fila completamente vacía -> fin de superkeys configuradas
+        break; // First row completely empty -> end of configured superkeys.
       }
   
       ++this->configured_superkeys;
@@ -334,8 +323,8 @@ void KeyRoleManager::determine_key_role()
 
             Key tap_action = action_0;
             Key hold_action = action_1;
-            // Limpiamos los flags de estas keys para poder calcular correctamente el valor de la qukey.
-            // SHIFT + F da 49434 o 0xC04E
+            // Clean the flags of these keys to correctly calculate the qukey value.
+            // SHIFT + F = 49434 or 0xC04E
             tap_action.setFlags(0);
             hold_action.setFlags(0);
 
@@ -345,22 +334,14 @@ void KeyRoleManager::determine_key_role()
                 uint16_t qukey_code = replace_superkey_with_qukey(&action_0, &action_1);
                 if(qukey_code != 0 || (qukey_code < ranges::DUL_FIRST || qukey_code > ranges::DUL_LAST))
                 {
-                    NRF_LOG_DEBUG("Qukey DETECTED");
+                    // QUKEY DETECTED
                     // Here we save the qukey and superkey id for later use.
                     this->modified_keys[this->modified_keys_count].sk_id = ranges::DYNAMIC_SUPER_FIRST + i;
                     this->modified_keys[this->modified_keys_count].qukey_id = qukey_code;
                     this->modified_keys[this->modified_keys_count].flags_action_1 = action_0.getFlags();
                     this->modified_keys[this->modified_keys_count].flags_action_2 = action_1.getFlags();
 
-                    // NRF_LOG_DEBUG("Qukey ID: %d", qukey_code);
-                    // NRF_LOG_DEBUG("Superkey ID: %d", ranges::DYNAMIC_SUPER_FIRST + i);
-                    // NRF_LOG_FLUSH();
                     this->modified_keys_count++;
-                }
-                else
-                {
-                    NRF_LOG_DEBUG("Qukey NOT DETECTED");
-                    NRF_LOG_FLUSH();
                 }
             }
         }
@@ -410,7 +391,6 @@ EventHandlerResult KeyRoleManager::onFocusEvent(const char *command)
         }
         else
         {
-            NRF_LOG_DEBUG("Receiving SK map");
             uint16_t pos = 0;
             Key key;
 
@@ -421,9 +401,6 @@ EventHandlerResult KeyRoleManager::onFocusEvent(const char *command)
                 pos++;
             }
             save_configurations();
-
-            //TODO: Eliminar esta llamada ya que se esta repitiendo. En save_configurations() se llama a SuperkeysHandler::save_superkey_map_from(key_storage.keys, this->configured_superkeys);
-            //SuperkeysHandler::save_superkey_map_from(key_storage.keys, this->configured_superkeys);
         }
         result = EventHandlerResult::EVENT_CONSUMED;
     }
