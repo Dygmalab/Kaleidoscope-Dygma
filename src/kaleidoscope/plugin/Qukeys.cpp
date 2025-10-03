@@ -368,20 +368,27 @@ bool Qukeys::isDualUseKey(Key key) {
   // Test for DualUse modifiers:
   if (key >= ranges::DUM_FIRST && key <= ranges::DUM_LAST) {
 
+    
     KeyRoleManager::modified_keys_t* action_flags = keyRoleManager.get_configured_qukeys(key.getRaw());
     
-    if (action_flags == nullptr) 
+    key.setRaw(key.getRaw() - ranges::DUM_FIRST);
+    queue_head_.primary_key = key;
+    queue_head_.alternate_key.setRaw(key.getFlags() + Key_LeftControl.getKeyCode());
+    
+    // If the user had some qukeys configured in the keymap action flags will return nullptr,
+    // this is because the already existitng qukeys are not stored in the configured keys array.
+    // In this case we will use the default flags, to keep the legacy qukey functionality.
+    if (action_flags != nullptr) 
     {
-      return false;
+      queue_head_.primary_key.setFlags(action_flags->flags_action_1);
+      queue_head_.alternate_key.setFlags(action_flags->flags_action_2);
+    }
+    else 
+    {
+      queue_head_.primary_key.setFlags(0);
     }
 
-    key.setRaw(key.getRaw() - ranges::DUM_FIRST);
 
-    queue_head_.primary_key = key;
-    queue_head_.primary_key.setFlags(action_flags->flags_action_1);
-
-    queue_head_.alternate_key.setRaw(key.getFlags() + Key_LeftControl.getKeyCode());
-    queue_head_.alternate_key.setFlags(action_flags->flags_action_2);
     return true;
   }
   // Test for DualUse layer shifts:
