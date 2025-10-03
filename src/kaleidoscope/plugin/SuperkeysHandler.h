@@ -128,8 +128,6 @@ namespace kaleidoscope
 
             static void save_pressed_modifiers(Key &mapped_key, uint8_t keyState);
 
-            static void log_cache_modifiers();
-
             static EventHandlerResult handle_superkeys(Key &mapped_key, KeyAddr key_addr, uint8_t keyState);
 
             static EventHandlerResult handle_regular_keys(Key &mapped_key, KeyAddr key_addr, uint8_t keyState);

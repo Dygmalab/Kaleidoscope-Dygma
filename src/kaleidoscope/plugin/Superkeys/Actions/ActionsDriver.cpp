@@ -86,24 +86,6 @@ Utils::ExtendedActions ActionsDriver::return_type(uint8_t tap_count, const Key *
     return sk_key_action;
 }
 
-void logKeyModifiers(Key key)
-{
-/*    uint8_t flags = key.getFlags();
-
-    if (flags & CTRL_HELD)
-        NRF_LOG_DEBUG("CTRL held");
-    if (flags & LALT_HELD)
-        NRF_LOG_DEBUG("Left ALT held");
-    if (flags & RALT_HELD)
-        NRF_LOG_DEBUG("Right ALT held");
-    if (flags & SHIFT_HELD)
-        NRF_LOG_DEBUG("SHIFT held");
-    if (flags & GUI_HELD)
-        NRF_LOG_DEBUG("GUI/Win held");
-    if (flags == 0)
-        NRF_LOG_DEBUG("No modifiers");*/
-}
-
 bool ActionsDriver::action_handler(uint8_t tap_count, const Key *actions, const Key &key, const KeyAddr &keyAddr)
 {
     bool result = false;
@@ -131,7 +113,6 @@ bool ActionsDriver::action_handler(uint8_t tap_count, const Key *actions, const 
     {
         handleKeyswitchEvent(returned_key.key, keyAddr, IS_PRESSED | INJECTED);
     }
-    // logKeyModifiers(returned_key.key);
     return result;
 }
 

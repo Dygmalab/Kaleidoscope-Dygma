@@ -101,18 +101,6 @@ void SuperkeysHandler::cleanup()
     }
 }
 
-void SuperkeysHandler::log_cache_modifiers()
-{
-    NRF_LOG_DEBUG("Estado de cache_modifiers: 0x%02X", cache_modifiers);
-
-    if (cache_modifiers & CTRL_HELD) NRF_LOG_DEBUG("CTRL activo");
-    if (cache_modifiers & LALT_HELD) NRF_LOG_DEBUG("Left ALT activo");
-    if (cache_modifiers & RALT_HELD) NRF_LOG_DEBUG("Right ALT activo");
-    if (cache_modifiers & SHIFT_HELD) NRF_LOG_DEBUG("SHIFT activo");
-    if (cache_modifiers & GUI_HELD) NRF_LOG_DEBUG("GUI activo");
-    if (cache_modifiers == 0) NRF_LOG_DEBUG("Sin modificadores");
-}
-
 void SuperkeysHandler::save_pressed_modifiers(Key &mapped_key, uint8_t keyState)
 {
     uint16_t raw = mapped_key.getRaw() & 0x00FF; // Take only the HID keycode (lower part)
@@ -180,8 +168,7 @@ void SuperkeysHandler::save_pressed_modifiers(Key &mapped_key, uint8_t keyState)
                 break;
         }
     }
-    // Log after updating
-    // log_cache_modifiers();
+
 }
 
 void SuperkeysHandler::set_minimum_hold(uint16_t minimum_hold)
@@ -197,7 +184,7 @@ EventHandlerResult SuperkeysHandler::handle_superkeys(Key &mapped_key, KeyAddr k
 
     if (keyToggledOn(keyState))
     {
-        NRF_LOG_DEBUG("super_key_index %i  ", super_key_index);
+        //NRF_LOG_DEBUG("super_key_index %i  ", super_key_index);
         for (uint8_t pos = 0; pos < get_configured_sk(); ++pos)
         {
             if (Sk_queue[pos] == nullptr) continue;
@@ -220,10 +207,30 @@ EventHandlerResult SuperkeysHandler::handle_superkeys(Key &mapped_key, KeyAddr k
                 }
                 else
                 {
-                    // Already enabled: forward the press to accumulate tap_count
-                    // without resetting state or duplicating the timeline entry.
-                    Sk_queue[pos]->key_pressed();
-                    return EventHandlerResult::EVENT_CONSUMED;
+                    // Already enabled
+                    if (Sk_queue[pos]->is_qukey())
+                    {
+                        // For qukeys, re-arm to avoid stale enabled state after a hold
+                        // causing the first next press to be ignored.
+                        Sk_queue[pos]->disable();
+
+                        Sk_queue[pos]->enable(cache_modifiers);
+                        Sk_queue[pos]->init_timer();
+                        Sk_queue[pos]->set_key_and_keyAddr(mapped_key, key_addr);
+                        Sk_queue[pos]->key_pressed();
+
+                        Utils::TimelineEntry entry = {
+                            mapped_key, key_addr, Runtime.millisAtCycleStart(), Utils::KeyType::SUPERKEY, false, static_cast<void *>(Sk_queue[pos])};
+
+                        timeline.add(entry);
+                        return EventHandlerResult::EVENT_CONSUMED;
+                    }
+                    else
+                    {
+                        // Non-qukeys: forward press to accumulate tap_count
+                        Sk_queue[pos]->key_pressed();
+                        return EventHandlerResult::EVENT_CONSUMED;
+                    }
                 }
             }
         }

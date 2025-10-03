@@ -207,8 +207,7 @@ void Superkey::check_if_sk_qukey()
     bool first_two_configured = (Actions[0].getRaw() != IDLE_KEY) && (Actions[1].getRaw() != IDLE_KEY);
     bool rest_idle = (Actions[2].getRaw() == IDLE_KEY) &&
                      (Actions[3].getRaw() == IDLE_KEY) &&
-                     (Actions[4].getRaw() == IDLE_KEY) &&
-                     (Actions[5].getRaw() == IDLE_KEY);
+                     (Actions[4].getRaw() == IDLE_KEY);
 
     if (first_two_configured && rest_idle)
     {
@@ -245,6 +244,11 @@ void Superkey::update_timestamp()
 uint16_t Superkey::get_index() const
 {
     return index_;
+}
+
+bool Superkey::is_qukey() const
+{
+    return superKeyState.is_qukey;
 }
 
 void Superkey::set_key_and_keyAddr(Key key, KeyAddr keyAddr)

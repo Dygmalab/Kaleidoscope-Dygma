@@ -21,6 +21,7 @@ public:
   bool is_enable() const;
   void init_timer();
   uint16_t get_index() const;
+  bool is_qukey() const;
 
   // Key actions
   void key_pressed();
