@@ -395,15 +395,17 @@ bool Qukeys::isDualUseKey(Key key) {
   if (key >= ranges::DUL_FIRST && key <= ranges::DUL_LAST) {
     KeyRoleManager::modified_keys_t* action_flags = keyRoleManager.get_configured_qukeys(key.getRaw());
     
-    if (action_flags == nullptr) 
-    {
-      return false;
-    }
-    
     key.setRaw(key.getRaw() - ranges::DUL_FIRST);
-
     queue_head_.primary_key = key;
-    queue_head_.primary_key.setFlags(action_flags->flags_action_1);
+
+    if (action_flags != nullptr) 
+    {
+      queue_head_.primary_key.setFlags(action_flags->flags_action_1);
+    }
+    else 
+    {
+      queue_head_.primary_key.setFlags(0);
+    }
 
     int8_t layer = key.getFlags();
     queue_head_.alternate_key = ShiftToLayer(layer);
