@@ -33,7 +33,6 @@
 
 #include "Adafruit_USBD_Device.h"
 #include "Ble_manager.h"
-#include "Colormap-Defy.h"
 #include "Communications.h"
 #include "KeyboardManager.h"
 #include "LED-Palette-Theme-Defy.h"
@@ -43,6 +42,8 @@
 #include "universalModules/Focus.h"
 #include "nrf_gpio.h"
 #include "Battery.h"
+
+#include "LEDManager.h"
 
 
 #define NEURON_LED_BRIGHTNESS 2
@@ -168,7 +169,7 @@ auto checkBrightness = [](const Packet &)
         p.header.device = UNKNOWN;
         p.data[0] = 0;
         p.data[1] = 0;
-        p.data[2] = static_cast<uint8_t>(ColormapEffectDefy.no_led_effect);
+        p.data[2] = LEDManager::BRIGHTNESS_LED_EFFECT_NONE;
         p.data[3] = 1;
         p.header.size = 4;
         Communications.sendPacket(p);
@@ -180,7 +181,7 @@ auto checkBrightness = [](const Packet &)
     auto &keyScanner = Runtime.device().keyScanner();
     auto isKSLeftWired = keyScanner.leftSideWiredConnection();
     auto isKSRightWired = keyScanner.rightSideWiredConnection();
-    ColormapEffectDefy.updateBrigthness(ColormapEffectDefy.no_led_effect, true, isKSLeftWired && isKSRightWired && !ble_innited());
+    LEDManager.update_brightness(LEDManager::BRIGHTNESS_LED_EFFECT_NONE, true, isKSLeftWired && isKSRightWired && !ble_innited());
 };
 
 void KeyboardHands::setup()
