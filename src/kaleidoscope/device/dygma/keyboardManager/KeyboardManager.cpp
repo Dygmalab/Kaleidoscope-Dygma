@@ -35,7 +35,6 @@
 #include "Ble_manager.h"
 #include "Communications.h"
 #include "KeyboardManager.h"
-#include "LED-Palette-Theme-Defy.h"
 #include "Radio_manager.h"
 #include "Status_leds.h"
 #include "Wire.h" // Arduino Wire wrapper for the NRF52 chips
