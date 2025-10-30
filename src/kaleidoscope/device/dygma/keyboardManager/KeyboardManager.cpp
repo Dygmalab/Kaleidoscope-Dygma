@@ -115,7 +115,7 @@ struct KeyboardHands
         uint8_t flag;
     } bright;
 
-    static void sendPacketBrightness();
+//    static void sendPacketBrightness();
 
   private:
     static uint8_t keyscan_interval_;
@@ -157,31 +157,31 @@ void KeyboardHands::setSidePower(bool power)
 Communications_protocol::Devices leftConnection[3]{UNKNOWN, UNKNOWN, UNKNOWN};
 Communications_protocol::Devices rightConnection[3]{UNKNOWN, UNKNOWN, UNKNOWN};
 
-auto checkBrightness = [](const Packet &)
-{
-    if (!::LEDControl.isEnabled())
-    {
-        status_leds.stop_all();
-
-        Communications_protocol::Packet p{};
-        p.header.command = Communications_protocol::BRIGHTNESS;
-        p.header.device = UNKNOWN;
-        p.data[0] = 0;
-        p.data[1] = 0;
-        p.data[2] = LEDManager::BRIGHTNESS_LED_EFFECT_NONE;
-        p.data[3] = 1;
-        p.header.size = 4;
-        Communications.sendPacket(p);
-
-        return;
-    }
-
-    status_leds.static_green(NEURON_LED_BRIGHTNESS);
-    auto &keyScanner = Runtime.device().keyScanner();
-    auto isKSLeftWired = keyScanner.leftSideWiredConnection();
-    auto isKSRightWired = keyScanner.rightSideWiredConnection();
-    LEDManager.update_brightness(LEDManager::BRIGHTNESS_LED_EFFECT_NONE, true, isKSLeftWired && isKSRightWired && !ble_innited());
-};
+//auto checkBrightness = [](const Packet &)
+//{
+//    if (!::LEDControl.isEnabled())
+//    {
+//        status_leds.stop_all();
+//
+//        Communications_protocol::Packet p{};
+//        p.header.command = Communications_protocol::BRIGHTNESS;
+//        p.header.device = UNKNOWN;
+//        p.data[0] = 0;
+//        p.data[1] = 0;
+//        p.data[2] = LEDManager::BRIGHTNESS_LED_EFFECT_NONE;
+//        p.data[3] = 1;
+//        p.header.size = 4;
+//        Communications.sendPacket(p);
+//
+//        return;
+//    }
+//
+//    status_leds.static_green(NEURON_LED_BRIGHTNESS);
+//    auto &keyScanner = Runtime.device().keyScanner();
+//    auto isKSLeftWired = keyScanner.leftSideWiredConnection();
+//    auto isKSRightWired = keyScanner.rightSideWiredConnection();
+//    LEDManager.update_brightness(LEDManager::BRIGHTNESS_LED_EFFECT_NONE, true, isKSLeftWired && isKSRightWired && !ble_innited());
+//};
 
 void KeyboardHands::setup()
 {
@@ -234,8 +234,8 @@ void KeyboardHands::setup()
                                                         }
                                                     }));
 
-    Communications.callbacks.bind(DISCONNECTED, checkBrightness);
-    Communications.callbacks.bind(CONNECTED, checkBrightness);
+//    Communications.callbacks.bind(DISCONNECTED, checkBrightness);
+//    Communications.callbacks.bind(CONNECTED, checkBrightness);
 
 
     settings_interval_ = ::EEPROMSettings.requestSlice(sizeof(keyscan_interval_));
@@ -285,35 +285,35 @@ void KeyboardHands::keyscanInterval(uint8_t interval)
 void KeyboardHands::ledBrightnessLedDriver(uint8_t brightness)
 {
     bright.led_brightness_ledDriver_ = brightness;
-    sendPacketBrightness();
+//    sendPacketBrightness();
     setbrightness(bright);
 }
 
 void KeyboardHands::ledBrightnessUG(uint8_t brightnessUG)
 {
     bright.led_brightness_underglow_ = brightnessUG;
-    sendPacketBrightness();
+//    sendPacketBrightness();
     setbrightness(bright);
 }
 
 void KeyboardHands::ledBrightnessLedDriverWireless(uint8_t brightness)
 {
     bright.led_brightness_ledDriver_wireless_ = brightness;
-    sendPacketBrightness();
+//    sendPacketBrightness();
     setbrightness(bright);
 }
 void KeyboardHands::ledBrightnessUGWireless(uint8_t brightnessUG)
 {
     bright.led_brightness_underglow_wireless_ = brightnessUG;
-    sendPacketBrightness();
+//    sendPacketBrightness();
     setbrightness(bright);
 }
 
-void KeyboardHands::sendPacketBrightness()
-{
-    Packet p{};
-    checkBrightness(p);
-}
+//void KeyboardHands::sendPacketBrightness()
+//{
+//    Packet p{};
+//    checkBrightness(p);
+//}
 
 void KeyboardHands::getChipID(char *cstring, uint16_t len)
 {
@@ -344,7 +344,7 @@ void KeyboardHands::get_chip_info(char *cstring, uint16_t len)
 /********* LED Driver *********/
 
 bool KeyboardLEDDriver::isLEDChangedNeuron;
-bool KeyboardLEDDriver::leds_enabled_ = true;
+//bool KeyboardLEDDriver::leds_enabled_ = true;
 uint8_t KeyboardLEDDriver::isLEDChangedLeft[LED_BANKS];
 uint8_t KeyboardLEDDriver::isLEDChangedRight[LED_BANKS];
 cRGB KeyboardLEDDriver::neuronLED;
@@ -394,13 +394,13 @@ uint8_t KeyboardLEDDriver::getBrightnessUGWireless()
 
 void KeyboardLEDDriver::syncLeds()
 {
-    bool is_enabled = ::LEDControl.isEnabled();
-
-    if (leds_enabled_ != is_enabled)
-    {
-        leds_enabled_ = is_enabled;
-        KeyboardHands::sendPacketBrightness();
-    }
+//    bool is_enabled = ::LEDControl.isEnabled();
+//
+//    if (leds_enabled_ != is_enabled)
+//    {
+//        leds_enabled_ = is_enabled;
+//        KeyboardHands::sendPacketBrightness();
+//    }
 
     if (isLEDChangedNeuron)
     {
