@@ -199,6 +199,11 @@ void KeyboardHands::setup()
                                                          rightConnection[1] = ble_innited() ? BLE_DEFY_RIGHT : KEYSCANNER_DEFY_RIGHT;
                                                      if (p.header.device == RF_DEFY_LEFT) leftConnection[2] = RF_DEFY_LEFT;
                                                      if (p.header.device == RF_DEFY_RIGHT) rightConnection[2] = RF_DEFY_RIGHT;
+
+                                                     auto &keyScanner = Runtime.device().keyScanner();
+                                                     auto isKSLeftWired = keyScanner.leftSideWiredConnection();
+                                                     auto isKSRightWired = keyScanner.rightSideWiredConnection();
+                                                     LEDManager.com_mode_set( isKSLeftWired && isKSRightWired && !ble_innited() );
                                                      ::LEDControl.enable();
                                                  }));
     Communications.callbacks.bind(DISCONNECTED, (
