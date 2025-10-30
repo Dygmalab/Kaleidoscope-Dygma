@@ -16,7 +16,6 @@
 #pragma GCC push_options
 #pragma GCC optimize("O0")
 
-
 namespace kaleidoscope
 {
 namespace plugin
@@ -304,6 +303,13 @@ void KeyRoleManager::set_active_sk()
   
       ++this->configured_superkeys;
     }
+
+    if(this->configured_superkeys > Utils::MAX_SUPER_KEYS_ACTIVE)
+    {
+        NRF_LOG_ERROR("Superkey count %i is greater than %i", this->configured_superkeys, Utils::MAX_SUPER_KEYS_ACTIVE);
+        NRF_LOG_FLUSH();
+        this->configured_superkeys = Utils::MAX_SUPER_KEYS_ACTIVE;
+    }
   }
 
 void KeyRoleManager::determine_key_role()
@@ -420,4 +426,4 @@ EventHandlerResult KeyRoleManager::beforeReportingState()
 } // namespace plugin
 } // namespace kaleidoscope
 kaleidoscope::plugin::KeyRoleManager keyRoleManager;
-#pragma GCC pop_options
+// #pragma GCC pop_options

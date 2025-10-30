@@ -1,6 +1,23 @@
 #include "Superkey.h"
 /*Variable declarations*/
 
+Superkey::Superkey()
+    : phisical_key_{}
+    , keyaddr_{}
+    , index_{0}
+    , shared_config_{nullptr}
+{
+    // Initialize bitfields explicitly
+    superKeyState.pressed = 0;
+    superKeyState.triggered = 0;
+    superKeyState.holded = 0;
+    superKeyState.released = 0;
+    superKeyState.interrupt = 0;
+    superKeyState.enabled = 0;
+    superKeyState.is_qukey = 0;
+    superKeyState.is_interruptable = 0;
+}
+
 /************SUPERKEY CONFIGURATION*************/
 void Superkey::init(const Key *act)
 {
@@ -30,7 +47,6 @@ void Superkey::disable()
     superKeyState.timeStamp = 0;
     superKeyState.pressed = false;
     superKeyState.released = false;
-    superKeyState.is_repeateable = false;
     timeline.remove(this->keyaddr_);
 }
 
@@ -55,7 +71,7 @@ void Superkey::run()
         }
         // For qukeys, do not apply the generic timeout path while release ordering is constrained.
     }
-    else if (kaleidoscope::Runtime_::hasTimeExpired(superKeyState.timeStamp, time_out_))
+    else if (shared_config_ && kaleidoscope::Runtime_::hasTimeExpired(superKeyState.timeStamp, shared_config_->time_out_))
     {
         timeout();
         disable();
@@ -95,7 +111,7 @@ void Superkey::key_released()
 
 void Superkey::key_is_pressed()
 {
-    if (kaleidoscope::Runtime_::hasTimeExpired(superKeyState.hold_start, hold_start_))
+    if (shared_config_ && kaleidoscope::Runtime_::hasTimeExpired(superKeyState.hold_start, shared_config_->hold_start_))
     {
         hold();
     }
@@ -108,7 +124,6 @@ void Superkey::tap()
 {
     superKeyState.released = false;
     superKeyState.hold_start = kaleidoscope::Runtime_::millisAtCycleStart();
-    superKeyState.minimum_hold = superKeyState.hold_start;
     update_timestamp();
     ++superKeyState.tap_count;
 }
@@ -128,7 +143,6 @@ void Superkey::hold()
 void Superkey::release()
 {
     superKeyState.released = true;
-    superKeyState.is_repeateable = false; // we stop sending the key to the OS.
     superKeyState.holded = false;
     ++superKeyState.tap_count;
     // Restart timer.
@@ -178,16 +192,14 @@ bool Superkey::interrupt(Key &regular_key, const KeyAddr &keyaddr_)
 
 void Superkey::set_up_actions(const Key *act)
 {
-    // Set each action in the superkeys.
-    for (int i = 0; i < KEYS_IN_SUPERKEY; ++i)
-    {
-        Actions[i] = act[i];
-    }
+    // Actions are now stored externally, just assign the pointer
+    actions_ = act;
 }
 
 bool Superkey::is_interruptible()
 {
-    superKeyState.is_interruptable = ActionsDriver::return_type(superKeyState.tap_count, Actions).key_is_interruptable;
+    if (!actions_) return false;
+    superKeyState.is_interruptable = ActionsDriver::return_type(superKeyState.tap_count, actions_).key_is_interruptable;
     return superKeyState.is_interruptable;
 }
 
@@ -203,11 +215,16 @@ KeyAddr Superkey::get_keyAddr() const
 
 void Superkey::check_if_sk_qukey()
 {
-    // Check if Actions[0] and Actions[1] are configured (not idle) and Actions[2] to Actions[5] are not configured (idle)
-    bool first_two_configured = (Actions[0].getRaw() != IDLE_KEY) && (Actions[1].getRaw() != IDLE_KEY);
-    bool rest_idle = (Actions[2].getRaw() == IDLE_KEY) &&
-                     (Actions[3].getRaw() == IDLE_KEY) &&
-                     (Actions[4].getRaw() == IDLE_KEY);
+    if (!actions_) {
+        superKeyState.is_qukey = false;
+        return;
+    }
+    
+    // Check if first two actions are configured (not idle) and rest are not configured (idle)
+    bool first_two_configured = (actions_[0].getRaw() != IDLE_KEY) && (actions_[1].getRaw() != IDLE_KEY);
+    bool rest_idle = (actions_[2].getRaw() == IDLE_KEY) &&
+                     (actions_[3].getRaw() == IDLE_KEY) &&
+                     (actions_[4].getRaw() == IDLE_KEY);
 
     if (first_two_configured && rest_idle)
     {
@@ -219,10 +236,6 @@ void Superkey::check_if_sk_qukey()
     }
 }
 
-void Superkey::keep_sending_hold_key(bool holded)
-{
-    superKeyState.is_repeateable = holded;
-}
 
 //*********************************************************************************************
 bool Superkey::is_enable() const
@@ -265,5 +278,7 @@ void Superkey::send_key() const
         ActionsDriver::send_modifiers_from_flags(superKeyState.cache_modifiers, keyaddr_);
     }
 
-    ActionsDriver::action_handler(superKeyState.tap_count, Actions, phisical_key_, keyaddr_);
+    if (actions_) {
+        ActionsDriver::action_handler(superKeyState.tap_count, actions_, phisical_key_, keyaddr_);
+    }
 }

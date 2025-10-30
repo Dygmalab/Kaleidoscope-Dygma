@@ -24,8 +24,6 @@ public:
      * */
     static bool isOnlyModifier(Key key);
 
-    static bool check_if_key_is_repeateable(const Key &key);
-
     static void send_regular_key(const Key &key, const KeyAddr &keyAddr);
 
     static bool key_can_interrupt(const Key &Action);

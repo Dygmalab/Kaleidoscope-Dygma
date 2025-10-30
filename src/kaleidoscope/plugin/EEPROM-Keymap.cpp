@@ -154,8 +154,11 @@ EventHandlerResult EEPROMKeymap::onFocusEvent(const char *command) {
       i++;
     }
     Runtime.storage().commit();
+
+    NRF_LOG_INFO("Keymap updated");
     
     keyRoleManager.setup_keys();
+    NRF_LOG_INFO("Keys setup DONE");
   }
 
   return EventHandlerResult::EVENT_CONSUMED;

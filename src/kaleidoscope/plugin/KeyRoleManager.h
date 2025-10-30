@@ -88,7 +88,7 @@ class KeyRoleManager : public kaleidoscope::Plugin
 
     struct key_storage_t
     {
-        // Keys configured in every superkey action.4
+        // Keys configured in every superkey action.
         Key keys[Utils::SUPER_KEY_COUNT][KEYS_IN_SUPERKEY];
 
         void reset()
@@ -127,7 +127,7 @@ class KeyRoleManager : public kaleidoscope::Plugin
     { 
       Key actions[6];
     };
-    superkey_storage_t superkey_storage[Utils::MAX_SUPER_KEYS_ACTIVE];
+    superkey_storage_t superkey_storage[Utils::SUPER_KEY_COUNT];
 
     void determine_key_role();
 

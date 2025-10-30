@@ -13,6 +13,8 @@
 
 using KeyID = uint16_t;
 
+class Superkey;
+
 namespace kaleidoscope
 {
     namespace plugin
@@ -106,9 +108,9 @@ namespace kaleidoscope
             static void save_superkey_map();
 
             private:
-            static Superkey *state_[Utils::SUPER_KEY_COUNT];
+            
             static uint16_t settings_base_;
-            static Superkey *Sk_queue[Utils::MAX_SUPER_KEYS_ACTIVE];
+            
             static uint8_t configured_superkeys;
             static uint8_t cache_modifiers;
 

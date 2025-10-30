@@ -1,6 +1,8 @@
+#include "Superkeys/Superkey/Superkey.h"
+#include "Superkeys/includes.h"
 #include <cstdint>
-#pragma GCC push_options
-#pragma GCC optimize("O0") // No optimization
+// #pragma GCC push_options
+// #pragma GCC optimize("O0") // No optimization
 
 #include "kaleidoscope/plugin/SuperkeysHandler.h"
 #include "SuperkeysHandler.h"
@@ -13,7 +15,12 @@ namespace plugin
 SuperkeysHandler::Configurations configurations;
 uint16_t SuperkeysHandler::settings_base_ = 0;
 uint8_t SuperkeysHandler::configured_superkeys = 0;
-Superkey *SuperkeysHandler::Sk_queue[Utils::MAX_SUPER_KEYS_ACTIVE] = {};
+
+Superkey SuperkeysHandler_sk_array[Utils::MAX_SUPER_KEYS_ACTIVE];
+
+// Shared configuration for all Superkeys
+static Utils::SharedConfig shared_sk_config;
+
 Key SuperkeysHandler::Actions[6] = {};
 uint8_t super_key_index = 0;
 uint8_t SuperkeysHandler::cache_modifiers = 0;
@@ -29,26 +36,38 @@ void SuperkeysHandler::setup(uint8_t active_superkeys, const Key (*sk_map)[KEYS_
 
 void SuperkeysHandler::init(const Key (*sk_map)[KEYS_IN_SUPERKEY])
 {
-    uint16_t sk_index = 0;
-    // NRF_LOG_DEBUG("Configured Super-keys %i", get_configured_sk());
-    while (sk_index < get_configured_sk())
-    {
-        // Set Super-keys keys.
-        for (int i = 0; i < KEYS_IN_SUPERKEY; ++i)
-        {
-            Actions[i] = sk_map[sk_index][i];
-        }
-        // Create a new superkey instance giving the position as index, we need to use a C style array and new due to the compatibility with Raise 1.
-        Superkey *superkeyInstance = new Superkey(sk_index, configurations.hold_start_, configurations.time_out_, configurations.overlap_threshold_);
-        superkeyInstance->init(Actions);
 
-        // Add instance to the queue
-        if (Sk_queue[sk_index] == nullptr)
-        {
-            Sk_queue[sk_index] = superkeyInstance;
-        }
+    NRF_LOG_INFO("SIZE OF Superkey: %i", sizeof(Superkey));
+    NRF_LOG_INFO("SIZE OF Superkey array: %i", sizeof(SuperkeysHandler_sk_array));
+    NRF_LOG_INFO("SIZE OF Superkey map: %i", sizeof(sk_map));
+
+    // Update shared configuration
+    shared_sk_config.hold_start_ = configurations.hold_start_;
+    shared_sk_config.time_out_ = configurations.time_out_;
+    shared_sk_config.overlap_threshold_ = configurations.overlap_threshold_;
+    
+    uint16_t sk_index = 0;
+    uint16_t max_sk = get_configured_sk();
+    
+    // Limit to array size
+    if (max_sk > Utils::MAX_SUPER_KEYS_ACTIVE) {
+        NRF_LOG_WARNING("Configured superkeys (%i) exceeds array size (%i), limiting to %i", max_sk, Utils::MAX_SUPER_KEYS_ACTIVE, Utils::MAX_SUPER_KEYS_ACTIVE);
+        max_sk = Utils::MAX_SUPER_KEYS_ACTIVE;
+        configured_superkeys = Utils::MAX_SUPER_KEYS_ACTIVE;
+    }
+    
+    while (sk_index < max_sk)
+    {
+        // Initialize superkey in static array with pointer directly to sk_map
+        // No need to copy - sk_map persists for the lifetime of the program
+        SuperkeysHandler_sk_array[sk_index] = Superkey(sk_index, &shared_sk_config, sk_map[sk_index]);
+        SuperkeysHandler_sk_array[sk_index].init(sk_map[sk_index]);
+        
         sk_index++;
     }
+    
+    NRF_LOG_INFO("Initialized %i superkeys in static array", sk_index);
+    NRF_LOG_FLUSH();
 }
 
 void SuperkeysHandler::config()
@@ -94,10 +113,10 @@ uint8_t SuperkeysHandler::get_configured_sk()
 
 void SuperkeysHandler::cleanup()
 {
-    for (uint16_t i = 0; i < get_configured_sk(); ++i)
+    // Reset all superkeys to default state
+    for (uint16_t i = 0; i < Utils::MAX_SUPER_KEYS_ACTIVE; ++i)
     {
-        delete Sk_queue[i];
-        Sk_queue[i] = nullptr; // Assign nullptr after deletion to avoid dangling pointer issues.
+        SuperkeysHandler_sk_array[i] = Superkey();
     }
 }
 
@@ -187,20 +206,18 @@ EventHandlerResult SuperkeysHandler::handle_superkeys(Key &mapped_key, KeyAddr k
         //NRF_LOG_DEBUG("super_key_index %i  ", super_key_index);
         for (uint8_t pos = 0; pos < get_configured_sk(); ++pos)
         {
-            if (Sk_queue[pos] == nullptr) continue;
-
-            if (Sk_queue[pos]->get_index() == super_key_index)
+            if (SuperkeysHandler_sk_array[pos].get_index() == super_key_index)
             {
-                if (!Sk_queue[pos]->is_enable())
+                if (!SuperkeysHandler_sk_array[pos].is_enable())
                 {
                     // Normal arm path
-                    Sk_queue[pos]->enable(cache_modifiers);
-                    Sk_queue[pos]->init_timer();
-                    Sk_queue[pos]->set_key_and_keyAddr(mapped_key, key_addr);
-                    Sk_queue[pos]->key_pressed();
+                    SuperkeysHandler_sk_array[pos].enable(cache_modifiers);
+                    SuperkeysHandler_sk_array[pos].init_timer();
+                    SuperkeysHandler_sk_array[pos].set_key_and_keyAddr(mapped_key, key_addr);
+                    SuperkeysHandler_sk_array[pos].key_pressed();
 
                     Utils::TimelineEntry entry = {
-                        mapped_key, key_addr, Runtime.millisAtCycleStart(), Utils::KeyType::SUPERKEY, false, static_cast<void *>(Sk_queue[pos])};
+                        mapped_key, key_addr, Runtime.millisAtCycleStart(), Utils::KeyType::SUPERKEY, false, static_cast<void *>(&SuperkeysHandler_sk_array[pos])};
 
                     timeline.add(entry);
                     return EventHandlerResult::EVENT_CONSUMED;
@@ -208,19 +225,19 @@ EventHandlerResult SuperkeysHandler::handle_superkeys(Key &mapped_key, KeyAddr k
                 else
                 {
                     // Already enabled
-                    if (Sk_queue[pos]->is_qukey())
+                    if (SuperkeysHandler_sk_array[pos].is_qukey())
                     {
                         // For qukeys, re-arm to avoid stale enabled state after a hold
                         // causing the first next press to be ignored.
-                        Sk_queue[pos]->disable();
+                        SuperkeysHandler_sk_array[pos].disable();
 
-                        Sk_queue[pos]->enable(cache_modifiers);
-                        Sk_queue[pos]->init_timer();
-                        Sk_queue[pos]->set_key_and_keyAddr(mapped_key, key_addr);
-                        Sk_queue[pos]->key_pressed();
+                        SuperkeysHandler_sk_array[pos].enable(cache_modifiers);
+                        SuperkeysHandler_sk_array[pos].init_timer();
+                        SuperkeysHandler_sk_array[pos].set_key_and_keyAddr(mapped_key, key_addr);
+                        SuperkeysHandler_sk_array[pos].key_pressed();
 
                         Utils::TimelineEntry entry = {
-                            mapped_key, key_addr, Runtime.millisAtCycleStart(), Utils::KeyType::SUPERKEY, false, static_cast<void *>(Sk_queue[pos])};
+                            mapped_key, key_addr, Runtime.millisAtCycleStart(), Utils::KeyType::SUPERKEY, false, static_cast<void *>(&SuperkeysHandler_sk_array[pos])};
 
                         timeline.add(entry);
                         return EventHandlerResult::EVENT_CONSUMED;
@@ -228,7 +245,7 @@ EventHandlerResult SuperkeysHandler::handle_superkeys(Key &mapped_key, KeyAddr k
                     else
                     {
                         // Non-qukeys: forward press to accumulate tap_count
-                        Sk_queue[pos]->key_pressed();
+                        SuperkeysHandler_sk_array[pos].key_pressed();
                         return EventHandlerResult::EVENT_CONSUMED;
                     }
                 }
@@ -239,10 +256,9 @@ EventHandlerResult SuperkeysHandler::handle_superkeys(Key &mapped_key, KeyAddr k
     {
         for (uint8_t pos = 0; pos < get_configured_sk(); ++pos)
         {
-            if (Sk_queue[pos] == nullptr) continue;
-            if (Sk_queue[pos]->get_index() == super_key_index)
+            if (SuperkeysHandler_sk_array[pos].get_index() == super_key_index)
             {
-                Sk_queue[pos]->key_released();
+                SuperkeysHandler_sk_array[pos].key_released();
                 return EventHandlerResult::EVENT_CONSUMED;
             }
         }
@@ -251,10 +267,9 @@ EventHandlerResult SuperkeysHandler::handle_superkeys(Key &mapped_key, KeyAddr k
     {
         for (uint8_t pos = 0; pos < get_configured_sk(); ++pos)
         {
-            if (Sk_queue[pos] == nullptr) continue;
-            if (Sk_queue[pos]->get_index() == super_key_index)
+            if (SuperkeysHandler_sk_array[pos].get_index() == super_key_index)
             {
-                Sk_queue[pos]->key_is_pressed();
+                SuperkeysHandler_sk_array[pos].key_is_pressed();
                 return EventHandlerResult::EVENT_CONSUMED;
             }
         }
@@ -324,9 +339,9 @@ EventHandlerResult SuperkeysHandler::beforeReportingState()
 
     for (uint8_t i = 0; i < configuredSK; i++)
     {
-        if (Sk_queue[i] != nullptr && Sk_queue[i]->is_enable())
+        if (SuperkeysHandler_sk_array[i].is_enable())
         {
-            Sk_queue[i]->run();
+            SuperkeysHandler_sk_array[i].run();
         }
     }
 
@@ -422,4 +437,4 @@ EventHandlerResult SuperkeysHandler::onFocusEvent(const char *command)
 } // namespace kaleidoscope
 kaleidoscope::plugin::SuperkeysHandler superkeysHandler;
 
-#pragma GCC pop_options
+// #pragma GCC pop_options

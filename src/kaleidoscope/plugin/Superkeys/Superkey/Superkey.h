@@ -32,8 +32,11 @@ public:
   KeyAddr get_keyAddr() const;
   void set_key_and_keyAddr(Key key, KeyAddr keyAddr);
 
+  Superkey();
+  
   // Constructor
-  explicit Superkey(uint16_t index, uint16_t hold_start, uint16_t time_out, uint16_t minimum_hold_start) : index_(index), time_out_(time_out), hold_start_(hold_start), minimum_hold_start_(minimum_hold_start)
+  explicit Superkey(uint16_t index, const Utils::SharedConfig* config, const Key* actions) : 
+  index_(index), shared_config_(config), actions_(actions)
   {
   }
 
@@ -43,31 +46,26 @@ private:
 
   struct SuperKeyState
   {
-    // Sk states
-    bool pressed{false};
-    bool triggered{false};
-    bool holded{false};
-    bool released{false};
-    bool interrupt{false};
-    bool enabled{false};
+    // Sk states (compacted as bitfields to save memory)
+    uint8_t pressed : 1;
+    uint8_t triggered : 1;
+    uint8_t holded : 1;
+    uint8_t released : 1;
+    uint8_t interrupt : 1;
+    uint8_t enabled : 1;
+    uint8_t is_qukey : 1;
+    uint8_t is_interruptable : 1;
+    
+    uint8_t _padding; // Padding to complete the byte
 
     // Sk tap count
     uint8_t tap_count{0};
     Utils::TapType type{Utils::TapType::None};
 
-    // Sk type
-    bool is_qukey{false};
-    bool is_interruptable{false};
-    bool is_repeateable{false};
-
     // Timers
     uint32_t start_time{0};
     uint32_t hold_start{0};
     uint32_t timeStamp{0};
-    uint32_t minimum_hold{0};
-
-    // keys in Actions
-    Utils::Actions action{};
 
     // Active external modifiers
     uint8_t cache_modifiers{0}; // This is used to cache the modifiers that are active when the superkey is pressed.
@@ -75,9 +73,8 @@ private:
   SuperKeyState superKeyState{};
 
   uint8_t index_{};
-  uint16_t time_out_{255};
-  uint16_t hold_start_{255};
-  uint16_t minimum_hold_start_{100};
+  const Utils::SharedConfig* shared_config_{nullptr}; // Pointer to shared configuration (4 bytes instead of 6)
+  const Key* actions_{nullptr}; // Pointer to actions array (stored separately to save memory)
 
   // Superkey States
   void tap();
@@ -105,24 +102,8 @@ private:
 
   void check_if_sk_interruptable(const Key &Action);
 
-  void set_repeated_actions(const Key &Action, bool holded)
-  {
-    superKeyState.action.tap = Action;
-    superKeyState.is_repeateable = holded;
-  }
-
-  void keep_sending_hold_key(bool holded);
-
   // Utils
   void update_timestamp();
-
-public:
-  Key Actions[6] = {
-      superKeyState.action.tap,
-      superKeyState.action.hold,
-      superKeyState.action.tap_hold,
-      superKeyState.action.double_tap,
-      superKeyState.action.double_tap_hold};
 };
 
 #endif // NRF_NEURON_SUPERKEY_H

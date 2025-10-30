@@ -2,6 +2,7 @@
 #define NRF_NEURON_INCLUDES_H
 #include <Kaleidoscope.h>
 #include <Kaleidoscope-Ranges.h>
+#include <cstdint>
 
 #define KEY_PRESED 2
 #define KEY_RELEASED 1
@@ -10,7 +11,8 @@
 namespace Utils
 {
     static constexpr uint8_t SUPER_KEY_COUNT = kaleidoscope::ranges::DYNAMIC_SUPER_LAST - kaleidoscope::ranges::DYNAMIC_SUPER_FIRST + 2;
-    static constexpr uint8_t MAX_SUPER_KEYS_ACTIVE = 50;
+    static constexpr uint8_t MAX_SUPER_KEYS_ACTIVE = 55; // Limited by stack size.
+    
     struct Actions
     {
         Key tap;
@@ -27,7 +29,15 @@ namespace Utils
         bool release_two_keys; // This is used if the sk has no key set it in double tap so we will release the tap action twice.
     };
 
-    enum class TapType
+    // Shared configuration structure (points to SuperkeysHandler::Configurations)
+    struct SharedConfig 
+    {
+        uint16_t hold_start_;
+        uint16_t time_out_;
+        uint8_t overlap_threshold_;
+    };
+
+    enum class TapType : uint8_t
     {
         None,
         Hold_Once,
@@ -38,7 +48,7 @@ namespace Utils
         Tap_Trice,
     };
 
-    enum class EventType
+    enum class EventType : uint8_t
     {
         IDLE = 0,
         HOLD = 1,
@@ -77,7 +87,7 @@ namespace Utils
 
     static constexpr int numRanges = sizeof(ranges) / sizeof(ranges[0]);
 
-    enum class KeyRanges
+    enum class KeyRanges : uint8_t
     {
         LAYER_LOCK,
         LED_BUTTONS,
@@ -88,7 +98,8 @@ namespace Utils
         UNKNOW
     };
 
-    enum class KeyType {
+    enum class KeyType : uint8_t 
+    {
         NONE,
         NORMAL,
         SUPERKEY,
