@@ -720,74 +720,74 @@ Communications_protocol::Devices KeyboardKeyScanner::rightHandDevice(void)
     return UNKNOWN;
 }
 
-void KeyboardKeyScanner::usbConnectionsStateMachine()
-{
-    uint32_t actualTime = millis();
-    bool usbMounted = TinyUSBDevice.mounted();
-    bool bleInitiated = ble_innited();
-    bool radioInited = RadioManager.isInited();
-    bool forceBle = BleManager.getForceBle();
-    static bool flag_ble_mode_allowed = true;
-
-    uint8_t bat_status_l = Battery::get_battery_status_left();
-    uint8_t bat_status_r = Battery::get_battery_status_right();
-    /*
-        0 -> Side connected and powered from its battery or the other side's battery.
-        1 o 2 -> Side connected and powered from the N2 while it is connected to the PC via USB.
-        4 -> Side disconnected.
-    */
-    if ( (bat_status_l == 1 || bat_status_l == 2 || bat_status_r == 1 || bat_status_r == 2) &&
-        flag_ble_mode_allowed)
-    {
-        flag_ble_mode_allowed = false;
-        NRF_LOG_DEBUG("BLE mode denied");
-    }
-
-    // For 3000ms at the 3100ms mark, check whether to initialize BLE or RF
-    if ( actualTime > 3000 && actualTime < 3100 &&
-        !bleInitiated &&
-        !radioInited )
-    {
-        if (usbMounted && !forceBle)
-        {
-            RadioManager.enable();
-        }
-        else
-        {
-            if (flag_ble_mode_allowed)
-            {
-                //Force connnect again just in case it was set as a device and not a host
-                BleManager.enable();
-
-                if (leftConnection[1] == KEYSCANNER_DEFY_LEFT)
-                {
-                    leftConnection[1] = BLE_DEFY_LEFT;
-                }
-
-                if (rightConnection[1] == KEYSCANNER_DEFY_RIGHT)
-                {
-                    rightConnection[1] = BLE_DEFY_RIGHT;
-                }
-
-                KeyboardHands::sendPacketBrightness();
-
-                BleManager.setForceBle(false);
-
-                Packet p{};
-                p.header.command = CONNECTED;
-                p.header.size = 0;
-                p.header.device = BLE_NEURON_2_DEFY;
-                Communications.sendPacket(p);
-            }
-        }
-    }
-
-    //Only in the case that we have ble init and there is not any usb connected we reboot the system
-    if( actualTime > 4000 && ble_innited() && !nrf_gpio_pin_read(SIDE_NRESET_1) && !nrf_gpio_pin_read(SIDE_NRESET_2) )
-    {
-        reset_mcu();
-    }
-}
+//void KeyboardKeyScanner::usbConnectionsStateMachine()
+//{
+//    uint32_t actualTime = millis();
+//    bool usbMounted = TinyUSBDevice.mounted();
+//    bool bleInitiated = ble_innited();
+//    bool radioInited = RadioManager.isInited();
+//    bool forceBle = BleManager.getForceBle();
+//    static bool flag_ble_mode_allowed = true;
+//
+//    uint8_t bat_status_l = Battery::get_battery_status_left();
+//    uint8_t bat_status_r = Battery::get_battery_status_right();
+//    /*
+//        0 -> Side connected and powered from its battery or the other side's battery.
+//        1 o 2 -> Side connected and powered from the N2 while it is connected to the PC via USB.
+//        4 -> Side disconnected.
+//    */
+//    if ( (bat_status_l == 1 || bat_status_l == 2 || bat_status_r == 1 || bat_status_r == 2) &&
+//        flag_ble_mode_allowed)
+//    {
+//        flag_ble_mode_allowed = false;
+//        NRF_LOG_DEBUG("BLE mode denied");
+//    }
+//
+//    // For 3000ms at the 3100ms mark, check whether to initialize BLE or RF
+//    if ( actualTime > 3000 && actualTime < 3100 &&
+//        !bleInitiated &&
+//        !radioInited )
+//    {
+//        if (usbMounted && !forceBle)
+//        {
+//            RadioManager.enable();
+//        }
+//        else
+//        {
+//            if (flag_ble_mode_allowed)
+//            {
+//                //Force connnect again just in case it was set as a device and not a host
+//                BleManager.enable();
+//
+//                if (leftConnection[1] == KEYSCANNER_DEFY_LEFT)
+//                {
+//                    leftConnection[1] = BLE_DEFY_LEFT;
+//                }
+//
+//                if (rightConnection[1] == KEYSCANNER_DEFY_RIGHT)
+//                {
+//                    rightConnection[1] = BLE_DEFY_RIGHT;
+//                }
+//
+//                KeyboardHands::sendPacketBrightness();
+//
+//                BleManager.setForceBle(false);
+//
+//                Packet p{};
+//                p.header.command = CONNECTED;
+//                p.header.size = 0;
+//                p.header.device = BLE_NEURON_2_DEFY;
+//                Communications.sendPacket(p);
+//            }
+//        }
+//    }
+//
+//    //Only in the case that we have ble init and there is not any usb connected we reboot the system
+//    if( actualTime > 4000 && ble_innited() && !nrf_gpio_pin_read(SIDE_NRESET_1) && !nrf_gpio_pin_read(SIDE_NRESET_2) )
+//    {
+//        reset_mcu();
+//    }
+//}
 
 bool KeyboardKeyScanner::rightSideWiredConnection()
 {
