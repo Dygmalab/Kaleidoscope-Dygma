@@ -46,7 +46,7 @@ private:
 
   struct SuperKeyState
   {
-    // Sk states (compacted as bitfields to save memory)
+    // Sk states (compacted as bitfields to save memory - all fit in 1 byte)
     uint8_t pressed : 1;
     uint8_t triggered : 1;
     uint8_t holded : 1;
@@ -55,12 +55,10 @@ private:
     uint8_t enabled : 1;
     uint8_t is_qukey : 1;
     uint8_t is_interruptable : 1;
-    
-    uint8_t _padding; // Padding to complete the byte
 
-    // Sk tap count
-    uint8_t tap_count{0};
-    Utils::TapType type{Utils::TapType::None};
+    // Sk tap count and type (tap_count uses 4 bits, type uses 4 bits)
+    uint8_t tap_count : 4;  // Max 15 taps (more than enough)
+    Utils::TapType type : 4; // 4 bits for enum (max 16 values)
 
     // Timers
     uint32_t start_time{0};

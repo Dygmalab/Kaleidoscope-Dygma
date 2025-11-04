@@ -93,11 +93,19 @@ void Superkey::key_released()
     // on release to ensure the instance is disabled before a rapid next press.
     if (superKeyState.is_qukey)
     {
-        if (!timeline.has_previous_superkey_pending(this->keyaddr_))
+        bool has_previous = timeline.has_previous_superkey_pending(this->keyaddr_);
+        //NRF_LOG_DEBUG("Qukey released at addr %d:%d, has_previous_pending=%d", 
+                      this->keyaddr_.row(), this->keyaddr_.col(), has_previous);
+        if (!has_previous)
         {
+            //NRF_LOG_DEBUG("Qukey finalizing immediately (no previous pending)");
             timeout();
             disable();
             return;
+        }
+        else
+        {
+            //NRF_LOG_DEBUG("Qukey deferring finalization (previous superkey pending)");
         }
     }
     // If it was a hold (already triggered) and not a qukey, we can safely
@@ -171,18 +179,19 @@ bool Superkey::interrupt(Key &regular_key, const KeyAddr &keyaddr_)
 
     if (!superKeyState.holded && ActionsDriver::key_can_interrupt(regular_key))
     {
-        // Decide whether this interruption should finalize as HOLD or TAP.
-        // If we've already passed the minimum hold threshold and this is not a qukey,
-        // treat it as HOLD; otherwise treat it as TAP.
-        superKeyState.tap_count = (uint8_t)Utils::EventType::TAP;
-        // if (kaleidoscope::Runtime_::hasTimeExpired(superKeyState.minimum_hold, minimum_hold_start_) && !superKeyState.is_qukey)
-        // {
-        //     superKeyState.tap_count = (uint8_t)Utils::EventType::HOLD;
-        // }
-        // else
-        // {
-        //     superKeyState.tap_count = (uint8_t)Utils::EventType::TAP;
-        // }
+        // Decide whether this interruption should finalize as HOLD, TAP, or DOUBLE TAP.
+        // If we've already completed a double tap (tap_count >= 2), preserve it.
+        // Otherwise, collapse to TAP.
+        if (static_cast<uint8_t>(superKeyState.tap_count) < static_cast<uint8_t>(Utils::TapType::Tap_Once))
+        {
+            superKeyState.tap_count = (uint8_t)Utils::EventType::TAP;
+        }
+        // else: keep current tap_count (double tap or more)
+        
+        //NRF_LOG_DEBUG("Superkey interrupted with tap_count=%d", superKeyState.tap_count);
+        
+        // Finalize immediately to preserve order - the key is sent BEFORE
+        // the interrupting key continues processing
         timeout();
         disable();
         result = true;
