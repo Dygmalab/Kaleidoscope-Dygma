@@ -131,11 +131,11 @@ bool Timeline::has_previous_superkey_pending(const KeyAddr& addr) const
 
     if (idx <= 0)
     {
-        NRF_LOG_DEBUG("has_previous_superkey_pending: idx=%d, returning false", idx);
+        //NRF_LOG_DEBUG("has_previous_superkey_pending: idx=%d, returning false", idx);
         return false;
     }
 
-    NRF_LOG_DEBUG("has_previous_superkey_pending: checking %d entries before idx=%d", idx, idx);
+    //NRF_LOG_DEBUG("has_previous_superkey_pending: checking %d entries before idx=%d", idx, idx);
     
     // Scan backwards to see if there is any earlier SUPERKEY still enabled
     for (int j = idx - 1; j >= 0; --j)
@@ -144,21 +144,21 @@ bool Timeline::has_previous_superkey_pending(const KeyAddr& addr) const
         {
             Superkey* sk = static_cast<Superkey*>(entries[j].context);
             bool is_enabled = (sk != nullptr && sk->is_enable());
-            NRF_LOG_DEBUG("  Entry[%d]: SUPERKEY at %d:%d, enabled=%d", 
-                          j, entries[j].addr.row(), entries[j].addr.col(), is_enabled);
+            //NRF_LOG_DEBUG("  Entry[%d]: SUPERKEY at %d:%d, enabled=%d", 
+            //              j, entries[j].addr.row(), entries[j].addr.col(), is_enabled);
             if (is_enabled)
             {
-                NRF_LOG_DEBUG("has_previous_superkey_pending: found enabled superkey, returning true");
+                //NRF_LOG_DEBUG("has_previous_superkey_pending: found enabled superkey, returning true");
                 return true;
             }
         }
         else
         {
-            NRF_LOG_DEBUG("  Entry[%d]: type=%d (not SUPERKEY)", j, static_cast<int>(entries[j].type));
+            //NRF_LOG_DEBUG("  Entry[%d]: type=%d (not SUPERKEY)", j, static_cast<int>(entries[j].type));
         }
     }
 
-    NRF_LOG_DEBUG("has_previous_superkey_pending: no enabled superkeys found, returning false");
+    //NRF_LOG_DEBUG("has_previous_superkey_pending: no enabled superkeys found, returning false");
     return false;
 }
 

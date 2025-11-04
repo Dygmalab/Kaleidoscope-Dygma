@@ -200,7 +200,7 @@ Key KeyRoleManager::search_and_replace(Key key)
             {
                 // Transform to QUKEY (only if tap is NOT a Layer Lock)
                 uint16_t qukey_code = replace_superkey_with_qukey(&action_0, &action_1);
-                NRF_LOG_DEBUG("SK->QK: 0x%04X -> 0x%04X", key.getRaw(), qukey_code);
+                //NRF_LOG_DEBUG("SK->QK: 0x%04X -> 0x%04X", key.getRaw(), qukey_code);
                 return Key(qukey_code);
             }
         }
@@ -378,12 +378,12 @@ void KeyRoleManager::determine_key_role()
                     this->modified_keys[this->modified_keys_count].flags_action_2 = action_1.getFlags();
 
                     this->modified_keys_count++;
-                    NRF_LOG_DEBUG("SK %d -> QK 0x%04X (tap: normal key)", i, qukey_code);
+                    //NRF_LOG_DEBUG("SK %d -> QK 0x%04X (tap: normal key)", i, qukey_code);
                 }
             }
             else if (tap_is_layer_lock)
             {
-                NRF_LOG_DEBUG("SK %d remains as SUPERKEY (tap: layer lock 0x%04X)", i, tap_action.getRaw());
+                //NRF_LOG_DEBUG("SK %d remains as SUPERKEY (tap: layer lock 0x%04X)", i, tap_action.getRaw());
             }
         }
     }
