@@ -80,6 +80,28 @@ class KeyRoleManager : public kaleidoscope::Plugin
 
     void setup_keys();
 
+    /**
+    * @brief Transforms the keymap bidirectionally between superkeys and qukeys
+    * 
+    * This function performs a two-pass transformation on the entire keymap stored in EEPROM:
+    * 
+    * Pass 1: Reverts all qukeys back to their original superkeys using the previous mapping.
+    *         This is necessary because when superkey configurations change, the qukey codes
+    *         they generate also change. We use previous_modified_keys[] which was saved
+    *         before the configuration update to correctly identify and revert qukeys.
+    * 
+    * Pass 2: Transforms superkeys to qukeys based on the current configuration.
+    *         Simple superkeys (tap + hold with modifier/layer) are converted to qukeys
+    *         for performance optimization, while complex superkeys remain unchanged.
+    * 
+    * This approach ensures the keymap stays synchronized with superkey configuration changes,
+    * handling both superkey→qukey and qukey→superkey transformations correctly.
+    * 
+    * @note This function is called after superkey configuration updates via Focus protocol
+    * @note Changes are committed to EEPROM storage at the end
+    */
+    void transform_keymap_superkeys_to_qukeys();
+
     modified_keys_t* get_configured_qukeys(uint16_t qukey_id);
 
   private:
@@ -105,13 +127,16 @@ class KeyRoleManager : public kaleidoscope::Plugin
         }
     };
     key_storage_t key_storage;
-    key_storage_t sk_storage;
 
+    // Current qukey mappings (superkey_id -> qukey_id)
     modified_keys_t modified_keys[Utils::MAX_SUPER_KEYS_ACTIVE];
+    
+    // Previous qukey mappings saved before configuration update
+    // Used to correctly revert qukeys to superkeys when configurations change
+    modified_keys_t previous_modified_keys[Utils::MAX_SUPER_KEYS_ACTIVE];
 
-    modified_keys_t* configured_qukeys;
-
-    uint8_t modified_keys_count;
+    uint8_t modified_keys_count;           // Number of active qukey mappings
+    uint8_t previous_modified_keys_count;  // Number of previous qukey mappings
     
     uint8_t sk_index;
     uint8_t configured_superkeys;
@@ -123,17 +148,13 @@ class KeyRoleManager : public kaleidoscope::Plugin
         SUPERKEY
     };
 
-    struct superkey_storage_t
-    { 
-      Key actions[6];
-    };
-    superkey_storage_t superkey_storage[Utils::SUPER_KEY_COUNT];
-
     void determine_key_role();
 
     void config();
 
     void send_sk_map();
+
+    Key find_superkey_for_qukey(Key qukey);
 
     bool is_only_modifier(Key key);
 
