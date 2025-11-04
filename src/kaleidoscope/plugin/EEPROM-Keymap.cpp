@@ -148,17 +148,14 @@ EventHandlerResult EEPROMKeymap::onFocusEvent(const char *command) {
       Key k;
 
       ::Focus.read(k);
-      //Here we transform the superkey to a qukey if needed.
-      Key key = keyRoleManager.search_and_replace(k);
-      updateKey(i, key);
+      
+      // Transform superkeys to qukeys if needed before storing
+      Key transformed_key = keyRoleManager.search_and_replace(k);
+      updateKey(i, transformed_key);
       i++;
     }
     Runtime.storage().commit();
 
-    NRF_LOG_INFO("Keymap updated");
-    
-    keyRoleManager.setup_keys();
-    NRF_LOG_INFO("Keys setup DONE");
   }
 
   return EventHandlerResult::EVENT_CONSUMED;
