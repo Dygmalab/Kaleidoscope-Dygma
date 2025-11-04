@@ -94,8 +94,7 @@ void Superkey::key_released()
     if (superKeyState.is_qukey)
     {
         bool has_previous = timeline.has_previous_superkey_pending(this->keyaddr_);
-        //NRF_LOG_DEBUG("Qukey released at addr %d:%d, has_previous_pending=%d", 
-                      this->keyaddr_.row(), this->keyaddr_.col(), has_previous);
+        //NRF_LOG_DEBUG("Qukey released at addr %d:%d, has_previous_pending=%d", this->keyaddr_.row(), this->keyaddr_.col(), has_previous);
         if (!has_previous)
         {
             //NRF_LOG_DEBUG("Qukey finalizing immediately (no previous pending)");
