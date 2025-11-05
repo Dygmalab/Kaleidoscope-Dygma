@@ -12,11 +12,11 @@
 #include "SuperkeysHandler.h"
 #include "kaleidoscope/plugin/Superkeys/Actions/ActionsDriver.h"
 #include "kaleidoscope/plugin/Superkeys/includes.h"
+
+#ifndef  NEURON_WIRED
 #include "Ble_composite_dev.h"
 #include "Ble_manager.h"
-
-#pragma GCC push_options
-#pragma GCC optimize("O0")
+#endif
 
 namespace kaleidoscope
 {
@@ -468,10 +468,10 @@ void KeyRoleManager::transform_keymap_superkeys_to_qukeys()
     uint16_t qk_to_sk = 0;
     uint16_t sk_to_qk = 0;
     
-    NRF_LOG_INFO("Transforming keymap: %d total keys", total_keys);
+    //NRF_LOG_INFO("Transforming keymap: %d total keys", total_keys);
     
     // Pass 1: Revert ALL qukeys to superkeys using PREVIOUS modified_keys[] mapping
-    NRF_LOG_DEBUG("Pass 1: Reverting qukeys to superkeys using %d previous mappings", previous_modified_keys_count);
+    //NRF_LOG_DEBUG("Pass 1: Reverting qukeys to superkeys using %d previous mappings", previous_modified_keys_count);
     for (uint16_t i = 0; i < total_keys; i++)
     {
         Key stored_key = Key(Runtime.storage().read(keymap_base + i * 2 + 1),
@@ -496,7 +496,7 @@ void KeyRoleManager::transform_keymap_superkeys_to_qukeys()
     }
     
     // Pass 2: Transform superkeys to qukeys based on current configuration
-    NRF_LOG_DEBUG("Pass 2: Transforming superkeys to qukeys");
+    //NRF_LOG_DEBUG("Pass 2: Transforming superkeys to qukeys");
     for (uint16_t i = 0; i < total_keys; i++)
     {
         Key stored_key = Key(Runtime.storage().read(keymap_base + i * 2 + 1),
@@ -515,11 +515,12 @@ void KeyRoleManager::transform_keymap_superkeys_to_qukeys()
     
     // Commit changes to EEPROM
     Runtime.storage().commit();
-    NRF_LOG_INFO("Keymap transformation completed: %d QK->SK, %d SK->QK", qk_to_sk, sk_to_qk);
+    //NRF_LOG_INFO("Keymap transformation completed: %d QK->SK, %d SK->QK", qk_to_sk, sk_to_qk);
 }
 
 EventHandlerResult KeyRoleManager::onKeyswitchEvent(Key &mapped_key, KeyAddr key_addr, uint8_t keyState)
 {
+#ifndef  NEURON_WIRED
     // Skip superkeys handling if MITM pairing is active. This prevents
     // superkeys from consuming key events when the user is typing the
     // pairing PIN code.
@@ -550,6 +551,7 @@ EventHandlerResult KeyRoleManager::onKeyswitchEvent(Key &mapped_key, KeyAddr key
         // Let the key continue to be processed by other plugins (HID, etc.)
         return EventHandlerResult::OK;
     }
+#endif
 
     if (qukeys.onKeyswitchEvent(mapped_key, key_addr, keyState) == EventHandlerResult::EVENT_CONSUMED)
     {
@@ -595,7 +597,7 @@ EventHandlerResult KeyRoleManager::onFocusEvent(const char *command)
                 previous_modified_keys[i] = modified_keys[i];
             }
             previous_modified_keys_count = modified_keys_count;
-            NRF_LOG_DEBUG("Saved %d previous qukey mappings", previous_modified_keys_count);
+            //NRF_LOG_DEBUG("Saved %d previous qukey mappings", previous_modified_keys_count);
             
             // Update configuration and rebuild superkey handlers
             save_configurations();
@@ -603,7 +605,7 @@ EventHandlerResult KeyRoleManager::onFocusEvent(const char *command)
             // Rebuild the qukey mappings based on new configuration
             set_active_sk();
             determine_key_role();
-            NRF_LOG_DEBUG("Rebuilt mappings: found %d qukeys", modified_keys_count);
+            //NRF_LOG_DEBUG("Rebuilt mappings: found %d qukeys", modified_keys_count);
             
             // Transform the keymap
             transform_keymap_superkeys_to_qukeys();
@@ -627,4 +629,3 @@ EventHandlerResult KeyRoleManager::beforeReportingState()
 } // namespace plugin
 } // namespace kaleidoscope
 kaleidoscope::plugin::KeyRoleManager keyRoleManager;
- #pragma GCC pop_options
