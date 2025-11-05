@@ -204,7 +204,7 @@ void KeyboardHands::setup()
                                                      auto isKSLeftWired = keyScanner.leftSideWiredConnection();
                                                      auto isKSRightWired = keyScanner.rightSideWiredConnection();
                                                      LEDManager.com_mode_set( isKSLeftWired && isKSRightWired && !ble_innited() );
-                                                     ::LEDControl.enable();
+                                                     LEDManager.leds_enable();
                                                  }));
     Communications.callbacks.bind(DISCONNECTED, (
                                                     [](const Packet &p)
