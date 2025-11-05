@@ -37,9 +37,9 @@ void SuperkeysHandler::setup(uint8_t active_superkeys, const Key (*sk_map)[KEYS_
 void SuperkeysHandler::init(const Key (*sk_map)[KEYS_IN_SUPERKEY])
 {
 
-    NRF_LOG_INFO("SIZE OF Superkey: %i", sizeof(Superkey));
-    NRF_LOG_INFO("SIZE OF Superkey array: %i", sizeof(SuperkeysHandler_sk_array));
-    NRF_LOG_INFO("SIZE OF Superkey map: %i", sizeof(sk_map));
+    //NRF_LOG_INFO("SIZE OF Superkey: %i", sizeof(Superkey));
+    //NRF_LOG_INFO("SIZE OF Superkey array: %i", sizeof(SuperkeysHandler_sk_array));
+    //NRF_LOG_INFO("SIZE OF Superkey map: %i", sizeof(sk_map));
 
     // Update shared configuration
     shared_sk_config.hold_start_ = configurations.hold_start_;
@@ -51,7 +51,7 @@ void SuperkeysHandler::init(const Key (*sk_map)[KEYS_IN_SUPERKEY])
     
     // Limit to array size
     if (max_sk > Utils::MAX_SUPER_KEYS_ACTIVE) {
-        NRF_LOG_WARNING("Configured superkeys (%i) exceeds array size (%i), limiting to %i", max_sk, Utils::MAX_SUPER_KEYS_ACTIVE, Utils::MAX_SUPER_KEYS_ACTIVE);
+        //NRF_LOG_WARNING("Configured superkeys (%i) exceeds array size (%i), limiting to %i", max_sk, Utils::MAX_SUPER_KEYS_ACTIVE, Utils::MAX_SUPER_KEYS_ACTIVE);
         max_sk = Utils::MAX_SUPER_KEYS_ACTIVE;
         configured_superkeys = Utils::MAX_SUPER_KEYS_ACTIVE;
     }
@@ -66,8 +66,8 @@ void SuperkeysHandler::init(const Key (*sk_map)[KEYS_IN_SUPERKEY])
         sk_index++;
     }
     
-    NRF_LOG_INFO("Initialized %i superkeys in static array", sk_index);
-    NRF_LOG_FLUSH();
+    //NRF_LOG_INFO("Initialized %i superkeys in static array", sk_index);
+    //NRF_LOG_FLUSH();
 }
 
 void SuperkeysHandler::config()
