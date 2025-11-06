@@ -13,11 +13,6 @@
 #include "kaleidoscope/plugin/Superkeys/Actions/ActionsDriver.h"
 #include "kaleidoscope/plugin/Superkeys/includes.h"
 
-#ifndef  NEURON_WIRED
-#include "Ble_composite_dev.h"
-#include "Ble_manager.h"
-#endif
-
 namespace kaleidoscope
 {
 namespace plugin
@@ -150,22 +145,42 @@ void KeyRoleManager::get_superkey(Key* mapped_key)
 
 uint16_t KeyRoleManager::calculate_qukey_code(uint32_t hold_action_raw, uint16_t tap_action_raw)
 {
-    const uint16_t tap_hid  = static_cast<uint16_t>(tap_action_raw  & 0x00FF);
-    const uint16_t hold_hid = static_cast<uint16_t>(hold_action_raw & 0x00FF);
+    // Extract HID keycode (lower 8 bits) and flags (upper 8 bits)
+    const uint16_t tap_hid   = static_cast<uint16_t>(tap_action_raw  & 0x00FF);
+    const uint16_t tap_flags = static_cast<uint16_t>((tap_action_raw >> 8) & 0x00FF);
+    const uint16_t hold_hid  = static_cast<uint16_t>(hold_action_raw & 0x00FF);
 
     // Case A: modifiers HID (Ctrl/Shift/Alt/OS/AltGr)
     if (hold_hid >= 0xE0 && hold_hid <= 0xE7) 
     {
         const int idx = hidModToDumIndex(hold_hid);
         if (idx < 0) return 0;
+        
+        // Include tap_flags in the qukey code to make it unique
+        // We use the upper bits of the 256-byte range for each modifier
+        // This allows up to 128 different flag combinations per modifier
         const uint32_t base = ranges::DUM_FIRST + (static_cast<uint32_t>(idx) << 8);
-        return static_cast<uint16_t>(base + tap_hid);
+        const uint32_t flags_offset = (tap_flags & 0x7F) << 1; // Use 7 bits for flags, shift left by 1
+        
+        // If tap has flags, use the upper half of the range (128-255)
+        // Otherwise use the lower half (0-127)
+        if (tap_flags != 0) {
+            return static_cast<uint16_t>(base + 128 + (tap_hid & 0x7F));
+        } else {
+            return static_cast<uint16_t>(base + tap_hid);
+        }
     }
     else 
     {
     // Case B: layer change (OSL / DUL)
         const uint32_t base = ranges::DUL_FIRST + layerIndexFromRaw(hold_action_raw);
-        return static_cast<uint16_t>(base + tap_hid);
+        
+        // Same logic for DUL - use upper half if tap has flags
+        if (tap_flags != 0) {
+            return static_cast<uint16_t>(base + 128 + (tap_hid & 0x7F));
+        } else {
+            return static_cast<uint16_t>(base + tap_hid);
+        }
     }
 
     // Not a modifier or layer change
@@ -198,9 +213,10 @@ Key KeyRoleManager::search_and_replace(Key key)
             
             if (!tap_is_layer_lock && (is_only_modifier(action_1) || has_layer_change(action_1)))
             {
-                // Transform to QUKEY (only if tap is NOT a Layer Lock)
+                // Transform to QUKEY (flags will be stored in modified_keys[] and restored when needed)
                 uint16_t qukey_code = replace_superkey_with_qukey(&action_0, &action_1);
-                //NRF_LOG_DEBUG("SK->QK: 0x%04X -> 0x%04X", key.getRaw(), qukey_code);
+                //NRF_LOG_DEBUG("[SK->QK] SK:0x%04X tap:0x%04X(flags:0x%02X) -> QK:0x%04X", 
+                //              key.getRaw(), action_0.getRaw(), action_0.getFlags(), qukey_code);
                 return Key(qukey_code);
             }
         }
@@ -366,19 +382,21 @@ void KeyRoleManager::determine_key_role()
 
             if (!tap_is_layer_lock && (is_only_modifier(hold_action) || has_layer_change(action_1)))
             {
-                // QUKEY - only if tap is NOT a Layer Lock
+                // QUKEY - flags will be stored in modified_keys[] and restored when needed
                 uint16_t qukey_code = replace_superkey_with_qukey(&action_0, &action_1);
                 if(qukey_code != 0 || (qukey_code < ranges::DUL_FIRST || qukey_code > ranges::DUL_LAST))
                 {
                     // QUKEY DETECTED
                     // Here we save the qukey and superkey id for later use.
+                    // IMPORTANT: We store the original flags so they can be restored when the qukey is used
                     this->modified_keys[this->modified_keys_count].sk_id = ranges::DYNAMIC_SUPER_FIRST + i;
                     this->modified_keys[this->modified_keys_count].qukey_id = qukey_code;
                     this->modified_keys[this->modified_keys_count].flags_action_1 = action_0.getFlags();
                     this->modified_keys[this->modified_keys_count].flags_action_2 = action_1.getFlags();
 
+                    //NRF_LOG_DEBUG("[DETERMINE] SK[%d]:0x%04X -> QK:0x%04X flags_a1:0x%02X stored at idx:%d", 
+                    //              i, ranges::DYNAMIC_SUPER_FIRST + i, qukey_code, action_0.getFlags(), this->modified_keys_count);
                     this->modified_keys_count++;
-                    //NRF_LOG_DEBUG("SK %d -> QK 0x%04X (tap: normal key)", i, qukey_code);
                 }
             }
             else if (tap_is_layer_lock)
@@ -520,39 +538,6 @@ void KeyRoleManager::transform_keymap_superkeys_to_qukeys()
 
 EventHandlerResult KeyRoleManager::onKeyswitchEvent(Key &mapped_key, KeyAddr key_addr, uint8_t keyState)
 {
-#ifndef  NEURON_WIRED
-    // Skip superkeys handling if MITM pairing is active. This prevents
-    // superkeys from consuming key events when the user is typing the
-    // pairing PIN code.
-    if (_BleManager.is_mitm_active())
-    {
-        // If the key is a superkey or qukey, convert it to its tap action
-        // so it can be processed normally by HID
-        if (mapped_key >= ranges::DYNAMIC_SUPER_FIRST && mapped_key <= ranges::DYNAMIC_SUPER_LAST)
-        {
-            // It's a superkey - get its tap action (action_0)
-            uint8_t super_key_index = static_cast<uint8_t>(mapped_key.getRaw() - ranges::DYNAMIC_SUPER_FIRST);
-            if (super_key_index < configured_superkeys)
-            {
-                Key tap_action = key_storage.keys[super_key_index][0];
-                if (!is_idle(tap_action))
-                {
-                    mapped_key = tap_action;
-                }
-            }
-        }
-        else if ((mapped_key >= ranges::DUM_FIRST && mapped_key <= ranges::DUM_LAST) ||
-                 (mapped_key >= ranges::DUL_FIRST && mapped_key <= ranges::DUL_LAST))
-        {
-            // It's a qukey - extract the tap action (lower 8 bits)
-            mapped_key = Key(mapped_key.getRaw() & 0xFF);
-        }
-        
-        // Let the key continue to be processed by other plugins (HID, etc.)
-        return EventHandlerResult::OK;
-    }
-#endif
-
     if (qukeys.onKeyswitchEvent(mapped_key, key_addr, keyState) == EventHandlerResult::EVENT_CONSUMED)
     {
         return EventHandlerResult::EVENT_CONSUMED;
