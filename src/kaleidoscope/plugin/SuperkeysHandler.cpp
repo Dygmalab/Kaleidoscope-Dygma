@@ -89,6 +89,12 @@ void SuperkeysHandler::save_configurations(const Key (*sk_map)[KEYS_IN_SUPERKEY]
     Runtime.storage().put(settings_base_, configurations);
     Runtime.storage().commit();
     config();
+    
+    // Update shared configuration for all superkeys
+    shared_sk_config.hold_start_ = configurations.hold_start_;
+    shared_sk_config.time_out_ = configurations.time_out_;
+    shared_sk_config.overlap_threshold_ = configurations.overlap_threshold_;
+    
     if(sk_map != nullptr)
     {
         cleanup();
@@ -436,5 +442,3 @@ EventHandlerResult SuperkeysHandler::onFocusEvent(const char *command)
 } // namespace plugin
 } // namespace kaleidoscope
 kaleidoscope::plugin::SuperkeysHandler superkeysHandler;
-
-// #pragma GCC pop_options
