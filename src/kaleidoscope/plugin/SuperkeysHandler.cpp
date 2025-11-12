@@ -250,9 +250,29 @@ EventHandlerResult SuperkeysHandler::handle_superkeys(Key &mapped_key, KeyAddr k
                     }
                     else
                     {
-                        // Non-qukeys: forward press to accumulate tap_count
-                        SuperkeysHandler_sk_array[pos].key_pressed();
-                        return EventHandlerResult::EVENT_CONSUMED;
+                        // Non-qukeys: check if it's in a finalized state (holded/triggered)
+                        // If so, re-arm it like qukeys to allow a new press after hold
+                        if (SuperkeysHandler_sk_array[pos].is_holded() || SuperkeysHandler_sk_array[pos].is_triggered())
+                        {
+                            SuperkeysHandler_sk_array[pos].disable();
+
+                            SuperkeysHandler_sk_array[pos].enable(cache_modifiers);
+                            SuperkeysHandler_sk_array[pos].init_timer();
+                            SuperkeysHandler_sk_array[pos].set_key_and_keyAddr(mapped_key, key_addr);
+                            SuperkeysHandler_sk_array[pos].key_pressed();
+
+                            Utils::TimelineEntry entry = {
+                                mapped_key, key_addr, Runtime.millisAtCycleStart(), Utils::KeyType::SUPERKEY, false, static_cast<void *>(&SuperkeysHandler_sk_array[pos])};
+
+                            timeline.add(entry);
+                            return EventHandlerResult::EVENT_CONSUMED;
+                        }
+                        else
+                        {
+                            // Normal case: forward press to accumulate tap_count
+                            SuperkeysHandler_sk_array[pos].key_pressed();
+                            return EventHandlerResult::EVENT_CONSUMED;
+                        }
                     }
                 }
             }
@@ -328,8 +348,8 @@ EventHandlerResult SuperkeysHandler::onKeyswitchEvent(Key &mapped_key, KeyAddr k
     // If it's not a super-key press, we treat it here.
     if (IS_OUTSIDE_DYNAMIC_SUPER_RANGE(mapped_key.getRaw()))
     {
-        handle_regular_keys(mapped_key, key_addr, keyState);
-        return EventHandlerResult::OK;
+        result = handle_regular_keys(mapped_key, key_addr, keyState);
+        return result;
     }
 
     result = handle_superkeys(mapped_key, key_addr, keyState);
@@ -339,17 +359,9 @@ EventHandlerResult SuperkeysHandler::onKeyswitchEvent(Key &mapped_key, KeyAddr k
 
 EventHandlerResult SuperkeysHandler::beforeReportingState()
 {
-
-    // Iterate through every superkey if they are enabled.
-    uint8_t configuredSK = get_configured_sk();
-
-    for (uint8_t i = 0; i < configuredSK; i++)
-    {
-        if (SuperkeysHandler_sk_array[i].is_enable())
-        {
-            SuperkeysHandler_sk_array[i].run();
-        }
-    }
+    // Process superkeys in timeline order to preserve correct finalization sequence
+    // This ensures that earlier superkeys finalize before later ones check for pending superkeys
+    timeline.process_superkeys_in_order();
 
     return EventHandlerResult::OK;
 }
