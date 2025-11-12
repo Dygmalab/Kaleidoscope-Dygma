@@ -19,6 +19,8 @@ public:
   void run();
   bool interrupt(Key &key, const KeyAddr &keyaddr);
   bool is_enable() const;
+  bool is_holded() const;
+  bool is_triggered() const;
   void init_timer();
   uint16_t get_index() const;
   bool is_qukey() const;

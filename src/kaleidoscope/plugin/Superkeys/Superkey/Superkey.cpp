@@ -29,13 +29,12 @@ void Superkey::enable(uint8_t modifiers_pressed)
 {
     // This is to tell the SK handler to remove the SK from the list of active sk.
     superKeyState.enabled = true;
+    superKeyState.pressed = true;  // Mark as pressed so run() can process it
     superKeyState.cache_modifiers = modifiers_pressed;
 }
 
 void Superkey::disable()
 {
-/*    NRF_LOG_DEBUG("Disabling Superkey %i", index_);
-    NRF_LOG_DEBUG("----------------------------------------");*/
     superKeyState.enabled = false;
     superKeyState.tap_count = 0;
     superKeyState.holded = false;
@@ -63,18 +62,50 @@ void Superkey::run()
         {
             // Preserve ordering: if there is an earlier superkey still pending,
             // defer qukey finalization until it completes.
-            if (!timeline.has_previous_superkey_pending(this->keyaddr_))
+            bool has_prev = timeline.has_previous_superkey_pending(this->keyaddr_);
+            if (!has_prev)
             {
                 timeout();
                 disable();
             }
+            else
+            {
+                // Wait for previous superkeys to finalize first
+            }
         }
         // For qukeys, do not apply the generic timeout path while release ordering is constrained.
     }
-    else if (shared_config_ && kaleidoscope::Runtime_::hasTimeExpired(superKeyState.timeStamp, shared_config_->time_out_))
+    else
     {
-        timeout();
-        disable();
+        // Handle interrupted state for normal superkeys
+        if (superKeyState.released && superKeyState.interrupt)
+        {
+            // Was interrupted by another key: preserve ordering
+            bool has_prev = timeline.has_previous_superkey_pending(this->keyaddr_);
+            if (!has_prev)
+            {
+                timeout();
+                disable();
+            }
+            else
+            {
+                // Wait for previous superkeys to finalize first
+            }
+        }
+        else if (superKeyState.pressed)
+        {
+            // Key is still pressed (not interrupted, not released)
+            // Check if it should transition to hold state
+            key_is_pressed();
+        }
+        
+        // Check timeout for both pressed and released states
+        // This allows detecting multiple taps after release
+        if (shared_config_ && kaleidoscope::Runtime_::hasTimeExpired(superKeyState.timeStamp, shared_config_->time_out_))
+        {
+            timeout();
+            disable();
+        }
     }
 }
 
@@ -89,22 +120,21 @@ void Superkey::key_released()
     // Capture whether this cycle was a hold before release() resets flags
     bool was_hold = superKeyState.holded;
     release();
+    
     // For qukeys: if there's no earlier superkey pending, finalize immediately
     // on release to ensure the instance is disabled before a rapid next press.
     if (superKeyState.is_qukey)
     {
         bool has_previous = timeline.has_previous_superkey_pending(this->keyaddr_);
-        //NRF_LOG_DEBUG("Qukey released at addr %d:%d, has_previous_pending=%d", this->keyaddr_.row(), this->keyaddr_.col(), has_previous);
         if (!has_previous)
         {
-            //NRF_LOG_DEBUG("Qukey finalizing immediately (no previous pending)");
             timeout();
             disable();
             return;
         }
         else
         {
-            //NRF_LOG_DEBUG("Qukey deferring finalization (previous superkey pending)");
+            // Defer finalization to preserve timeline order
         }
     }
     // If it was a hold (already triggered) and not a qukey, we can safely
@@ -113,6 +143,10 @@ void Superkey::key_released()
     {
         timeout();
         disable();
+    }
+    else
+    {
+        // Will finalize in run() after timeout
     }
 }
 
@@ -149,6 +183,7 @@ void Superkey::hold()
 
 void Superkey::release()
 {
+    superKeyState.pressed = false;  // Physical key is no longer pressed
     superKeyState.released = true;
     superKeyState.holded = false;
     ++superKeyState.tap_count;
@@ -187,12 +222,10 @@ bool Superkey::interrupt(Key &regular_key, const KeyAddr &keyaddr_)
         }
         // else: keep current tap_count (double tap or more)
         
-        //NRF_LOG_DEBUG("Superkey interrupted with tap_count=%d", superKeyState.tap_count);
-        
-        // Finalize immediately to preserve order - the key is sent BEFORE
-        // the interrupting key continues processing
-        timeout();
-        disable();
+        // Mark as interrupted and released to trigger finalization in run() cycle
+        // This preserves timeline order instead of sending immediately
+        superKeyState.interrupt = true;
+        superKeyState.released = true;
         result = true;
     }
     return result;
@@ -249,6 +282,16 @@ void Superkey::check_if_sk_qukey()
 bool Superkey::is_enable() const
 {
     return superKeyState.enabled;
+}
+
+bool Superkey::is_holded() const
+{
+    return superKeyState.holded;
+}
+
+bool Superkey::is_triggered() const
+{
+    return superKeyState.triggered;
 }
 
 void Superkey::init_timer()
