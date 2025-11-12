@@ -94,15 +94,14 @@ bool Timeline::check_interruptions()
             {
                 bool interrupt_result = sk_prev->interrupt(curr.key, curr.addr);
 
-                // Only when the previous superkey DID handle the interruption
-                // (i.e. it finalized itself), we remove it from the timeline
-                // and restart the analysis to keep references valid.
+                // interrupt_result=true means the superkey was interrupted and marked as released.
+                // However, we should NOT remove it from the timeline yet because it hasn't finalized.
+                // The superkey will be removed when disable() is called after timeout().
+                // So we just mark that an interruption occurred but don't remove the entry.
                 if (interrupt_result)
                 {
-                    remove(prev.addr);
                     interruptionOccurred = true;
-                    // Since we removed an element, we start the analysis again
-                    return check_interruptions();
+                    // Don't remove or restart - let the superkey finalize in its run() cycle
                 }
             }
         }
@@ -114,6 +113,71 @@ bool Timeline::check_interruptions()
 void Timeline::process()
 {
 
+}
+
+void Timeline::process_superkeys_in_order()
+{
+    // Process entries in timeline order (oldest to newest)
+    // CRITICAL: Only allow ONE entry to finalize per cycle to preserve order
+    // Process both superkeys and normal keys to maintain chronological order
+    
+    bool one_processed = false;  // Track if we've already processed one entry this cycle
+    
+    // Process from oldest to newest (forward iteration)
+    uint8_t i = 0;
+    while (i < count)
+    {
+        if (entries[i].type == Utils::KeyType::SUPERKEY)
+        {
+            Superkey* sk = static_cast<Superkey*>(entries[i].context);
+            if (sk != nullptr && sk->is_enable())
+            {
+                uint8_t count_before = count;
+                sk->run();
+                
+                // If the superkey called disable() and removed itself from timeline,
+                // count decreased and all entries shifted left.
+                if (count < count_before)
+                {
+                    
+                    one_processed = true;
+                    
+                    // CRITICAL: Stop processing after first finalization
+                    // This ensures entries finalize in separate cycles, preserving order
+                    break;
+                }
+            }
+        }
+        else if (entries[i].type == Utils::KeyType::NORMAL)
+        {
+            // Normal key: check if there are any superkeys before it
+            bool has_prev_sk = false;
+            for (int j = i - 1; j >= 0; --j)
+            {
+                if (entries[j].type == Utils::KeyType::SUPERKEY)
+                {
+                    has_prev_sk = true;
+                    break;
+                }
+            }
+            
+            if (!has_prev_sk)
+            {
+                // No superkeys before this normal key, send it now
+                
+                // Inject the key press
+                handleKeyswitchEvent(entries[i].key, entries[i].addr, IS_PRESSED | INJECTED);
+                
+                // Remove from timeline
+                remove(entries[i].addr);
+                
+                one_processed = true;
+                
+                break;
+            }
+        }
+        i++;
+    }
 }
 
 bool Timeline::has_previous_superkey_pending(const KeyAddr& addr) const
@@ -131,34 +195,24 @@ bool Timeline::has_previous_superkey_pending(const KeyAddr& addr) const
 
     if (idx <= 0)
     {
-        //NRF_LOG_DEBUG("has_previous_superkey_pending: idx=%d, returning false", idx);
         return false;
     }
 
-    //NRF_LOG_DEBUG("has_previous_superkey_pending: checking %d entries before idx=%d", idx, idx);
     
-    // Scan backwards to see if there is any earlier SUPERKEY still enabled
+    // Scan backwards to see if there is any earlier SUPERKEY in the timeline
+    // If a superkey is in the timeline, it's still pending regardless of enabled state
+    // because it will be removed from timeline when fully processed
     for (int j = idx - 1; j >= 0; --j)
     {
         if (entries[j].type == Utils::KeyType::SUPERKEY)
         {
             Superkey* sk = static_cast<Superkey*>(entries[j].context);
-            bool is_enabled = (sk != nullptr && sk->is_enable());
-            //NRF_LOG_DEBUG("  Entry[%d]: SUPERKEY at %d:%d, enabled=%d", 
-            //              j, entries[j].addr.row(), entries[j].addr.col(), is_enabled);
-            if (is_enabled)
+            if (sk != nullptr)
             {
-                //NRF_LOG_DEBUG("has_previous_superkey_pending: found enabled superkey, returning true");
                 return true;
             }
         }
-        else
-        {
-            //NRF_LOG_DEBUG("  Entry[%d]: type=%d (not SUPERKEY)", j, static_cast<int>(entries[j].type));
-        }
     }
-
-    //NRF_LOG_DEBUG("has_previous_superkey_pending: no enabled superkeys found, returning false");
     return false;
 }
 

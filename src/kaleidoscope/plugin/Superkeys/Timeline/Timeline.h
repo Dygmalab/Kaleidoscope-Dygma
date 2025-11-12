@@ -12,6 +12,9 @@ public:
     void remove(const KeyAddr& addr);
     void process();
     
+    // Process all superkeys in timeline order (from oldest to newest)
+    void process_superkeys_in_order();
+    
     // Returns true if there is any SUPERKEY entry in the timeline that
     // appears before the entry at the provided address, and is still active.
     bool has_previous_superkey_pending(const KeyAddr& addr) const;
