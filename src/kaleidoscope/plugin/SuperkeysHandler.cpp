@@ -313,6 +313,14 @@ EventHandlerResult SuperkeysHandler::handle_regular_keys(Key &mapped_key, KeyAdd
             save_pressed_modifiers(mapped_key, keyState);
         }
 
+        // Don't add Dynamic Macros to timeline - they have their own event handler
+        // that consumes them. Adding them to timeline causes double execution.
+        if (mapped_key.getRaw() >= ranges::DYNAMIC_MACRO_FIRST && 
+            mapped_key.getRaw() <= ranges::DYNAMIC_MACRO_LAST)
+        {
+            return EventHandlerResult::OK;
+        }
+
         Utils::TimelineEntry entry = {mapped_key, key_addr, Runtime.millisAtCycleStart(), Utils::KeyType::NORMAL, false, nullptr};
 
         if (timeline.add(entry))
