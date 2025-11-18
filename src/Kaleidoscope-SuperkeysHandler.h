@@ -1,5 +1,5 @@
-/* DynamicMacros - Dynamic macro support for Kaleidoscope.
- * Copyright (C) 2019  Keyboard.io, Inc.
+/* SuperkeysHandler - SuperKeys support for Kaleidoscope.
+ * Copyright (C) 2025 Dygma Lab S.L.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
