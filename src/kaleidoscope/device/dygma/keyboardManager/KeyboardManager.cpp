@@ -74,11 +74,11 @@ struct KeyboardHands
         return side_power_;
     }
 
-    static void keyscanInterval(uint8_t interval);
-    static uint8_t keyscanInterval()
-    {
-        return keyscan_interval_;
-    }
+//    static void keyscanInterval(uint8_t interval);
+//    static uint8_t keyscanInterval()
+//    {
+//        return keyscan_interval_;
+//    }
 
     static void getChipID(char *buff, uint16_t len);
     static void get_chip_info(char *buff, uint16_t len);
@@ -118,7 +118,7 @@ struct KeyboardHands
 //    static void sendPacketBrightness();
 
   private:
-    static uint8_t keyscan_interval_;
+//    static uint8_t keyscan_interval_;
     static bool side_power_;
     static uint16_t settings_interval_;
     static uint16_t settings_base;
@@ -132,7 +132,7 @@ bool KeyboardHands::side_power_;
 uint16_t KeyboardHands::settings_interval_;
 uint16_t KeyboardHands::settings_base;
 KeyboardHands::Brightness KeyboardHands::bright;
-uint8_t KeyboardHands::keyscan_interval_ = 15;
+//uint8_t KeyboardHands::keyscan_interval_ = 15;
 
 void KeyboardHands::setSidePower(bool power)
 {
@@ -243,18 +243,9 @@ void KeyboardHands::setup()
 //    Communications.callbacks.bind(CONNECTED, checkBrightness);
 
 
-    settings_interval_ = ::EEPROMSettings.requestSlice(sizeof(keyscan_interval_));
+    settings_interval_ = ::EEPROMSettings.requestSlice(sizeof(uint8_t));
     settings_base = ::EEPROMSettings.requestSlice(sizeof(KeyboardHands::Brightness));
     // If keyscan is max, assume that EEPROM is uninitialized, and store the defaults.
-    uint16_t interval;
-    Runtime.storage().get(settings_interval_, interval);
-    if (interval == 0xff)
-    {
-        Runtime.storage().put(settings_interval_, keyscan_interval_);
-        Runtime.storage().commit();
-    }
-    Runtime.storage().get(settings_interval_, keyscan_interval_);
-
     KeyboardHands::Brightness brightness;
     Runtime.storage().get(settings_base, brightness);
     if (brightness.flag != 0)
@@ -274,17 +265,15 @@ void KeyboardHands::setbrightness(const Brightness &data)
     Runtime.storage().put(settings_base, data);
     Runtime.storage().commit();
 }
+//    uint16_t interval;
+//    Runtime.storage().get(settings_interval_, interval);
+//    if (interval == 0xff)
+//    {
+//        Runtime.storage().put(settings_interval_, keyscan_interval_);
+//        Runtime.storage().commit();
+//    }
+//    Runtime.storage().get(settings_interval_, keyscan_interval_);
 
-void KeyboardHands::keyscanInterval(uint8_t interval)
-{
-    Communications_protocol::Packet p{};
-    p.header.command = Communications_protocol::KEYSCAN_INTERVAL;
-    p.data[0] = interval;
-    p.header.size = 1;
-    Communications.sendPacket(p);
-    keyscan_interval_ = interval;
-    Runtime.storage().put(settings_interval_, keyscan_interval_);
-    Runtime.storage().commit();
 }
 
 void KeyboardHands::ledBrightnessLedDriver(uint8_t brightness)
@@ -300,6 +289,17 @@ void KeyboardHands::ledBrightnessUG(uint8_t brightnessUG)
 //    sendPacketBrightness();
     setbrightness(bright);
 }
+//void KeyboardHands::keyscanInterval(uint8_t interval)
+//{
+//    Communications_protocol::Packet p{};
+//    p.header.command = Communications_protocol::KEYSCAN_INTERVAL;
+//    p.data[0] = interval;
+//    p.header.size = 1;
+//    Communications.sendPacket(p);
+//    keyscan_interval_ = interval;
+//    Runtime.storage().put(settings_interval_, keyscan_interval_);
+//    Runtime.storage().commit();
+//}
 
 void KeyboardHands::ledBrightnessLedDriverWireless(uint8_t brightness)
 {
@@ -887,10 +887,10 @@ void KeyboardNrf::side::prepareForFlash()
     Wire::begin(100);
 }
 
-uint16_t KeyboardNrf::settings::keyscanInterval()
-{
-    return KeyboardHands::keyscanInterval();
-}
+//uint16_t KeyboardNrf::settings::keyscanInterval()
+//{
+//    return KeyboardHands::keyscanInterval();
+//}
 
 void KeyboardNrf::settings::getChipID(char *buff, uint16_t len)
 {
@@ -902,10 +902,10 @@ void KeyboardNrf::settings::get_chip_info(char *buff, uint16_t len)
     KeyboardHands::get_chip_info(buff, len);
 }
 
-void KeyboardNrf::settings::keyscanInterval(uint16_t interval)
-{
-    KeyboardHands::keyscanInterval(interval);
-}
+//void KeyboardNrf::settings::keyscanInterval(uint16_t interval)
+//{
+//    KeyboardHands::keyscanInterval(interval);
+//}
 
 } // namespace dygma
 } // namespace device
