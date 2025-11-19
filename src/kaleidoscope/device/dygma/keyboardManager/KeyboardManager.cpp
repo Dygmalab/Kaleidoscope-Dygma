@@ -83,29 +83,30 @@ struct KeyboardHands
     static void getChipID(char *buff, uint16_t len);
     static void get_chip_info(char *buff, uint16_t len);
 
-    static void ledBrightnessLedDriver(uint8_t brightness);
-    static uint8_t ledBrightnessLedDriver()
-    {
-        return bright.led_brightness_ledDriver_;
-    }
-
-    static void ledBrightnessUG(uint8_t brightnessUG);
-    static uint8_t ledBrightnessUG()
-    {
-        return bright.led_brightness_underglow_;
-    }
-
-    static void ledBrightnessLedDriverWireless(uint8_t brightness);
-    static uint8_t ledBrightnessLedDriverWireless()
-    {
-        return bright.led_brightness_ledDriver_wireless_;
-    }
-
-    static void ledBrightnessUGWireless(uint8_t brightnessUG);
-    static uint8_t ledBrightnessUGWireless()
-    {
-        return bright.led_brightness_underglow_wireless_;
-    }
+//    static void ledBrightnessLedDriver(uint8_t brightness);
+//    static uint8_t ledBrightnessLedDriver()
+//    {
+//        return bright.led_brightness_ledDriver_;
+//    }
+//
+//    static void ledBrightnessUG(uint8_t brightnessUG);
+//    static uint8_t ledBrightnessUG()
+//    {
+//        return bright.led_brightness_underglow_;
+//    }
+//
+//    static void ledBrightnessLedDriverWireless(uint8_t brightness);
+//    static uint8_t ledBrightnessLedDriverWireless()
+//    {
+//        return bright.led_brightness_ledDriver_wireless_;
+//    }
+//
+//    static void ledBrightnessUGWireless(uint8_t brightnessUG);
+//    static uint8_t ledBrightnessUGWireless()
+//    {
+//        return bright.led_brightness_underglow_wireless_;
+//    }
+#warning "Remove Brightness when fully removed"
     static struct Brightness
     {
         uint8_t led_brightness_ledDriver_;
@@ -123,7 +124,7 @@ struct KeyboardHands
     static uint16_t settings_interval_;
     static uint16_t settings_base;
 
-    static void setbrightness(const Brightness &data);
+//    static void setbrightness(const Brightness &data);
 };
 
 dygma_keyboards::Hand KeyboardHands::leftHand(dygma_keyboards::Hand::LEFT);
@@ -131,7 +132,7 @@ dygma_keyboards::Hand KeyboardHands::rightHand(dygma_keyboards::Hand::RIGHT);
 bool KeyboardHands::side_power_;
 uint16_t KeyboardHands::settings_interval_;
 uint16_t KeyboardHands::settings_base;
-KeyboardHands::Brightness KeyboardHands::bright;
+//KeyboardHands::Brightness KeyboardHands::bright;
 //uint8_t KeyboardHands::keyscan_interval_ = 15;
 
 void KeyboardHands::setSidePower(bool power)
@@ -246,25 +247,6 @@ void KeyboardHands::setup()
     settings_interval_ = ::EEPROMSettings.requestSlice(sizeof(uint8_t));
     settings_base = ::EEPROMSettings.requestSlice(sizeof(KeyboardHands::Brightness));
     // If keyscan is max, assume that EEPROM is uninitialized, and store the defaults.
-    KeyboardHands::Brightness brightness;
-    Runtime.storage().get(settings_base, brightness);
-    if (brightness.flag != 0)
-    {
-        bright.led_brightness_ledDriver_ = 255;
-        bright.led_brightness_underglow_ = 255;
-        bright.led_brightness_underglow_wireless_ = 125;
-        bright.led_brightness_ledDriver_wireless_ = 125;
-        bright.flag = 0;
-        setbrightness(bright);
-    }
-    Runtime.storage().get(settings_base, bright);
-}
-
-void KeyboardHands::setbrightness(const Brightness &data)
-{
-    Runtime.storage().put(settings_base, data);
-    Runtime.storage().commit();
-}
 //    uint16_t interval;
 //    Runtime.storage().get(settings_interval_, interval);
 //    if (interval == 0xff)
@@ -274,21 +256,26 @@ void KeyboardHands::setbrightness(const Brightness &data)
 //    }
 //    Runtime.storage().get(settings_interval_, keyscan_interval_);
 
+//    KeyboardHands::Brightness brightness;
+//    Runtime.storage().get(settings_base, brightness);
+//    if (brightness.flag != 0)
+//    {
+//        bright.led_brightness_ledDriver_ = 255;
+//        bright.led_brightness_underglow_ = 255;
+//        bright.led_brightness_underglow_wireless_ = 125;
+//        bright.led_brightness_ledDriver_wireless_ = 125;
+//        bright.flag = 0;
+//        setbrightness(bright);
+//    }
+//    Runtime.storage().get(settings_base, bright);
 }
 
-void KeyboardHands::ledBrightnessLedDriver(uint8_t brightness)
-{
-    bright.led_brightness_ledDriver_ = brightness;
-//    sendPacketBrightness();
-    setbrightness(bright);
-}
+//void KeyboardHands::setbrightness(const Brightness &data)
+//{
+//    Runtime.storage().put(settings_base, data);
+//    Runtime.storage().commit();
+//}
 
-void KeyboardHands::ledBrightnessUG(uint8_t brightnessUG)
-{
-    bright.led_brightness_underglow_ = brightnessUG;
-//    sendPacketBrightness();
-    setbrightness(bright);
-}
 //void KeyboardHands::keyscanInterval(uint8_t interval)
 //{
 //    Communications_protocol::Packet p{};
@@ -301,18 +288,32 @@ void KeyboardHands::ledBrightnessUG(uint8_t brightnessUG)
 //    Runtime.storage().commit();
 //}
 
-void KeyboardHands::ledBrightnessLedDriverWireless(uint8_t brightness)
-{
-    bright.led_brightness_ledDriver_wireless_ = brightness;
-//    sendPacketBrightness();
-    setbrightness(bright);
-}
-void KeyboardHands::ledBrightnessUGWireless(uint8_t brightnessUG)
-{
-    bright.led_brightness_underglow_wireless_ = brightnessUG;
-//    sendPacketBrightness();
-    setbrightness(bright);
-}
+//void KeyboardHands::ledBrightnessLedDriver(uint8_t brightness)
+//{
+//    bright.led_brightness_ledDriver_ = brightness;
+////    sendPacketBrightness();
+//    setbrightness(bright);
+//}
+//
+//void KeyboardHands::ledBrightnessUG(uint8_t brightnessUG)
+//{
+//    bright.led_brightness_underglow_ = brightnessUG;
+////    sendPacketBrightness();
+//    setbrightness(bright);
+//}
+//
+//void KeyboardHands::ledBrightnessLedDriverWireless(uint8_t brightness)
+//{
+//    bright.led_brightness_ledDriver_wireless_ = brightness;
+////    sendPacketBrightness();
+//    setbrightness(bright);
+//}
+//void KeyboardHands::ledBrightnessUGWireless(uint8_t brightnessUG)
+//{
+//    bright.led_brightness_underglow_wireless_ = brightnessUG;
+////    sendPacketBrightness();
+//    setbrightness(bright);
+//}
 
 //void KeyboardHands::sendPacketBrightness()
 //{
@@ -356,46 +357,46 @@ cRGB KeyboardLEDDriver::neuronLED;
 constexpr uint8_t KeyboardLEDDriver::led_map[KeyboardLEDDriverProps::led_count];
 constexpr uint8_t KeyboardLEDDriverProps::key_led_map[];
 
-// Wired setters and getters
-void KeyboardLEDDriver::setBrightness(uint8_t brightness)
-{
-    KeyboardHands::ledBrightnessLedDriver(brightness);
-}
-
-uint8_t KeyboardLEDDriver::getBrightness()
-{
-    return KeyboardHands::ledBrightnessLedDriver();
-}
-
-void KeyboardLEDDriver::setBrightnessUG(uint8_t brightnessUG)
-{
-    KeyboardHands::ledBrightnessUG(brightnessUG);
-}
-
-uint8_t KeyboardLEDDriver::getBrightnessUG()
-{
-    return KeyboardHands::ledBrightnessUG();
-}
-// Wireless setters and getters
-void KeyboardLEDDriver::setBrightnessWireless(uint8_t brightness)
-{
-    KeyboardHands::ledBrightnessLedDriverWireless(brightness);
-}
-
-uint8_t KeyboardLEDDriver::getBrightnessWireless()
-{
-    return KeyboardHands::ledBrightnessLedDriverWireless();
-}
-
-void KeyboardLEDDriver::setBrightnessUGWireless(uint8_t brightnessUG)
-{
-    KeyboardHands::ledBrightnessUGWireless(brightnessUG);
-}
-
-uint8_t KeyboardLEDDriver::getBrightnessUGWireless()
-{
-    return KeyboardHands::ledBrightnessUGWireless();
-}
+//// Wired setters and getters
+//void KeyboardLEDDriver::setBrightness(uint8_t brightness)
+//{
+//    KeyboardHands::ledBrightnessLedDriver(brightness);
+//}
+//
+//uint8_t KeyboardLEDDriver::getBrightness()
+//{
+//    return KeyboardHands::ledBrightnessLedDriver();
+//}
+//
+//void KeyboardLEDDriver::setBrightnessUG(uint8_t brightnessUG)
+//{
+//    KeyboardHands::ledBrightnessUG(brightnessUG);
+//}
+//
+//uint8_t KeyboardLEDDriver::getBrightnessUG()
+//{
+//    return KeyboardHands::ledBrightnessUG();
+//}
+//// Wireless setters and getters
+//void KeyboardLEDDriver::setBrightnessWireless(uint8_t brightness)
+//{
+//    KeyboardHands::ledBrightnessLedDriverWireless(brightness);
+//}
+//
+//uint8_t KeyboardLEDDriver::getBrightnessWireless()
+//{
+//    return KeyboardHands::ledBrightnessLedDriverWireless();
+//}
+//
+//void KeyboardLEDDriver::setBrightnessUGWireless(uint8_t brightnessUG)
+//{
+//    KeyboardHands::ledBrightnessUGWireless(brightnessUG);
+//}
+//
+//uint8_t KeyboardLEDDriver::getBrightnessUGWireless()
+//{
+//    return KeyboardHands::ledBrightnessUGWireless();
+//}
 
 void KeyboardLEDDriver::syncLeds()
 {
