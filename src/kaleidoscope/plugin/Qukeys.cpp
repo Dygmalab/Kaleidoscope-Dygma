@@ -21,8 +21,13 @@
 
 #include "kaleidoscope/Runtime.h"
 #include <Kaleidoscope-Ranges.h>
+#include <cstdint>
 #include "kaleidoscope/progmem_helpers.h"
 #include "kaleidoscope/layers.h"
+
+#include "SuperkeysHandler.h"
+
+#include "KeyRoleManager.h"
 
 
 namespace kaleidoscope {
@@ -362,22 +367,61 @@ bool Qukeys::isQukey(KeyAddr k) {
 bool Qukeys::isDualUseKey(Key key) {
   // Test for DualUse modifiers:
   if (key >= ranges::DUM_FIRST && key <= ranges::DUM_LAST) {
-    key.setRaw(key.getRaw() - ranges::DUM_FIRST);
 
-    queue_head_.primary_key = key;
-    queue_head_.primary_key.setFlags(0);
+    KeyRoleManager::modified_keys_t* action_flags = keyRoleManager.get_configured_qukeys(key.getRaw());
+    
+    uint16_t offset = key.getRaw() - ranges::DUM_FIRST;
+    uint8_t modifier_index = (offset >> 8) & 0xFF;  // Upper 8 bits = modifier index
+    uint8_t keycode = offset & 0xFF;  // Lower 8 bits = keycode (+ flags offset)
+    
+    // If keycode >= 128, it means the tap has flags, extract only lower 7 bits
+    if (keycode >= 128) {
+      keycode = keycode - 128;  // Remove the flags offset
+    }
+    
+    queue_head_.primary_key = Key(keycode);
+    queue_head_.alternate_key.setRaw(modifier_index + Key_LeftControl.getKeyCode());
+    
+    // If the user had some qukeys configured in the keymap action flags will return nullptr,
+    // this is because the already existitng qukeys are not stored in the configured keys array.
+    // In this case we will use the default flags, to keep the legacy qukey functionality.
+    if (action_flags != nullptr) 
+    {
+      queue_head_.primary_key.setFlags(action_flags->flags_action_1);
+      queue_head_.alternate_key.setFlags(action_flags->flags_action_2);
+    }
+    else 
+    {
+      queue_head_.primary_key.setFlags(0);
+    }
 
-    queue_head_.alternate_key.setRaw(key.getFlags() + Key_LeftControl.getKeyCode());
+
     return true;
   }
   // Test for DualUse layer shifts:
   if (key >= ranges::DUL_FIRST && key <= ranges::DUL_LAST) {
-    key.setRaw(key.getRaw() - ranges::DUL_FIRST);
+    KeyRoleManager::modified_keys_t* action_flags = keyRoleManager.get_configured_qukeys(key.getRaw());
+    
+    uint16_t offset = key.getRaw() - ranges::DUL_FIRST;
+    int8_t layer = offset >> 8;  // Layer is in upper 8 bits
+    
+    // If offset >= 128 (in lower 8 bits), it means the tap has flags
+    uint16_t keycode_offset = offset & 0xFF;
+    if (keycode_offset >= 128) {
+      keycode_offset = keycode_offset - 128;  // Remove the flags offset
+    }
+    
+    queue_head_.primary_key = Key(keycode_offset);
 
-    queue_head_.primary_key = key;
-    queue_head_.primary_key.setFlags(0);
+    if (action_flags != nullptr) 
+    {
+      queue_head_.primary_key.setFlags(action_flags->flags_action_1);
+    }
+    else 
+    {
+      queue_head_.primary_key.setFlags(0);
+    }
 
-    int8_t layer = key.getFlags();
     queue_head_.alternate_key = ShiftToLayer(layer);
     return true;
   }
@@ -505,6 +549,8 @@ EventHandlerResult Qukeys::onFocusEvent(const char *command)
 
       Runtime.storage().update(storage_base_ + 3, minimum);
       Runtime.storage().commit();
+
+      SuperkeysHandler::set_minimum_hold(minimum);
     }
   }
 
@@ -571,4 +617,4 @@ EventHandlerResult Qukeys::onSetup()
 } // namespace plugin {
 } // namespace kaleidoscope {
 
-kaleidoscope::plugin::Qukeys Qukeys;
+kaleidoscope::plugin::Qukeys qukeys;
