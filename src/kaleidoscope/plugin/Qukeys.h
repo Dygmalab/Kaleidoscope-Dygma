@@ -26,8 +26,9 @@
 // DualUse Key definitions for Qukeys in the keymap
 #define MT(mod, key) Key(                                               \
     kaleidoscope::ranges::DUM_FIRST +                                   \
-    (((Key_ ## mod).getKeyCode() - Key_LeftControl.getKeyCode()) << 8) +          \
-    (Key_ ## key).getKeyCode()                                               \
+    (((Key_ ## mod).getKeyCode() - Key_LeftControl.getKeyCode()) << 8) + \
+    (Key_ ## key).getKeyCode() |                                        \
+    ((Key_ ## mod).getKeyCode() & 0x100) \
 )
 #define SFT_T(key) MT(LeftShift, key)
 #define CTL_T(key) MT(LeftControl, key)

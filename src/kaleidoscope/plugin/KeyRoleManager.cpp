@@ -76,21 +76,28 @@ static inline int layerIndexFromRaw(uint32_t raw)
 
 static inline int hidModToDumIndex(uint16_t hid)
 {
-    switch (hid)
+    // Check for right modifiers (0x100 bit set)
+    bool is_right = (hid & 0x100) != 0;
+    uint8_t mod = hid & 0xFF;  // Get just the HID code
+    
+    switch (mod)
     {
-        case 0xE0:
-        case 0xE4:
-            return 0; // Ctrl
-        case 0xE1:
-        case 0xE5:
-            return 1; // Shift
-        case 0xE2:
-            return 2; // Alt
-        case 0xE3:
-        case 0xE7:
-            return 3; // OS/GUI
-        case 0xE6:
-            return 6; // AltGr
+        case 0xE0: // Left Control
+            return is_right ? 4 : 0;  // Right Ctrl is index 4, Left is 0
+        case 0xE1: // Left Shift
+            return is_right ? 5 : 1;  // Right Shift is index 5, Left is 1
+        case 0xE2: // Left Alt
+            return is_right ? 6 : 2;  // Right Alt is index 6, Left is 2
+        case 0xE3: // Left GUI/OS
+            return is_right ? 7 : 3;  // Right GUI is index 7, Left is 3
+        case 0xE4: // Right Control
+            return 4;  // Always right Ctrl (0xE4 is right control)
+        case 0xE5: // Right Shift
+            return 5;  // Always right Shift (0xE5 is right shift)
+        case 0xE6: // Right Alt (AltGr)
+            return 6;  // Always right Alt
+        case 0xE7: // Right GUI/OS
+            return 7;  // Always right GUI
         default:
             return -1;
     }
@@ -99,14 +106,18 @@ static inline int hidModToDumIndex(uint16_t hid)
 bool KeyRoleManager::is_only_modifier(Key key)
 {
     uint16_t key_id = key.getRaw() & 0x00FF; // We only take the HID keycode (lower part)
+    uint16_t flags = key.getRaw() & 0xFF00;  // Get the flags part
 
-    // HID modifier range: 224 (0xE0) to 231 (0xE7)
-    return (key_id >= 0xE0 && key_id <= 0xE7);
+    // HIDmodifier range: 224 (0xE0) to 231 (0xE7) for left modifiers
+    // Right modifiers are in the same range but with the 0x100 bit set
+    return (key_id >= 0xE0 && key_id <= 0xE7) || 
+           ((key_id | 0x100) >= 0xEE0 && (key_id | 0x100) <= 0xEE7);
 }
 
 bool KeyRoleManager::has_layer_change(Key Action)
 {
     auto ranges_t = static_cast<Utils::KeyRanges>(ActionsDriver::find_key_type(Action.getRaw()));
+
     switch (ranges_t)
     {
     case Utils::KeyRanges::LAYER_LOCK:
@@ -164,32 +175,29 @@ uint16_t KeyRoleManager::calculate_qukey_code(uint32_t hold_action_raw, uint16_t
     // Extract HID keycode (lower 8 bits) and flags (upper 8 bits)
     const uint16_t tap_hid   = static_cast<uint16_t>(tap_action_raw  & 0x00FF);
     const uint16_t tap_flags = static_cast<uint16_t>((tap_action_raw >> 8) & 0x00FF);
-    const uint16_t hold_hid  = static_cast<uint16_t>(hold_action_raw & 0x00FF);
+    const uint16_t hold_hid  = static_cast<uint16_t>(hold_action_raw & 0x01FF); // Include 9th bit for right modifiers
 
     // Case A: modifiers HID (Ctrl/Shift/Alt/OS/AltGr)
-    if (hold_hid >= 0xE0 && hold_hid <= 0xE7) 
+    if ((hold_hid >= 0xE0 && hold_hid <= 0xE7) || (hold_hid >= 0x1E0 && hold_hid <= 0x1E7)) 
     {
         const int idx = hidModToDumIndex(hold_hid);
         if (idx < 0) return 0;
         
-        // Include tap_flags in the qukey code to make it unique
-        // We use the upper bits of the 256-byte range for each modifier
-        // This allows up to 128 different flag combinations per modifier
-        const uint32_t base = ranges::DUM_FIRST + (static_cast<uint32_t>(idx) << 8);
-        const uint32_t flags_offset = (tap_flags & 0x7F) << 1; // Use 7 bits for flags, shift left by 1
+        // Calculate the base address for this modifier
+        uint32_t base = ranges::DUM_FIRST + (static_cast<uint32_t>(idx) << 8);
         
         // If tap has flags, use the upper half of the range (128-255)
         // Otherwise use the lower half (0-127)
         if (tap_flags != 0) {
             return static_cast<uint16_t>(base + 128 + (tap_hid & 0x7F));
         } else {
-            return static_cast<uint16_t>(base + tap_hid);
+            return static_cast<uint16_t>(base + (tap_hid & 0x7F));
         }
     }
-    else 
+    // Case B: layer changes
+    else if (has_layer_change(Key(hold_hid)))
     {
-    // Case B: layer change (OSL / DUL)
-        const uint32_t base = ranges::DUL_FIRST + layerIndexFromRaw(hold_action_raw);
+        uint32_t base = ranges::DUL_FIRST + layerIndexFromRaw(hold_action_raw);
         
         // Same logic for DUL - use upper half if tap has flags
         if (tap_flags != 0) {

@@ -380,7 +380,33 @@ bool Qukeys::isDualUseKey(Key key) {
     }
     
     queue_head_.primary_key = Key(keycode);
-    queue_head_.alternate_key.setRaw(modifier_index + Key_LeftControl.getKeyCode());
+    
+    // Determine if this is a right modifier by checking the original key's 9th bit
+    // Determine the modifier key based on the modifier_index
+    Key modifier_base;
+    switch (modifier_index) {
+        case 0: // Left Control
+        case 4: // Right Control
+            modifier_base = (modifier_index == 4) ? Key_RightControl : Key_LeftControl;
+            break;
+        case 1: // Left Shift
+        case 5: // Right Shift
+            modifier_base = (modifier_index == 5) ? Key_RightShift : Key_LeftShift;
+            break;
+        case 2: // Left Alt
+        case 6: // Right Alt (AltGr)
+            modifier_base = (modifier_index == 6) ? Key_RightAlt : Key_LeftAlt;
+            break;
+        case 3: // Left GUI
+        case 7: // Right GUI
+            modifier_base = (modifier_index == 7) ? Key_RightGui : Key_LeftGui;
+            break;
+        default:
+            modifier_base = Key_NoKey;
+            break;
+    }
+    
+    queue_head_.alternate_key = modifier_base;
     
     // If the user had some qukeys configured in the keymap action flags will return nullptr,
     // this is because the already existitng qukeys are not stored in the configured keys array.
