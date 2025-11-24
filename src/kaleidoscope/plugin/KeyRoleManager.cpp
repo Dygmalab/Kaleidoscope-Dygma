@@ -227,7 +227,13 @@ Key KeyRoleManager::search_and_replace(Key key)
             Key tap_action = action_0;
             tap_action.setFlags(0);
             
-            if (!tap_is_layer_lock && (is_only_modifier(action_1) || has_layer_change(action_1)))
+            // Only convert to Qukey if:
+            // 1. Tap action is not a layer lock
+            // 2. Tap action is not just a modifier
+            // 3. Hold action is a modifier or layer change
+            if (!tap_is_layer_lock && 
+                !is_only_modifier(tap_action) && 
+                (is_only_modifier(action_1) || has_layer_change(action_1)))
             {
                 // Transform to QUKEY (flags will be stored in modified_keys[] and restored when needed)
                 uint16_t qukey_code = replace_superkey_with_qukey(&action_0, &action_1);
