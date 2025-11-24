@@ -426,29 +426,37 @@ bool Qukeys::isDualUseKey(Key key) {
   }
   // Test for DualUse layer shifts:
   if (key >= ranges::DUL_FIRST && key <= ranges::DUL_LAST) {
-    KeyRoleManager::modified_keys_t* action_flags = keyRoleManager.get_configured_qukeys(key.getRaw());
+    uint16_t raw_key = key.getRaw();
+    //NRF_LOG_DEBUG("isDualUseKey: DUL key found, raw=0x%04X", raw_key);
     
-    uint16_t offset = key.getRaw() - ranges::DUL_FIRST;
+    KeyRoleManager::modified_keys_t* action_flags = keyRoleManager.get_configured_qukeys(raw_key);
+    
+    uint16_t offset = raw_key - ranges::DUL_FIRST;
     int8_t layer = offset >> 8;  // Layer is in upper 8 bits
     
     // If offset >= 128 (in lower 8 bits), it means the tap has flags
     uint16_t keycode_offset = offset & 0xFF;
-    if (keycode_offset >= 128) {
+    bool has_tap_flags = (keycode_offset >= 128);
+    if (has_tap_flags) {
       keycode_offset = keycode_offset - 128;  // Remove the flags offset
     }
     
+    //NRF_LOG_DEBUG("  offset=0x%04X, layer=%d, keycode=0x%02X, has_flags=%d", 
+    //              offset, layer, keycode_offset, has_tap_flags);
+    
     queue_head_.primary_key = Key(keycode_offset);
 
-    if (action_flags != nullptr) 
-    {
+    if (action_flags != nullptr) {
+      //NRF_LOG_DEBUG("  Using action flags: action1_flags=0x%02X, action2_flags=0x%02X",
+      //              action_flags->flags_action_1, action_flags->flags_action_2);
       queue_head_.primary_key.setFlags(action_flags->flags_action_1);
-    }
-    else 
-    {
+    } else {
+      //NRF_LOG_DEBUG("  No action flags, using default flags");
       queue_head_.primary_key.setFlags(0);
     }
 
     queue_head_.alternate_key = ShiftToLayer(layer);
+    //NRF_LOG_DEBUG("  Set alternate key to layer %d", layer);
     return true;
   }
   // It's not a DualUse Key:

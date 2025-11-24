@@ -57,21 +57,32 @@ auto is_idle = [](const Key &k) { return k.getRaw() == 1; };
 
 static inline int layerIndexFromRaw(uint32_t raw)
 {
-    auto ranges_t = static_cast<Utils::KeyRanges>(ActionsDriver::find_key_type(raw));
+    auto key_type = ActionsDriver::find_key_type(raw);
+    auto ranges_t = static_cast<Utils::KeyRanges>(key_type);
+    int layer_idx = -1;
+    uint32_t base = 0;
 
-    if(ranges_t != Utils::KeyRanges::LAYER_LOCK && ranges_t != Utils::KeyRanges::LAYER_SHIFT)
+    if (ranges_t == Utils::KeyRanges::LAYER_LOCK)
     {
-        return -1;
-    }
-    else if (ranges_t == Utils::KeyRanges::LAYER_LOCK)
-    {
-        return static_cast<int>((raw - Utils::LAYER_LOCK_FIRST ) << 8); // múltiplos de 256   
+        base = Utils::LAYER_LOCK_FIRST;
+        layer_idx = static_cast<int>(raw - base);
+        //NRF_LOG_DEBUG("layerIndexFromRaw: LAYER_LOCK - raw=0x%08lX, base=0x%08lX, layer_idx=%d", 
+        //              raw, base, layer_idx);
     }
     else if (ranges_t == Utils::KeyRanges::LAYER_SHIFT)
     {
-        return static_cast<int>((raw - Utils::LAYER_SHIFT_FIRST ) << 8); // múltiplos de 256   
+        base = Utils::LAYER_SHIFT_FIRST;
+        layer_idx = static_cast<int>(raw - base);
+        //NRF_LOG_DEBUG("layerIndexFromRaw: LAYER_SHIFT - raw=0x%08lX, base=0x%08lX, layer_idx=%d", 
+        //              raw, base, layer_idx);
     }
-    return -1;
+    else
+    {
+        //NRF_LOG_DEBUG("layerIndexFromRaw: Not a layer key - raw=0x%08lX, type=%d", 
+        //              raw, key_type);
+    }
+    
+    return layer_idx;
 }
 
 static inline int hidModToDumIndex(uint16_t hid)
@@ -116,23 +127,17 @@ bool KeyRoleManager::is_only_modifier(Key key)
 
 bool KeyRoleManager::has_layer_change(Key Action)
 {
-    auto ranges_t = static_cast<Utils::KeyRanges>(ActionsDriver::find_key_type(Action.getRaw()));
+    auto raw = Action.getRaw();
+    auto key_type = ActionsDriver::find_key_type(raw);
+    auto ranges_t = static_cast<Utils::KeyRanges>(key_type);
 
-    switch (ranges_t)
-    {
-    case Utils::KeyRanges::LAYER_LOCK:
-    case Utils::KeyRanges::LAYER_SHIFT:
-    {
-        return true;
-    }
-    break;
+    bool is_layer = (ranges_t == Utils::KeyRanges::LAYER_LOCK || 
+                    ranges_t == Utils::KeyRanges::LAYER_SHIFT);
     
-    default:
-    {
-        return false;
-    }
-    break;
-    }
+    // Debug output
+    //NRF_LOG_DEBUG("has_layer_change: raw=0x%04X, type=%d, is_layer=%d", raw, key_type, is_layer);
+    
+    return is_layer;
 }
 
 bool KeyRoleManager::is_qukey(Key key)
@@ -177,37 +182,67 @@ uint16_t KeyRoleManager::calculate_qukey_code(uint32_t hold_action_raw, uint16_t
     const uint16_t tap_flags = static_cast<uint16_t>((tap_action_raw >> 8) & 0x00FF);
     const uint16_t hold_hid  = static_cast<uint16_t>(hold_action_raw & 0x01FF); // Include 9th bit for right modifiers
 
+    //NRF_LOG_DEBUG("calculate_qukey_code: hold_raw=0x%08lX, tap_raw=0x%04X, hold_hid=0x%04X, tap_hid=0x%02X, tap_flags=0x%02X",
+    //              hold_action_raw, tap_action_raw, hold_hid, tap_hid, tap_flags);
+
+    // First check if this is a layer change key using the raw action
     // Case A: modifiers HID (Ctrl/Shift/Alt/OS/AltGr)
-    if ((hold_hid >= 0xE0 && hold_hid <= 0xE7) || (hold_hid >= 0x1E0 && hold_hid <= 0x1E7)) 
+    if (!has_layer_change(Key(hold_action_raw)) && (hold_hid >= 0xE0 && hold_hid <= 0xE7) || (hold_hid >= 0x1E0 && hold_hid <= 0x1E7)) 
     {
         const int idx = hidModToDumIndex(hold_hid);
-        if (idx < 0) return 0;
+        if (idx < 0) {
+            //NRF_LOG_DEBUG("  Invalid modifier index for hold_hid=0x%04X", hold_hid);
+            return 0;
+        }
         
         // Calculate the base address for this modifier
         uint32_t base = ranges::DUM_FIRST + (static_cast<uint32_t>(idx) << 8);
         
         // If tap has flags, use the upper half of the range (128-255)
         // Otherwise use the lower half (0-127)
+        uint16_t qukey_code;
         if (tap_flags != 0) {
-            return static_cast<uint16_t>(base + 128 + (tap_hid & 0x7F));
+            qukey_code = static_cast<uint16_t>(base + 128 + (tap_hid & 0x7F));
         } else {
-            return static_cast<uint16_t>(base + (tap_hid & 0x7F));
+            qukey_code = static_cast<uint16_t>(base + (tap_hid & 0x7F));
         }
-    }
-    // Case B: layer changes
-    else if (has_layer_change(Key(hold_hid)))
-    {
-        uint32_t base = ranges::DUL_FIRST + layerIndexFromRaw(hold_action_raw);
         
-        // Same logic for DUL - use upper half if tap has flags
-        if (tap_flags != 0) {
-            return static_cast<uint16_t>(base + 128 + (tap_hid & 0x7F));
-        } else {
-            return static_cast<uint16_t>(base + tap_hid);
+        //NRF_LOG_DEBUG("  Modifier qukey - idx=%d, base=0x%04X, code=0x%04X", idx, base, qukey_code);
+        return qukey_code;
+    }
+    // Case B: layer changes - check using the raw action
+    if (has_layer_change(Key(hold_action_raw)))
+    {
+        // Get the layer index from the raw action
+        int layer_idx = layerIndexFromRaw(hold_action_raw);
+        if (layer_idx < 0) {
+            //NRF_LOG_DEBUG("  Invalid layer index for hold_action_raw=0x%08lX", hold_action_raw);
+            return 0;
         }
+        
+        // Calculate the base address for this layer
+        // Each layer gets 256 possible keycodes (0-255)
+        uint32_t base = ranges::DUL_FIRST + (static_cast<uint32_t>(layer_idx) << 8);
+        
+        // Calculate the final qukey code
+        uint16_t qukey_code;
+        if (tap_flags != 0) {
+            // If tap has flags, use the upper half of the range (128-255)
+            qukey_code = static_cast<uint16_t>(base + 128 + (tap_hid & 0x7F));
+        } else {
+            // Otherwise use the lower half (0-127)
+            qukey_code = static_cast<uint16_t>(base + (tap_hid & 0x7F));
+        }
+        
+        // Debug output
+        //NRF_LOG_DEBUG("  Layer qukey - hold=0x%04X, tap=0x%02X, layer_idx=%d, base=0x%04X, code=0x%04X", 
+        //              hold_hid, tap_hid, layer_idx, base, qukey_code);
+        
+        return qukey_code;
     }
 
     // Not a modifier or layer change
+    //NRF_LOG_DEBUG("  Not a modifier or layer change");
     return 0;
 }
 
