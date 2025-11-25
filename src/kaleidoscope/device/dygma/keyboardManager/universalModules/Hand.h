@@ -22,31 +22,10 @@
 #include "Communications_protocol.h"
 #include "common.h"
 
-struct cRGB {
-  uint8_t r;
-  uint8_t g;
-  uint8_t b;
-  uint8_t w;
-};
-
 namespace kaleidoscope {
 namespace device {
 namespace dygma {
 namespace dygma_keyboards {
-
-#define LED_BANKS           11
-
-#define LEDS_PER_HAND       88
-#define LPH                 LEDS_PER_HAND
-#define LEDS_PER_BANK       8
-#define LED_BYTES_PER_BANK  (sizeof(cRGB) * LEDS_PER_BANK)
-
-#define LED_RED_CHANNEL_MAX 229
-
-typedef union {
-  cRGB leds[LEDS_PER_HAND];
-  uint8_t bytes[LED_BANKS][LED_BYTES_PER_BANK];
-} LEDData_t;
 
 typedef union {
   uint8_t rows[5];
@@ -63,7 +42,6 @@ class Hand {
   void releaseAllKeys();
 
   HandSide this_device_;
-  LEDData_t led_data{};
 
  private:
   dygma_keyboards::key_data key_data_{};

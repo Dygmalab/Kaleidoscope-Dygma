@@ -74,38 +74,9 @@ struct KeyboardHands
         return side_power_;
     }
 
-//    static void keyscanInterval(uint8_t interval);
-//    static uint8_t keyscanInterval()
-//    {
-//        return keyscan_interval_;
-//    }
-
     static void getChipID(char *buff, uint16_t len);
     static void get_chip_info(char *buff, uint16_t len);
 
-//    static void ledBrightnessLedDriver(uint8_t brightness);
-//    static uint8_t ledBrightnessLedDriver()
-//    {
-//        return bright.led_brightness_ledDriver_;
-//    }
-//
-//    static void ledBrightnessUG(uint8_t brightnessUG);
-//    static uint8_t ledBrightnessUG()
-//    {
-//        return bright.led_brightness_underglow_;
-//    }
-//
-//    static void ledBrightnessLedDriverWireless(uint8_t brightness);
-//    static uint8_t ledBrightnessLedDriverWireless()
-//    {
-//        return bright.led_brightness_ledDriver_wireless_;
-//    }
-//
-//    static void ledBrightnessUGWireless(uint8_t brightnessUG);
-//    static uint8_t ledBrightnessUGWireless()
-//    {
-//        return bright.led_brightness_underglow_wireless_;
-//    }
 #warning "Remove Brightness when fully removed"
     static struct Brightness
     {
@@ -116,15 +87,10 @@ struct KeyboardHands
         uint8_t flag;
     } bright;
 
-//    static void sendPacketBrightness();
-
   private:
-//    static uint8_t keyscan_interval_;
     static bool side_power_;
     static uint16_t settings_interval_;
     static uint16_t settings_base;
-
-//    static void setbrightness(const Brightness &data);
 };
 
 dygma_keyboards::Hand KeyboardHands::leftHand(dygma_keyboards::Hand::LEFT);
@@ -132,8 +98,6 @@ dygma_keyboards::Hand KeyboardHands::rightHand(dygma_keyboards::Hand::RIGHT);
 bool KeyboardHands::side_power_;
 uint16_t KeyboardHands::settings_interval_;
 uint16_t KeyboardHands::settings_base;
-//KeyboardHands::Brightness KeyboardHands::bright;
-//uint8_t KeyboardHands::keyscan_interval_ = 15;
 
 void KeyboardHands::setSidePower(bool power)
 {
@@ -157,32 +121,6 @@ void KeyboardHands::setSidePower(bool power)
 // BLE       WIRED       RF
 Communications_protocol::Devices leftConnection[3]{UNKNOWN, UNKNOWN, UNKNOWN};
 Communications_protocol::Devices rightConnection[3]{UNKNOWN, UNKNOWN, UNKNOWN};
-
-//auto checkBrightness = [](const Packet &)
-//{
-//    if (!::LEDControl.isEnabled())
-//    {
-//        status_leds.stop_all();
-//
-//        Communications_protocol::Packet p{};
-//        p.header.command = Communications_protocol::BRIGHTNESS;
-//        p.header.device = UNKNOWN;
-//        p.data[0] = 0;
-//        p.data[1] = 0;
-//        p.data[2] = LEDManager::BRIGHTNESS_LED_EFFECT_NONE;
-//        p.data[3] = 1;
-//        p.header.size = 4;
-//        Communications.sendPacket(p);
-//
-//        return;
-//    }
-//
-//    status_leds.static_green(NEURON_LED_BRIGHTNESS);
-//    auto &keyScanner = Runtime.device().keyScanner();
-//    auto isKSLeftWired = keyScanner.leftSideWiredConnection();
-//    auto isKSRightWired = keyScanner.rightSideWiredConnection();
-//    LEDManager.update_brightness(LEDManager::BRIGHTNESS_LED_EFFECT_NONE, true, isKSLeftWired && isKSRightWired && !ble_innited());
-//};
 
 void KeyboardHands::setup()
 {
@@ -240,86 +178,10 @@ void KeyboardHands::setup()
                                                         }
                                                     }));
 
-//    Communications.callbacks.bind(DISCONNECTED, checkBrightness);
-//    Communications.callbacks.bind(CONNECTED, checkBrightness);
-
 
     settings_interval_ = ::EEPROMSettings.requestSlice(sizeof(uint8_t));
     settings_base = ::EEPROMSettings.requestSlice(sizeof(KeyboardHands::Brightness));
-    // If keyscan is max, assume that EEPROM is uninitialized, and store the defaults.
-//    uint16_t interval;
-//    Runtime.storage().get(settings_interval_, interval);
-//    if (interval == 0xff)
-//    {
-//        Runtime.storage().put(settings_interval_, keyscan_interval_);
-//        Runtime.storage().commit();
-//    }
-//    Runtime.storage().get(settings_interval_, keyscan_interval_);
-
-//    KeyboardHands::Brightness brightness;
-//    Runtime.storage().get(settings_base, brightness);
-//    if (brightness.flag != 0)
-//    {
-//        bright.led_brightness_ledDriver_ = 255;
-//        bright.led_brightness_underglow_ = 255;
-//        bright.led_brightness_underglow_wireless_ = 125;
-//        bright.led_brightness_ledDriver_wireless_ = 125;
-//        bright.flag = 0;
-//        setbrightness(bright);
-//    }
-//    Runtime.storage().get(settings_base, bright);
 }
-
-//void KeyboardHands::setbrightness(const Brightness &data)
-//{
-//    Runtime.storage().put(settings_base, data);
-//    Runtime.storage().commit();
-//}
-
-//void KeyboardHands::keyscanInterval(uint8_t interval)
-//{
-//    Communications_protocol::Packet p{};
-//    p.header.command = Communications_protocol::KEYSCAN_INTERVAL;
-//    p.data[0] = interval;
-//    p.header.size = 1;
-//    Communications.sendPacket(p);
-//    keyscan_interval_ = interval;
-//    Runtime.storage().put(settings_interval_, keyscan_interval_);
-//    Runtime.storage().commit();
-//}
-
-//void KeyboardHands::ledBrightnessLedDriver(uint8_t brightness)
-//{
-//    bright.led_brightness_ledDriver_ = brightness;
-////    sendPacketBrightness();
-//    setbrightness(bright);
-//}
-//
-//void KeyboardHands::ledBrightnessUG(uint8_t brightnessUG)
-//{
-//    bright.led_brightness_underglow_ = brightnessUG;
-////    sendPacketBrightness();
-//    setbrightness(bright);
-//}
-//
-//void KeyboardHands::ledBrightnessLedDriverWireless(uint8_t brightness)
-//{
-//    bright.led_brightness_ledDriver_wireless_ = brightness;
-////    sendPacketBrightness();
-//    setbrightness(bright);
-//}
-//void KeyboardHands::ledBrightnessUGWireless(uint8_t brightnessUG)
-//{
-//    bright.led_brightness_underglow_wireless_ = brightnessUG;
-////    sendPacketBrightness();
-//    setbrightness(bright);
-//}
-
-//void KeyboardHands::sendPacketBrightness()
-//{
-//    Packet p{};
-//    checkBrightness(p);
-//}
 
 void KeyboardHands::getChipID(char *cstring, uint16_t len)
 {
@@ -344,165 +206,6 @@ void KeyboardHands::get_chip_info(char *cstring, uint16_t len)
 
     snprintf(cstring, len, "DEVICEID=%8lx%8lx\nPART=%lx\nVARIANT=%lx\nPACKAGE=%lx\nRAM=%ld\nFLASH=%ld", NRF_FICR->DEVICEID[1], NRF_FICR->DEVICEID[0],
              NRF_FICR->INFO.PART, NRF_FICR->INFO.VARIANT, NRF_FICR->INFO.PACKAGE, NRF_FICR->INFO.RAM, NRF_FICR->INFO.FLASH);
-}
-
-
-/********* LED Driver *********/
-
-bool KeyboardLEDDriver::isLEDChangedNeuron;
-//bool KeyboardLEDDriver::leds_enabled_ = true;
-uint8_t KeyboardLEDDriver::isLEDChangedLeft[LED_BANKS];
-uint8_t KeyboardLEDDriver::isLEDChangedRight[LED_BANKS];
-cRGB KeyboardLEDDriver::neuronLED;
-constexpr uint8_t KeyboardLEDDriver::led_map[KeyboardLEDDriverProps::led_count];
-constexpr uint8_t KeyboardLEDDriverProps::key_led_map[];
-
-//// Wired setters and getters
-//void KeyboardLEDDriver::setBrightness(uint8_t brightness)
-//{
-//    KeyboardHands::ledBrightnessLedDriver(brightness);
-//}
-//
-//uint8_t KeyboardLEDDriver::getBrightness()
-//{
-//    return KeyboardHands::ledBrightnessLedDriver();
-//}
-//
-//void KeyboardLEDDriver::setBrightnessUG(uint8_t brightnessUG)
-//{
-//    KeyboardHands::ledBrightnessUG(brightnessUG);
-//}
-//
-//uint8_t KeyboardLEDDriver::getBrightnessUG()
-//{
-//    return KeyboardHands::ledBrightnessUG();
-//}
-//// Wireless setters and getters
-//void KeyboardLEDDriver::setBrightnessWireless(uint8_t brightness)
-//{
-//    KeyboardHands::ledBrightnessLedDriverWireless(brightness);
-//}
-//
-//uint8_t KeyboardLEDDriver::getBrightnessWireless()
-//{
-//    return KeyboardHands::ledBrightnessLedDriverWireless();
-//}
-//
-//void KeyboardLEDDriver::setBrightnessUGWireless(uint8_t brightnessUG)
-//{
-//    KeyboardHands::ledBrightnessUGWireless(brightnessUG);
-//}
-//
-//uint8_t KeyboardLEDDriver::getBrightnessUGWireless()
-//{
-//    return KeyboardHands::ledBrightnessUGWireless();
-//}
-
-void KeyboardLEDDriver::syncLeds()
-{
-//    bool is_enabled = ::LEDControl.isEnabled();
-//
-//    if (leds_enabled_ != is_enabled)
-//    {
-//        leds_enabled_ = is_enabled;
-//        KeyboardHands::sendPacketBrightness();
-//    }
-
-    if (isLEDChangedNeuron)
-    {
-        updateNeuronLED();
-        isLEDChangedNeuron = false;
-    }
-
-    if (isLEDChangedNeuron)
-    {
-        updateNeuronLED();
-        isLEDChangedNeuron = false;
-    }
-}
-
-void KeyboardLEDDriver::updateNeuronLED()
-{
-    // static constexpr struct
-    // {
-    //   uint8_t r, g, b;
-    // } pins = {3, 5, 4};
-
-    // invert as these are common anode, and make sure we reach 65535 to be able
-    // to turn fully off.
-    /*analogWrite(pins.r, ((256 - pgm_read_byte(&gamma8[neuronLED.r])) << 8) - 1);
-  analogWrite(pins.g, ((256 - pgm_read_byte(&gamma8[neuronLED.g])) << 8) - 1);
-  analogWrite(pins.b, ((256 - pgm_read_byte(&gamma8[neuronLED.b])) << 8) - 1);*/
-}
-
-void KeyboardLEDDriver::setCrgbAt(uint8_t i, cRGB crgb)
-{
-    // prevent reading off the end of the led_map array
-    if (i >= KeyboardLEDDriverProps::led_count) return;
-
-    // neuron LED
-    if (i == KeyboardLEDDriverProps::led_count - 2)
-    {
-        isLEDChangedNeuron |= !(neuronLED.r == crgb.r && neuronLED.g == crgb.g && neuronLED.b == crgb.b && neuronLED.w == crgb.w);
-        neuronLED = crgb;
-        return;
-    }
-
-    // get the SLED index
-    uint8_t sled_num = led_map[i];
-    if (sled_num < LEDS_PER_HAND)
-    {
-        cRGB oldColor = KeyboardHands::leftHand.led_data.leds[sled_num];
-        KeyboardHands::leftHand.led_data.leds[sled_num] = crgb;
-        isLEDChangedLeft[uint8_t(sled_num / 8)] |= !(oldColor.r == crgb.r && oldColor.g == crgb.g && oldColor.b == crgb.b && oldColor.w == crgb.w);
-    }
-    else if (sled_num < 2 * LEDS_PER_HAND)
-    {
-        cRGB oldColor = KeyboardHands::rightHand.led_data.leds[sled_num - LEDS_PER_HAND];
-        KeyboardHands::rightHand.led_data.leds[sled_num - LEDS_PER_HAND] = crgb;
-        isLEDChangedRight[uint8_t((sled_num - LEDS_PER_HAND) / 8)] |=
-            !(oldColor.r == crgb.r && oldColor.g == crgb.g && oldColor.b == crgb.b && oldColor.w == crgb.w);
-    }
-    else
-    {
-        // TODO(anyone):
-        // how do we want to handle debugging assertions about crazy user
-        // code that would overwrite other memory?
-    }
-}
-
-// void WiredLEDDriver::setCrgbNeuron(cRGB crgb) {
-//   isLEDChangedNeuron |= !(neuronLED.r==crgb.r && neuronLED.g==crgb.g && neuronLED.b==crgb.b && neuronLED.w==crgb.w);
-//   neuronLED = crgb;
-// }
-
-cRGB KeyboardLEDDriver::getCrgbAt(uint8_t i)
-{
-    if (i >= KeyboardLEDDriverProps::led_count) return {0, 0, 0};
-
-    uint8_t sled_num = led_map[i];
-    if (sled_num < LEDS_PER_HAND)
-    {
-        return KeyboardHands::leftHand.led_data.leds[sled_num];
-    }
-    else if (sled_num < 2 * LEDS_PER_HAND)
-    {
-        return KeyboardHands::rightHand.led_data.leds[sled_num - LEDS_PER_HAND];
-    }
-    else
-    {
-        return {0, 0, 0};
-    }
-}
-
-void KeyboardLEDDriver::setup()
-{
-    // arduino zero analogWrite(255) isn't fully on as its actually working with a
-    // 16bit counter and the mapping is a bit shift.
-    // so change to 16 bit resolution to avoid the mapping and do the mapping
-    // ourselves in updateHubleLED() to ensure LEDs can be set fully off
-    // analogWriteResolution(16);
-    updateNeuronLED();
 }
 
 /********* Key scanner *********/
@@ -726,75 +429,6 @@ Communications_protocol::Devices KeyboardKeyScanner::rightHandDevice(void)
     return UNKNOWN;
 }
 
-//void KeyboardKeyScanner::usbConnectionsStateMachine()
-//{
-//    uint32_t actualTime = millis();
-//    bool usbMounted = TinyUSBDevice.mounted();
-//    bool bleInitiated = ble_innited();
-//    bool radioInited = RadioManager.isInited();
-//    bool forceBle = BleManager.getForceBle();
-//    static bool flag_ble_mode_allowed = true;
-//
-//    uint8_t bat_status_l = Battery::get_battery_status_left();
-//    uint8_t bat_status_r = Battery::get_battery_status_right();
-//    /*
-//        0 -> Side connected and powered from its battery or the other side's battery.
-//        1 o 2 -> Side connected and powered from the N2 while it is connected to the PC via USB.
-//        4 -> Side disconnected.
-//    */
-//    if ( (bat_status_l == 1 || bat_status_l == 2 || bat_status_r == 1 || bat_status_r == 2) &&
-//        flag_ble_mode_allowed)
-//    {
-//        flag_ble_mode_allowed = false;
-//        NRF_LOG_DEBUG("BLE mode denied");
-//    }
-//
-//    // For 3000ms at the 3100ms mark, check whether to initialize BLE or RF
-//    if ( actualTime > 3000 && actualTime < 3100 &&
-//        !bleInitiated &&
-//        !radioInited )
-//    {
-//        if (usbMounted && !forceBle)
-//        {
-//            RadioManager.enable();
-//        }
-//        else
-//        {
-//            if (flag_ble_mode_allowed)
-//            {
-//                //Force connnect again just in case it was set as a device and not a host
-//                BleManager.enable();
-//
-//                if (leftConnection[1] == KEYSCANNER_DEFY_LEFT)
-//                {
-//                    leftConnection[1] = BLE_DEFY_LEFT;
-//                }
-//
-//                if (rightConnection[1] == KEYSCANNER_DEFY_RIGHT)
-//                {
-//                    rightConnection[1] = BLE_DEFY_RIGHT;
-//                }
-//
-//                KeyboardHands::sendPacketBrightness();
-//
-//                BleManager.setForceBle(false);
-//
-//                Packet p{};
-//                p.header.command = CONNECTED;
-//                p.header.size = 0;
-//                p.header.device = BLE_NEURON_2_DEFY;
-//                Communications.sendPacket(p);
-//            }
-//        }
-//    }
-//
-//    //Only in the case that we have ble init and there is not any usb connected we reboot the system
-//    if( actualTime > 4000 && ble_innited() && !nrf_gpio_pin_read(SIDE_NRESET_1) && !nrf_gpio_pin_read(SIDE_NRESET_2) )
-//    {
-//        reset_mcu();
-//    }
-//}
-
 bool KeyboardKeyScanner::rightSideWiredConnection()
 {
     return nrf_gpio_pin_read(SIDE_NRESET_2);
@@ -819,13 +453,6 @@ void KeyboardNrf::setup()
     KeyboardHands::setup();
     KeyboardFocus.init();
     KeyScanner::setup();
-    LEDDriver::setup();
-}
-
-void KeyboardLEDDriver::setCrgbNeuron(cRGB crgb)
-{
-    isLEDChangedNeuron |= !(neuronLED.r == crgb.r && neuronLED.g == crgb.g && neuronLED.b == crgb.b && neuronLED.w == crgb.w);
-    neuronLED = crgb;
 }
 
 uint8_t KeyboardNrf::side::getPower()
@@ -888,11 +515,6 @@ void KeyboardNrf::side::prepareForFlash()
     Wire::begin(100);
 }
 
-//uint16_t KeyboardNrf::settings::keyscanInterval()
-//{
-//    return KeyboardHands::keyscanInterval();
-//}
-
 void KeyboardNrf::settings::getChipID(char *buff, uint16_t len)
 {
     KeyboardHands::getChipID(buff, len);
@@ -902,11 +524,6 @@ void KeyboardNrf::settings::get_chip_info(char *buff, uint16_t len)
 {
     KeyboardHands::get_chip_info(buff, len);
 }
-
-//void KeyboardNrf::settings::keyscanInterval(uint16_t interval)
-//{
-//    KeyboardHands::keyscanInterval(interval);
-//}
 
 } // namespace dygma
 } // namespace device
