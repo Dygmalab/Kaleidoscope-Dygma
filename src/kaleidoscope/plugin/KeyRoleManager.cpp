@@ -24,7 +24,7 @@
 #include <Kaleidoscope-FocusSerial.h>
 #include <cstdint>
 
-#include "Qukeys.h"
+#include "QukeysDygma.h"
 #include "SuperkeysHandler.h"
 #include "kaleidoscope/plugin/Superkeys/Actions/ActionsDriver.h"
 #include "kaleidoscope/plugin/Superkeys/includes.h"
