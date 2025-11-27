@@ -21,8 +21,13 @@
 
 #include "kaleidoscope/Runtime.h"
 #include <Kaleidoscope-Ranges.h>
+#include <cstdint>
 #include "kaleidoscope/progmem_helpers.h"
 #include "kaleidoscope/layers.h"
+
+#include "SuperkeysHandler.h"
+
+#include "KeyRoleManager.h"
 
 
 namespace kaleidoscope {
@@ -362,23 +367,96 @@ bool Qukeys::isQukey(KeyAddr k) {
 bool Qukeys::isDualUseKey(Key key) {
   // Test for DualUse modifiers:
   if (key >= ranges::DUM_FIRST && key <= ranges::DUM_LAST) {
-    key.setRaw(key.getRaw() - ranges::DUM_FIRST);
 
-    queue_head_.primary_key = key;
-    queue_head_.primary_key.setFlags(0);
+    KeyRoleManager::modified_keys_t* action_flags = keyRoleManager.get_configured_qukeys(key.getRaw());
+    
+    uint16_t offset = key.getRaw() - ranges::DUM_FIRST;
+    uint8_t modifier_index = (offset >> 8) & 0xFF;  // Upper 8 bits = modifier index
+    uint8_t keycode = offset & 0xFF;  // Lower 8 bits = keycode (+ flags offset)
+    
+    // If keycode >= 128, it means the tap has flags, extract only lower 7 bits
+    if (keycode >= 128) {
+      keycode = keycode - 128;  // Remove the flags offset
+    }
+    
+    queue_head_.primary_key = Key(keycode);
+    
+    // Determine if this is a right modifier by checking the original key's 9th bit
+    // Determine the modifier key based on the modifier_index
+    Key modifier_base;
+    switch (modifier_index) {
+        case 0: // Left Control
+        case 4: // Right Control
+            modifier_base = (modifier_index == 4) ? Key_RightControl : Key_LeftControl;
+            break;
+        case 1: // Left Shift
+        case 5: // Right Shift
+            modifier_base = (modifier_index == 5) ? Key_RightShift : Key_LeftShift;
+            break;
+        case 2: // Left Alt
+        case 6: // Right Alt (AltGr)
+            modifier_base = (modifier_index == 6) ? Key_RightAlt : Key_LeftAlt;
+            break;
+        case 3: // Left GUI
+        case 7: // Right GUI
+            modifier_base = (modifier_index == 7) ? Key_RightGui : Key_LeftGui;
+            break;
+        default:
+            modifier_base = Key_NoKey;
+            break;
+    }
+    
+    queue_head_.alternate_key = modifier_base;
+    
+    // If the user had some qukeys configured in the keymap action flags will return nullptr,
+    // this is because the already existitng qukeys are not stored in the configured keys array.
+    // In this case we will use the default flags, to keep the legacy qukey functionality.
+    if (action_flags != nullptr) 
+    {
+      queue_head_.primary_key.setFlags(action_flags->flags_action_1);
+      queue_head_.alternate_key.setFlags(action_flags->flags_action_2);
+    }
+    else 
+    {
+      queue_head_.primary_key.setFlags(0);
+    }
 
-    queue_head_.alternate_key.setRaw(key.getFlags() + Key_LeftControl.getKeyCode());
+
     return true;
   }
   // Test for DualUse layer shifts:
   if (key >= ranges::DUL_FIRST && key <= ranges::DUL_LAST) {
-    key.setRaw(key.getRaw() - ranges::DUL_FIRST);
+    uint16_t raw_key = key.getRaw();
+    //NRF_LOG_DEBUG("isDualUseKey: DUL key found, raw=0x%04X", raw_key);
+    
+    KeyRoleManager::modified_keys_t* action_flags = keyRoleManager.get_configured_qukeys(raw_key);
+    
+    uint16_t offset = raw_key - ranges::DUL_FIRST;
+    int8_t layer = offset >> 8;  // Layer is in upper 8 bits
+    
+    // If offset >= 128 (in lower 8 bits), it means the tap has flags
+    uint16_t keycode_offset = offset & 0xFF;
+    bool has_tap_flags = (keycode_offset >= 128);
+    if (has_tap_flags) {
+      keycode_offset = keycode_offset - 128;  // Remove the flags offset
+    }
+    
+    //NRF_LOG_DEBUG("  offset=0x%04X, layer=%d, keycode=0x%02X, has_flags=%d", 
+    //              offset, layer, keycode_offset, has_tap_flags);
+    
+    queue_head_.primary_key = Key(keycode_offset);
 
-    queue_head_.primary_key = key;
-    queue_head_.primary_key.setFlags(0);
+    if (action_flags != nullptr) {
+      //NRF_LOG_DEBUG("  Using action flags: action1_flags=0x%02X, action2_flags=0x%02X",
+      //              action_flags->flags_action_1, action_flags->flags_action_2);
+      queue_head_.primary_key.setFlags(action_flags->flags_action_1);
+    } else {
+      //NRF_LOG_DEBUG("  No action flags, using default flags");
+      queue_head_.primary_key.setFlags(0);
+    }
 
-    int8_t layer = key.getFlags();
     queue_head_.alternate_key = ShiftToLayer(layer);
+    //NRF_LOG_DEBUG("  Set alternate key to layer %d", layer);
     return true;
   }
   // It's not a DualUse Key:
@@ -505,6 +583,8 @@ EventHandlerResult Qukeys::onFocusEvent(const char *command)
 
       Runtime.storage().update(storage_base_ + 3, minimum);
       Runtime.storage().commit();
+
+      SuperkeysHandler::set_minimum_hold(minimum);
     }
   }
 
@@ -571,4 +651,4 @@ EventHandlerResult Qukeys::onSetup()
 } // namespace plugin {
 } // namespace kaleidoscope {
 
-kaleidoscope::plugin::Qukeys Qukeys;
+kaleidoscope::plugin::Qukeys qukeys;

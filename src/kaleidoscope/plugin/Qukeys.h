@@ -26,8 +26,9 @@
 // DualUse Key definitions for Qukeys in the keymap
 #define MT(mod, key) Key(                                               \
     kaleidoscope::ranges::DUM_FIRST +                                   \
-    (((Key_ ## mod).getKeyCode() - Key_LeftControl.getKeyCode()) << 8) +          \
-    (Key_ ## key).getKeyCode()                                               \
+    (((Key_ ## mod).getKeyCode() - Key_LeftControl.getKeyCode()) << 8) + \
+    (Key_ ## key).getKeyCode() |                                        \
+    ((Key_ ## mod).getKeyCode() & 0x100) \
 )
 #define SFT_T(key) MT(LeftShift, key)
 #define CTL_T(key) MT(LeftControl, key)
@@ -248,7 +249,7 @@ bool isModifierKey(Key key);
 } // namespace plugin {
 } // namespace kaleidoscope {
 
-extern kaleidoscope::plugin::Qukeys Qukeys;
+extern kaleidoscope::plugin::Qukeys qukeys;
 
 // Macro for use in sketch file to simplify definition of the qukeys array and
 // guarantee that the count is set correctly. This is considerably less
