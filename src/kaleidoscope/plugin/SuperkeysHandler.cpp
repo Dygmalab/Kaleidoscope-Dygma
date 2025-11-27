@@ -329,6 +329,12 @@ EventHandlerResult SuperkeysHandler::handle_regular_keys(Key &mapped_key, KeyAdd
             save_pressed_modifiers(mapped_key, keyState);
         }
 
+        uint16_t raw = mapped_key.getRaw();
+        if (raw >= Utils::LED_BUTTONS_FIRST && raw <= Utils::LED_BUTTONS_LAST)
+        {
+            return EventHandlerResult::OK;
+        }
+
         // Don't add Dynamic Macros to timeline - they have their own event handler
         // that consumes them. Adding them to timeline causes double execution.
         if (mapped_key.getRaw() >= ranges::DYNAMIC_MACRO_FIRST && 
