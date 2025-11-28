@@ -187,7 +187,7 @@ uint16_t KeyRoleManager::calculate_qukey_code(uint32_t hold_action_raw, uint16_t
 
     // First check if this is a layer change key using the raw action
     // Case A: modifiers HID (Ctrl/Shift/Alt/OS/AltGr)
-    if (!has_layer_change(Key(hold_action_raw)) && (hold_hid >= 0xE0 && hold_hid <= 0xE7) || (hold_hid >= 0x1E0 && hold_hid <= 0x1E7)) 
+    if (!has_layer_change(Key(hold_action_raw)) && ( (hold_hid >= 0xE0 && hold_hid <= 0xE7) || (hold_hid >= 0x1E0 && hold_hid <= 0x1E7) ) )
     {
         const int idx = hidModToDumIndex(hold_hid);
         if (idx < 0) {
