@@ -15,7 +15,7 @@
  */
 #include "ActionsDriver.h"
 
-Utils::ExtendedActions ActionsDriver::return_type(uint8_t tap_count, const Key *actions)
+Utils::ExtendedActions ActionsDriver::return_type(uint8_t tap_count, const Superkey::superkey_config_t * p_superkey)
 {
     Utils::ExtendedActions sk_key_action = {0xFFFF, false, false};
     switch (static_cast<Utils::TapType>(tap_count))
@@ -32,36 +32,36 @@ Utils::ExtendedActions ActionsDriver::return_type(uint8_t tap_count, const Key *
     case Utils::TapType::Tap_Once:
     {
         // NRF_LOG_DEBUG("Tap_Once");
-        sk_key_action.key = actions[0];
-        sk_key_action.key_is_interruptable = key_can_interrupt(actions[0]);
+        sk_key_action.key = Superkey::getActionAsKey(&p_superkey->actions[0]);
+        sk_key_action.key_is_interruptable = key_can_interrupt(p_superkey->actions[0]);
     }
     break;
 
     case Utils::TapType::Hold_Once:
     {
         // NRF_LOG_DEBUG("Hold_Once");
-        sk_key_action.key = actions[1];
-        sk_key_action.key_is_interruptable = key_can_interrupt(actions[1]);
+        sk_key_action.key = Superkey::getActionAsKey(&p_superkey->actions[1]);
+        sk_key_action.key_is_interruptable = key_can_interrupt(p_superkey->actions[1]);
     }
     break;
 
     case Utils::TapType::Tap_Hold:
     {
         // NRF_LOG_DEBUG("Tap_Hold");
-        sk_key_action.key = actions[2];
-        sk_key_action.key_is_interruptable = key_can_interrupt(actions[2]);
+        sk_key_action.key = Superkey::getActionAsKey(&p_superkey->actions[2]);
+        sk_key_action.key_is_interruptable = key_can_interrupt(p_superkey->actions[2]);
     }
     break;
 
     case Utils::TapType::Tap_Twice:
     {
         // NRF_LOG_DEBUG("Tap_Twice");
-        sk_key_action.key = actions[3];
-        sk_key_action.key_is_interruptable = key_can_interrupt(actions[3]);
+        sk_key_action.key = Superkey::getActionAsKey(&p_superkey->actions[3]);
+        sk_key_action.key_is_interruptable = key_can_interrupt(p_superkey->actions[3]);
         if(sk_key_action.key == 1)
         {
             // If the tap twice action is not set, we will release the tap action twice.
-            sk_key_action.key = actions[0];
+            sk_key_action.key = Superkey::getActionAsKey(&p_superkey->actions[0]);
             sk_key_action.release_two_keys = true;
         }
         else
@@ -74,20 +74,20 @@ Utils::ExtendedActions ActionsDriver::return_type(uint8_t tap_count, const Key *
     case Utils::TapType::Tap_Twice_Hold:
     {
         // NRF_LOG_DEBUG("Tap_Twice_Hold");
-        sk_key_action.key = actions[4];
-        sk_key_action.key_is_interruptable = key_can_interrupt(actions[4]);
+        sk_key_action.key = Superkey::getActionAsKey(&p_superkey->actions[4]);
+        sk_key_action.key_is_interruptable = key_can_interrupt(p_superkey->actions[4]);
     }
     break;
 
     default:
     {
         // NRF_LOG_DEBUG("Tap_Trice or more");
-        sk_key_action.key = actions[3];
-        sk_key_action.key_is_interruptable = key_can_interrupt(actions[3]);
+        sk_key_action.key = Superkey::getActionAsKey(&p_superkey->actions[3]);
+        sk_key_action.key_is_interruptable = key_can_interrupt(p_superkey->actions[3]);
         if(sk_key_action.key == 1)
         {
             // If the tap twice action is not set, we will release the tap action twice.
-            sk_key_action.key = actions[0];
+            sk_key_action.key = Superkey::getActionAsKey(&p_superkey->actions[0]);
             sk_key_action.release_two_keys = true;
         }
         else
@@ -100,13 +100,13 @@ Utils::ExtendedActions ActionsDriver::return_type(uint8_t tap_count, const Key *
     return sk_key_action;
 }
 
-bool ActionsDriver::action_handler(uint8_t tap_count, const Key *actions, const Key &key, const KeyAddr &keyAddr)
+bool ActionsDriver::action_handler(uint8_t tap_count, const Superkey::superkey_config_t * p_superkey, const Key &key, const KeyAddr &keyAddr)
 {
     bool result = false;
     // TODO: Create Key list to filter the key and run the corresponding action.
     // TODO: Add a event type HOLD or TAP in order to decide if the HOLD action has to send serveral times or only once.
 
-    Utils::ExtendedActions returned_key = return_type(tap_count, actions);
+    Utils::ExtendedActions returned_key = return_type(tap_count, p_superkey);
 
 /*
         NRF_LOG_DEBUG("Key released raw=%i flags=%i",
@@ -160,6 +160,13 @@ bool ActionsDriver::key_can_interrupt(const Key &Action)
     }
     break;
     }
+}
+
+bool ActionsDriver::key_can_interrupt(const Superkey::action_config_t &Action)
+{
+    Key key = Superkey::getActionAsKey(&Action);
+
+    return key_can_interrupt( key );
 }
 
 uint16_t ActionsDriver::find_key_type(uint16_t value)

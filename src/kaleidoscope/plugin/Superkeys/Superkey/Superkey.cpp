@@ -13,6 +13,7 @@
  * You should have received a copy of the GNU General Public License along with
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#include "Superkeys/Actions/ActionsDriver.h"
 #include "Superkey.h"
 
 
@@ -34,9 +35,9 @@ Superkey::Superkey()
 }
 
 /************SUPERKEY CONFIGURATION*************/
-void Superkey::init(const Key *act)
+void Superkey::init(const superkey_config_t *p_superkey_config)
 {
-    set_up_actions(act);
+    set_up_superkey_config(p_superkey_config);
     check_if_sk_qukey();
 }
 
@@ -246,16 +247,16 @@ bool Superkey::interrupt(Key &regular_key, const KeyAddr &keyaddr_)
     return result;
 }
 
-void Superkey::set_up_actions(const Key *act)
+void Superkey::set_up_superkey_config(const superkey_config_t * p_superkey_config)
 {
     // Actions are now stored externally, just assign the pointer
-    actions_ = act;
+    superkey_config_ = p_superkey_config;
 }
 
 bool Superkey::is_interruptible()
 {
-    if (!actions_) return false;
-    superKeyState.is_interruptable = ActionsDriver::return_type(superKeyState.tap_count, actions_).key_is_interruptable;
+    if (!superkey_config_) return false;
+    superKeyState.is_interruptable = ActionsDriver::return_type(superKeyState.tap_count, superkey_config_).key_is_interruptable;
     return superKeyState.is_interruptable;
 }
 
@@ -271,16 +272,16 @@ KeyAddr Superkey::get_keyAddr() const
 
 void Superkey::check_if_sk_qukey()
 {
-    if (!actions_) {
+    if (!superkey_config_) {
         superKeyState.is_qukey = false;
         return;
     }
     
     // Check if first two actions are configured (not idle) and rest are not configured (idle)
-    bool first_two_configured = (actions_[0].getRaw() != IDLE_KEY) && (actions_[1].getRaw() != IDLE_KEY);
-    bool rest_idle = (actions_[2].getRaw() == IDLE_KEY) &&
-                     (actions_[3].getRaw() == IDLE_KEY) &&
-                     (actions_[4].getRaw() == IDLE_KEY);
+    bool first_two_configured = (getActionRaw(&superkey_config_->actions[0]) != IDLE_KEY) && (getActionRaw(&superkey_config_->actions[1]) != IDLE_KEY);
+    bool rest_idle = (getActionRaw(&superkey_config_->actions[2]) == IDLE_KEY) &&
+                     (getActionRaw(&superkey_config_->actions[3]) == IDLE_KEY) &&
+                     (getActionRaw(&superkey_config_->actions[4]) == IDLE_KEY);
 
     if (first_two_configured && rest_idle)
     {
@@ -344,7 +345,30 @@ void Superkey::send_key() const
         ActionsDriver::send_modifiers_from_flags(superKeyState.cache_modifiers, keyaddr_);
     }
 
-    if (actions_) {
-        ActionsDriver::action_handler(superKeyState.tap_count, actions_, phisical_key_, keyaddr_);
+    if (superkey_config_) {
+        ActionsDriver::action_handler(superKeyState.tap_count, superkey_config_, phisical_key_, keyaddr_);
     }
+}
+
+uint16_t Superkey::getActionRaw( const action_config_t * p_action_config )
+{
+    return (uint16_t)(
+             ((uint16_t)p_action_config->flags << 8)
+             + (uint16_t)p_action_config->keyCode );
+}
+
+void Superkey::setActionRaw( action_config_t * p_action_config, uint16_t raw )
+{
+    p_action_config->flags  = (uint8_t)(raw >> 8);
+    p_action_config->keyCode = (uint8_t)(raw & 0x00FF);
+}
+
+Key Superkey::getActionAsKey( const action_config_t * p_action_config )
+{
+    return Key( p_action_config->keyCode, p_action_config->flags );
+}
+
+Key Superkey::getActionAsKey( const superkey_config_t * p_superkey, uint16_t action_id )
+{
+    return getActionAsKey( &p_superkey->actions[action_id] );
 }

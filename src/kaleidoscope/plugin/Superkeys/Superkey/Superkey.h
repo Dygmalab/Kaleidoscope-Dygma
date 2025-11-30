@@ -16,20 +16,32 @@
 
 #ifndef NRF_NEURON_SUPERKEY_H
 #define NRF_NEURON_SUPERKEY_H
-#include "kaleidoscope/plugin/Superkeys/includes.h"
 
-constexpr uint8_t KEYS_IN_SUPERKEY = 6;
+#include "kbd_core.h"
+#include "Superkeys/includes.h"
+
+constexpr uint8_t ACTIONS_IN_SUPERKEY = 6;
 constexpr uint8_t QUKEY_MIN_IDLE_ACTIONS = 3;
 constexpr uint8_t IDLE_KEY = 1;
-
-// Forward declarations.
-class ActionsDriver;
 
 class Superkey
 {
 public:
+
+    typedef struct PACK
+    {
+        uint8_t flags;
+        uint8_t keyCode;
+    } action_config_t;
+
+    typedef struct PACK
+    {
+        action_config_t actions[ACTIONS_IN_SUPERKEY];
+    } superkey_config_t;
+
+public:
   // Superkeys states
-  void init(const Key *act);
+  void init(const superkey_config_t *p_superkey_config);
   void enable( uint8_t modifiers_pressed);
   void disable();
   void run();
@@ -50,11 +62,16 @@ public:
   KeyAddr get_keyAddr() const;
   void set_key_and_keyAddr(Key key, KeyAddr keyAddr);
 
+  static uint16_t getActionRaw( const action_config_t * p_action_config );
+  static void setActionRaw( action_config_t * p_action_config, uint16_t raw );
+  static Key getActionAsKey( const action_config_t * p_action_config );
+  static Key getActionAsKey( const superkey_config_t * p_superkey, uint16_t action_id );
+
   Superkey();
   
   // Constructor
-  explicit Superkey(uint16_t index, const Utils::SharedConfig* config, const Key* actions) : 
-  index_(index), shared_config_(config), actions_(actions)
+  explicit Superkey(uint16_t index, const Utils::SharedConfig* config, const superkey_config_t * superkey_config) :
+  index_(index), shared_config_(config), superkey_config_(superkey_config)
   {
   }
 
@@ -90,7 +107,7 @@ private:
 
   uint8_t index_{};
   const Utils::SharedConfig* shared_config_{nullptr}; // Pointer to shared configuration (4 bytes instead of 6)
-  const Key* actions_{nullptr}; // Pointer to actions array (stored separately to save memory)
+  const superkey_config_t * superkey_config_{nullptr}; // Pointer to actions array (stored separately to save memory)
 
   // Superkey States
   void tap();
@@ -105,7 +122,7 @@ private:
   void send_key() const;
 
   // Sk Configurations
-  void set_up_actions(const Key *act);
+  void set_up_superkey_config(const superkey_config_t * p_superkey_config);
 
   /**
    * @brief Check if the superkey is a Qukey.

@@ -14,8 +14,9 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Superkeys/Superkey/Superkey.h"
 #include "Superkeys/includes.h"
+#include "Superkeys/Superkey/Superkey.h"
+#include "Superkeys/Actions/ActionsDriver.h"
 #include <cstdint>
 // #pragma GCC push_options
 // #pragma GCC optimize("O0") // No optimization
@@ -41,16 +42,16 @@ Key SuperkeysHandler::Actions[6] = {};
 uint8_t super_key_index = 0;
 uint8_t SuperkeysHandler::cache_modifiers = 0;
 
-void SuperkeysHandler::setup(uint8_t active_superkeys, const Key (*sk_map)[KEYS_IN_SUPERKEY])
+void SuperkeysHandler::setup(uint8_t active_superkeys, const Superkey::superkey_config_t * p_sk_map )
 {
     configured_superkeys = active_superkeys;
     settings_base_ = kaleidoscope::plugin::EEPROMSettings::requestSlice(sizeof(SuperkeysHandler::Configurations));
     cleanup();
     config();
-    init(sk_map);
+    init(p_sk_map);
 }
 
-void SuperkeysHandler::init(const Key (*sk_map)[KEYS_IN_SUPERKEY])
+void SuperkeysHandler::init(const Superkey::superkey_config_t * p_sk_map)
 {
 
     //NRF_LOG_INFO("SIZE OF Superkey: %i", sizeof(Superkey));
@@ -76,8 +77,8 @@ void SuperkeysHandler::init(const Key (*sk_map)[KEYS_IN_SUPERKEY])
     {
         // Initialize superkey in static array with pointer directly to sk_map
         // No need to copy - sk_map persists for the lifetime of the program
-        SuperkeysHandler_sk_array[sk_index] = Superkey(sk_index, &shared_sk_config, sk_map[sk_index]);
-        SuperkeysHandler_sk_array[sk_index].init(sk_map[sk_index]);
+        SuperkeysHandler_sk_array[sk_index] = Superkey(sk_index, &shared_sk_config, &p_sk_map[sk_index]);
+        SuperkeysHandler_sk_array[sk_index].init(&p_sk_map[sk_index]);
         
         sk_index++;
     }
@@ -100,7 +101,7 @@ void SuperkeysHandler::config()
     Runtime.storage().get(settings_base_, configurations);
 }
 
-void SuperkeysHandler::save_configurations(const Key (*sk_map)[KEYS_IN_SUPERKEY])
+void SuperkeysHandler::save_configurations(const Superkey::superkey_config_t * p_sk_map)
 {
     Runtime.storage().put(settings_base_, configurations);
     Runtime.storage().commit();
@@ -111,20 +112,20 @@ void SuperkeysHandler::save_configurations(const Key (*sk_map)[KEYS_IN_SUPERKEY]
     shared_sk_config.time_out_ = configurations.time_out_;
     shared_sk_config.overlap_threshold_ = configurations.overlap_threshold_;
     
-    if(sk_map != nullptr)
+    if(p_sk_map != nullptr)
     {
         cleanup();
-        init(sk_map);   
+        init(p_sk_map);
     }
 }
 
-void SuperkeysHandler::save_superkey_map_from(const Key (*sk_map)[KEYS_IN_SUPERKEY], uint8_t active_superkeys)
+void SuperkeysHandler::save_superkey_map_from(const Superkey::superkey_config_t * p_sk_map, uint8_t active_superkeys)
 {
     configured_superkeys = active_superkeys;
-    if(sk_map != nullptr)
+    if(p_sk_map != nullptr)
     {
         cleanup();
-        init(sk_map);   
+        init(p_sk_map);
     }
 }
 

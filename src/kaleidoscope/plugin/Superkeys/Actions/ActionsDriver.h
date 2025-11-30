@@ -15,17 +15,18 @@
  */
 #ifndef NRF_NEURON_ACTIONSDRIVER_H
 #define NRF_NEURON_ACTIONSDRIVER_H
-#include "kaleidoscope/plugin/Superkeys/includes.h"
+#include "Superkeys/includes.h"
+#include "Superkeys/Superkey/Superkey.h"
 #include <cstdint>
 
 using EventFunction = uint8_t (*)();
-class Superkey;
+
 class ActionsDriver
 {
 public:
-    static Utils::ExtendedActions return_type(uint8_t tap_count, const Key *actions);
+    static Utils::ExtendedActions return_type(uint8_t tap_count, const Superkey::superkey_config_t * p_superkey);
 
-    static bool action_handler(uint8_t tap_count, const Key *actions, const Key &key, const KeyAddr &keyAddr);
+    static bool action_handler(uint8_t tap_count, const Superkey::superkey_config_t *p_superkey, const Key &key, const KeyAddr &keyAddr);
 
     /*
      * 0xE0 (224) → Left Ctrl
@@ -42,6 +43,7 @@ public:
     static void send_regular_key(const Key &key, const KeyAddr &keyAddr);
 
     static bool key_can_interrupt(const Key &Action);
+    static bool key_can_interrupt(const Superkey::action_config_t &Action);
 
     static void send_modifier(const Key &key, const KeyAddr &key_addr);
 

@@ -14,6 +14,7 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Timeline.h"
+#include "Superkeys/Superkey/Superkey.h"
 
 #define LOG_TIMELINE 0
 

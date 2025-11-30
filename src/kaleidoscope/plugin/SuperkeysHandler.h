@@ -23,11 +23,10 @@
 #include "EEPROM-Settings.h"
 #include "Kaleidoscope-FocusSerial.h"
 
-#include "kaleidoscope/plugin/Superkeys/includes.h"
+#include "Superkeys/includes.h"
+#include "Superkeys/Superkey/Superkey.h"
 
 using KeyID = uint16_t;
-
-class Superkey;
 
 namespace kaleidoscope
 {
@@ -81,7 +80,7 @@ namespace kaleidoscope
              * It allocates a storage slice in EEPROM to store the DynamicSuperKeys settings, including size and offset.
              * After setting up the storage, it updates the SuperKeys cache to ensure consistency with the stored values.
              */
-            static void setup(uint8_t active_superkeys, const Key (*sk_map)[KEYS_IN_SUPERKEY]);
+            static void setup(uint8_t active_superkeys, const Superkey::superkey_config_t * p_sk_map);
 
             /**
              * @brief Get the number of active superkeys.
@@ -117,7 +116,7 @@ namespace kaleidoscope
 
             static void set_minimum_hold(uint16_t minimum_hold);
 
-            static void save_superkey_map_from(const Key (*sk_map)[KEYS_IN_SUPERKEY], uint8_t active_superkeys);
+            static void save_superkey_map_from(const Superkey::superkey_config_t * p_sk_map, uint8_t active_superkeys);
 
             static void save_superkey_map();
 
@@ -131,11 +130,11 @@ namespace kaleidoscope
             // keys in Actions
             static Key Actions[KEYS_IN_SUPERKEY];
 
-            static void init(const Key (*sk_map)[KEYS_IN_SUPERKEY]);
+            static void init(const Superkey::superkey_config_t * p_sk_map);
             static void config();
             static void enable();
             static void disable();
-            static void save_configurations(const Key (*sk_map)[KEYS_IN_SUPERKEY]);
+            static void save_configurations(const Superkey::superkey_config_t * p_sk_map);
 
             /*
              *  Erase superkeys instances to avoid memory leaks.
