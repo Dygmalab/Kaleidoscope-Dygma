@@ -96,7 +96,7 @@ class KeyRoleManager : public kaleidoscope::Plugin
      * It allocates a storage slice in EEPROM to store the KeyRoleManager settings, including size and offset.
      * After setting up the storage, it updates the KeyRoleManager cache to ensure consistency with the stored values.
      */
-    void setup_superkeys(uint8_t _max_layers);
+    void setup_superkeys(void);
 
     Key search_and_replace(Key key);
 

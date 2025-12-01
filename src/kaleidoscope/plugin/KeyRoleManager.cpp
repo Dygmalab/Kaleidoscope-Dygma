@@ -36,7 +36,6 @@ namespace plugin
 
 #define ACTION_IS_UNDEFINED( p_action )   ( (*(uint16_t *)p_action) == 0xFFFF )
 
-uint8_t max_layers;
 uint16_t settings_base_ = 0;
 
 KeyRoleManager::KeyRoleManager()
@@ -377,9 +376,8 @@ EventHandlerResult KeyRoleManager::onSetup()
     UNUSED( result );
 }
 
-void KeyRoleManager::setup_superkeys(uint8_t _max_layers)
+void KeyRoleManager::setup_superkeys(void)
 {
-    max_layers = _max_layers;
     qukeys.onSetup();         // Initialize the Qukeys plugin.
     SuperkeysHandler::setup(configured_superkeys, p_keyrole_config->superkeys); // Initialize the SuperkeysHandler plugin.
 }
@@ -552,7 +550,7 @@ Key KeyRoleManager::find_superkey_for_qukey(Key qukey)
 
 void KeyRoleManager::transform_keymap_superkeys_to_qukeys()
 {
-    uint16_t total_keys = static_cast<uint16_t>(Runtime.device().numKeys()) * max_layers;
+    uint16_t total_keys = static_cast<uint16_t>(Runtime.device().numKeys()) * APP_LAYERS_CNT;
     uint16_t keymap_base = EEPROMKeymap::keymap_base();
     uint16_t qk_to_sk = 0;
     uint16_t sk_to_qk = 0;
