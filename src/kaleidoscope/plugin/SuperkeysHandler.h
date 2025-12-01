@@ -104,11 +104,11 @@ namespace kaleidoscope
             struct Configurations
             {
                 // Memory space
-                uint16_t storage_base_;
-                uint16_t storage_size_;
+//                uint16_t storage_base_;
+//                uint16_t storage_size_;
 
                 // Superkey configurations
-                uint16_t delayed_time_;
+//                uint16_t delayed_time_;
                 uint16_t wait_for_;
                 uint16_t hold_start_;
                 uint8_t repeat_interval_;
@@ -117,7 +117,7 @@ namespace kaleidoscope
 
                 void reset()
                 {
-                    delayed_time_ = 0;
+//                    delayed_time_ = 0;
                     wait_for_ = 500;
                     hold_start_ = 236;
                     repeat_interval_ = 20;
