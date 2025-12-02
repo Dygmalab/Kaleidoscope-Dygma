@@ -20,7 +20,6 @@
 
 
 #include "kaleidoscope/Runtime.h"
-#include <Kaleidoscope-EEPROM-Settings.h>
 #include <Kaleidoscope-LEDControl.h>
 
 #include "kaleidoscope/driver/color/GammaCorrection.h"
@@ -76,16 +75,6 @@ struct KeyboardHands
 
     static void getChipID(char *buff, uint16_t len);
     static void get_chip_info(char *buff, uint16_t len);
-
-#warning "Remove Brightness when fully removed"
-    static struct Brightness
-    {
-        uint8_t led_brightness_ledDriver_;
-        uint8_t led_brightness_underglow_;
-        uint8_t led_brightness_ledDriver_wireless_;
-        uint8_t led_brightness_underglow_wireless_;
-        uint8_t flag;
-    } bright;
 
   private:
     static bool side_power_;
@@ -177,10 +166,6 @@ void KeyboardHands::setup()
                                                             rightHand.releaseAllKeys();
                                                         }
                                                     }));
-
-
-    settings_interval_ = ::EEPROMSettings.requestSlice(sizeof(uint8_t));
-    settings_base = ::EEPROMSettings.requestSlice(sizeof(KeyboardHands::Brightness));
 }
 
 void KeyboardHands::getChipID(char *cstring, uint16_t len)

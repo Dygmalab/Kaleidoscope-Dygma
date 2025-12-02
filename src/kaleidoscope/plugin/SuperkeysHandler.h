@@ -22,7 +22,6 @@
 #include <Kaleidoscope.h>
 #include <cstdint>
 #include "Kaleidoscope-Ranges.h"
-#include "EEPROM-Settings.h"
 #include "Kaleidoscope-FocusSerial.h"
 
 #include "Superkeys/includes.h"
@@ -100,32 +99,6 @@ namespace kaleidoscope
              */
             static uint8_t get_configured_sk();
 
-#warning "Remove this when the EEPROM is solved"
-            struct Configurations
-            {
-                // Memory space
-//                uint16_t storage_base_;
-//                uint16_t storage_size_;
-
-                // Superkey configurations
-//                uint16_t delayed_time_;
-                uint16_t wait_for_;
-                uint16_t hold_start_;
-                uint8_t repeat_interval_;
-                uint8_t overlap_threshold_;
-                uint16_t time_out_;
-
-                void reset()
-                {
-//                    delayed_time_ = 0;
-                    wait_for_ = 500;
-                    hold_start_ = 236;
-                    repeat_interval_ = 20;
-                    overlap_threshold_ = 80;
-                    time_out_ = 144;
-                }
-            };
-
             static void save_superkey_map_from(const Superkey::superkey_config_t * p_sk_map, uint8_t active_superkeys);
 
             static void save_superkey_map();
@@ -133,8 +106,6 @@ namespace kaleidoscope
             private:
             
             static const superkey_config_t * p_superkey_config;
-
-            static uint16_t settings_base_;
             
             static uint8_t configured_superkeys;
             static uint8_t cache_modifiers;

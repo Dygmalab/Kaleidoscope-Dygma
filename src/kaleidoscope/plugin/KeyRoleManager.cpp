@@ -14,17 +14,16 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 #include "kbdfal_ll_memory.h"
 #include "KeyRoleManager.h"
 
 #include "Kaleidoscope-Ranges.h"
 #include "kaleidoscope/key_defs.h"
-
-#include <Kaleidoscope-EEPROM-Keymap.h>
-#include <Kaleidoscope-EEPROM-Settings.h>
 #include <Kaleidoscope-FocusSerial.h>
 #include <cstdint>
 
+#include "EEPROMKeymapDygma.h"
 #include "QukeysDygma.h"
 #include "SuperkeysHandler.h"
 #include "Superkeys/Actions/ActionsDriver.h"
@@ -35,8 +34,6 @@ namespace plugin
 {
 
 #define ACTION_IS_UNDEFINED( p_action )   ( (*(uint16_t *)p_action) == 0xFFFF )
-
-uint16_t settings_base_ = 0;
 
 KeyRoleManager::KeyRoleManager()
 {
@@ -327,33 +324,8 @@ uint16_t KeyRoleManager::replace_superkey_with_qukey(const Key *action_0, const 
     return qukey_code;
 }
 
-//void KeyRoleManager::config()
-//{
-//    // if one block is invalid, restart everything
-//    bool reset_storage = true;
-//
-//    for (uint8_t i = 0; i < Utils::SUPER_KEY_COUNT; i++)
-//    {
-//        for (size_t j = 0; j < ACTIONS_IN_SUPERKEY; j++)
-//        {
-//            if (key_storage.keys[i][j] != 0xFFFF)
-//            {
-//                reset_storage = false;
-//            }
-//        }
-//    }
-//
-//    if (reset_storage)
-//    {
-//        // Restart key_storage.
-//        cfgmem_keyrole_reset();
-//    }
-//}
-
-
 void KeyRoleManager::setup_keys()
 {
-//    config();
     set_active_sk();
     determine_key_role();
     SuperkeysHandler::save_superkey_map_from( p_keyrole_config->superkeys, this->configured_superkeys);
@@ -366,9 +338,6 @@ EventHandlerResult KeyRoleManager::onSetup()
     result = kbdfal_ll_memory_item_request( KBDMEM_ITEM_TYPE_KEYROLE, (const void **)&p_keyrole_config );
     ASSERT_DYGMA( result == RESULT_OK, "kbdfal_ll_memory_item_request failed" );
 
-    settings_base_ = kaleidoscope::plugin::EEPROMSettings::requestSlice(sizeof(KeyRoleManager::key_storage_t));
-
-//    config();
     set_active_sk();
     determine_key_role();
     return EventHandlerResult::OK;
@@ -551,7 +520,7 @@ Key KeyRoleManager::find_superkey_for_qukey(Key qukey)
 void KeyRoleManager::transform_keymap_superkeys_to_qukeys()
 {
     uint16_t total_keys = static_cast<uint16_t>(Runtime.device().numKeys()) * APP_LAYERS_CNT;
-    uint16_t keymap_base = EEPROMKeymap::keymap_base();
+    const EEPROMKeymap::keymap_config_t * p_keymap_config = EEPROMKeymap::getKeymapConfig();
     uint16_t qk_to_sk = 0;
     uint16_t sk_to_qk = 0;
     
@@ -561,8 +530,7 @@ void KeyRoleManager::transform_keymap_superkeys_to_qukeys()
     //NRF_LOG_DEBUG("Pass 1: Reverting qukeys to superkeys using %d previous mappings", previous_modified_keys_count);
     for (uint16_t i = 0; i < total_keys; i++)
     {
-        Key stored_key = Key(Runtime.storage().read(keymap_base + i * 2 + 1),
-                             Runtime.storage().read(keymap_base + i * 2));
+        Key stored_key = Key( p_keymap_config->keys[i].keyCode, p_keymap_config->keys[i].flags );
         
         if (is_qukey(stored_key))
         {
@@ -586,8 +554,7 @@ void KeyRoleManager::transform_keymap_superkeys_to_qukeys()
     //NRF_LOG_DEBUG("Pass 2: Transforming superkeys to qukeys");
     for (uint16_t i = 0; i < total_keys; i++)
     {
-        Key stored_key = Key(Runtime.storage().read(keymap_base + i * 2 + 1),
-                             Runtime.storage().read(keymap_base + i * 2));
+        Key stored_key = Key( p_keymap_config->keys[i].keyCode, p_keymap_config->keys[i].flags );
         
         if (!IS_OUTSIDE_DYNAMIC_SUPER_RANGE(stored_key))
         {

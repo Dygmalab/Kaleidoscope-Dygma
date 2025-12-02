@@ -19,7 +19,6 @@
 
 #include "kbd_core.h"
 
-#include "EEPROM-Settings.h"
 #include "Kaleidoscope-FocusSerial.h"
 #include "Kaleidoscope-Ranges.h"
 #include "Superkeys/includes.h"
@@ -133,27 +132,6 @@ class KeyRoleManager : public kaleidoscope::Plugin
   private:
 
     const keyrole_config_t * p_keyrole_config = nullptr;
-
-#warning "Remove this when EEPROM is solved"
-    struct key_storage_t
-    {
-        // Keys configured in every superkey action.
-        Key keys[Utils::SUPER_KEY_COUNT][ACTIONS_IN_SUPERKEY];
-
-        void reset()
-        {
-            static Key idle_key;
-            idle_key.setRaw(0xFFFF);
-            for (uint8_t i = 0; i < Utils::SUPER_KEY_COUNT; ++i)
-            {
-                for (uint8_t j = 0; j < ACTIONS_IN_SUPERKEY; ++j)
-                {
-                    keys[i][j] = idle_key;
-                }
-            }
-        }
-    };
-//    key_storage_t key_storage;
 
     // Current qukey mappings (superkey_id -> qukey_id)
     modified_keys_t modified_keys[Utils::MAX_SUPER_KEYS_ACTIVE];

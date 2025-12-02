@@ -38,8 +38,6 @@ namespace kaleidoscope
 namespace plugin
 {
 const SuperkeysHandler::superkey_config_t * SuperkeysHandler::p_superkey_config = nullptr;
-//SuperkeysHandler::Configurations configurations;
-uint16_t SuperkeysHandler::settings_base_ = 0;
 uint8_t SuperkeysHandler::configured_superkeys = 0;
 
 Superkey SuperkeysHandler_sk_array[Utils::MAX_SUPER_KEYS_ACTIVE];
@@ -58,8 +56,6 @@ void SuperkeysHandler::setup(uint8_t active_superkeys, const Superkey::superkey_
 
     result = kbdfal_ll_memory_item_request( KBDMEM_ITEM_TYPE_SUPERKEY, (const void **)&p_superkey_config );
     ASSERT_DYGMA( result == RESULT_OK, "kbdfal_ll_memory_item_request failed" );
-
-    settings_base_ = kaleidoscope::plugin::EEPROMSettings::requestSlice(sizeof(SuperkeysHandler::Configurations));
 
     cleanup();
     config();
