@@ -30,8 +30,6 @@
 
 #include "Arduino.h"
 #include "kaleidoscope/device/Base.h"
-#include "kaleidoscope/driver/keyscanner/Base.h"
-#include "kaleidoscope/driver/storage/Flash.h"
 #include "libraries/KeyboardioHID/src/MultiReport/RawHID.h"
 
 
@@ -98,7 +96,6 @@ struct KeyboardProps : kaleidoscope::device::BaseProps {
     typedef KeyboardKeyScannerProps KeyScannerProps;
     typedef KeyboardKeyScanner KeyScanner;
     typedef kaleidoscope::driver::bootloader::nrf::nrfBoot Bootloader;
-    typedef kaleidoscope::driver::storage::Flash<StorageProps> Storage;
 
     static constexpr const char *short_name = SHORT_NAME;
 };
