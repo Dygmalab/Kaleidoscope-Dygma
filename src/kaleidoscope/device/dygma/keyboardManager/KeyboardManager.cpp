@@ -20,26 +20,26 @@
 
 
 #include "kaleidoscope/Runtime.h"
-#include <Kaleidoscope-LEDControl.h>
+//#include <Kaleidoscope-LEDControl.h>
+//
+//#include "kaleidoscope/driver/color/GammaCorrection.h"
+//#include "kaleidoscope/driver/keyscanner/Base_Impl.h"
+//#include "kaleidoscope/util/crc16.h"
 
-#include "kaleidoscope/driver/color/GammaCorrection.h"
-#include "kaleidoscope/driver/keyscanner/Base_Impl.h"
-#include "kaleidoscope/util/crc16.h"
-
-#include "common.h"
-
-#include "Twi_master.h"
-
-#include "Adafruit_USBD_Device.h"
-#include "Ble_manager.h"
+//#include "common.h"
+//
+//#include "Twi_master.h"
+//
+//#include "Adafruit_USBD_Device.h"
+//#include "Ble_manager.h"
 #include "Communications.h"
 #include "KeyboardManager.h"
-#include "Radio_manager.h"
+//#include "Radio_manager.h"
 #include "Status_leds.h"
 #include "Wire.h" // Arduino Wire wrapper for the NRF52 chips
 #include "universalModules/Focus.h"
 #include "nrf_gpio.h"
-#include "Battery.h"
+//#include "Battery.h"
 
 #include "LEDManager.h"
 
@@ -47,7 +47,7 @@
 #define NEURON_LED_BRIGHTNESS 2
 
 
-Twi_master twi_master(TWI_MASTER_SCL_PIN, TWI_MASTER_SDA_PIN);
+//Twi_master twi_master(TWI_MASTER_SCL_PIN, TWI_MASTER_SDA_PIN);
 Status_leds status_leds(LED_GREEN_PIN, LED_RED_PIN);
 
 
@@ -88,25 +88,26 @@ bool KeyboardHands::side_power_;
 uint16_t KeyboardHands::settings_interval_;
 uint16_t KeyboardHands::settings_base;
 
-void KeyboardHands::setSidePower(bool power)
-{
-    // 0 -> reset keyboard side, 1 -> run keyboard side
-    if (power)
-    {
-        nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
-        nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_NOPULL);
-    }
-    else
-    {
-        nrf_gpio_cfg_output(SIDE_NRESET_1);
-        nrf_gpio_cfg_output(SIDE_NRESET_2);
-        nrf_gpio_pin_write(SIDE_NRESET_1, power);
-        nrf_gpio_pin_write(SIDE_NRESET_2, power);
-    }
-
-
-    side_power_ = power;
-}
+#warning "Resolve this"
+//void KeyboardHands::setSidePower(bool power)
+//{
+//    // 0 -> reset keyboard side, 1 -> run keyboard side
+//    if (power)
+//    {
+//        nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
+//        nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_NOPULL);
+//    }
+//    else
+//    {
+//        nrf_gpio_cfg_output(SIDE_NRESET_1);
+//        nrf_gpio_cfg_output(SIDE_NRESET_2);
+//        nrf_gpio_pin_write(SIDE_NRESET_1, power);
+//        nrf_gpio_pin_write(SIDE_NRESET_2, power);
+//    }
+//
+//
+//    side_power_ = power;
+//}
 // BLE       WIRED       RF
 Communications_protocol::Devices leftConnection[3]{UNKNOWN, UNKNOWN, UNKNOWN};
 Communications_protocol::Devices rightConnection[3]{UNKNOWN, UNKNOWN, UNKNOWN};
@@ -414,23 +415,25 @@ Communications_protocol::Devices KeyboardKeyScanner::rightHandDevice(void)
     return UNKNOWN;
 }
 
-bool KeyboardKeyScanner::rightSideWiredConnection()
-{
-    return nrf_gpio_pin_read(SIDE_NRESET_2);
-}
-
-bool KeyboardKeyScanner::leftSideWiredConnection()
-{
-    return nrf_gpio_pin_read(SIDE_NRESET_1);
-}
+#warning "Resolve this"
+//bool KeyboardKeyScanner::rightSideWiredConnection()
+//{
+//    return nrf_gpio_pin_read(SIDE_NRESET_2);
+//}
+//
+//bool KeyboardKeyScanner::leftSideWiredConnection()
+//{
+//    return nrf_gpio_pin_read(SIDE_NRESET_1);
+//}
 
 /********* KeyboardNrf class (Hardware plugin) *********/
 
 void KeyboardNrf::setup()
 {
     // Check if we can live without this reset sides
-    nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
-    nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_NOPULL);
+#warning "Resolve this"
+//    nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
+//    nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_NOPULL);
 
     status_leds.init();
     status_leds.static_green(NEURON_LED_BRIGHTNESS);
@@ -465,35 +468,36 @@ uint8_t KeyboardNrf::side::rightVersion()
     //  return KeyboardHands::hand_spi2.readVersion();
 }
 
-void KeyboardNrf::side::reset_sides()
-{
-    nrf_gpio_cfg_output(SIDE_NRESET_1);
-    nrf_gpio_cfg_output(SIDE_NRESET_2);
-    nrf_gpio_pin_write(SIDE_NRESET_1, 0);
-    nrf_gpio_pin_write(SIDE_NRESET_2, 0);
-    delay(10);
-    nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
-    nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_NOPULL);
-    delay(50); // We should give a bit more time but for now lest leave it like this
-}
-
-void KeyboardNrf::side::reset_right_side()
-{
-    nrf_gpio_cfg_output(SIDE_NRESET_1);
-    nrf_gpio_pin_write(SIDE_NRESET_1, 0);
-    delay(10);
-    nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
-    delay(50); // We should give a bit more time but for now lest leave it like this
-}
-
-void KeyboardNrf::side::reset_left_side()
-{
-    nrf_gpio_cfg_output(SIDE_NRESET_2);
-    nrf_gpio_pin_write(SIDE_NRESET_2, 0);
-    delay(10);
-    nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_NOPULL);
-    delay(50); // We should give a bit more time but for now lest leave it like this
-}
+#warning "Resolve this"
+//void KeyboardNrf::side::reset_sides()
+//{
+//    nrf_gpio_cfg_output(SIDE_NRESET_1);
+//    nrf_gpio_cfg_output(SIDE_NRESET_2);
+//    nrf_gpio_pin_write(SIDE_NRESET_1, 0);
+//    nrf_gpio_pin_write(SIDE_NRESET_2, 0);
+//    delay(10);
+//    nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
+//    nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_NOPULL);
+//    delay(50); // We should give a bit more time but for now lest leave it like this
+//}
+//
+//void KeyboardNrf::side::reset_right_side()
+//{
+//    nrf_gpio_cfg_output(SIDE_NRESET_1);
+//    nrf_gpio_pin_write(SIDE_NRESET_1, 0);
+//    delay(10);
+//    nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
+//    delay(50); // We should give a bit more time but for now lest leave it like this
+//}
+//
+//void KeyboardNrf::side::reset_left_side()
+//{
+//    nrf_gpio_cfg_output(SIDE_NRESET_2);
+//    nrf_gpio_pin_write(SIDE_NRESET_2, 0);
+//    delay(10);
+//    nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_NOPULL);
+//    delay(50); // We should give a bit more time but for now lest leave it like this
+//}
 
 void KeyboardNrf::side::prepareForFlash()
 {
