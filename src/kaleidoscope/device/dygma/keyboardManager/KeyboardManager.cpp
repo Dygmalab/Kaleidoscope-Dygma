@@ -21,9 +21,9 @@
 
 #include "kaleidoscope/Runtime.h"
 //#include <Kaleidoscope-LEDControl.h>
-//
+
 //#include "kaleidoscope/driver/color/GammaCorrection.h"
-//#include "kaleidoscope/driver/keyscanner/Base_Impl.h"
+#include "kaleidoscope/driver/keyscanner/Base_Impl.h"
 //#include "kaleidoscope/util/crc16.h"
 
 //#include "common.h"
@@ -46,6 +46,11 @@
 
 #define NEURON_LED_BRIGHTNESS 2
 
+/* External prototypes */
+extern bool_t kbd_glue_left_wired_connected( void );
+extern bool_t kbd_glue_right_wired_connected( void );
+extern void kbd_glue_side_power_left_set( bool_t power );
+extern void kbd_glue_side_power_right_set( bool_t power );
 
 //Twi_master twi_master(TWI_MASTER_SCL_PIN, TWI_MASTER_SDA_PIN);
 Status_leds status_leds(LED_GREEN_PIN, LED_RED_PIN);
@@ -88,26 +93,14 @@ bool KeyboardHands::side_power_;
 uint16_t KeyboardHands::settings_interval_;
 uint16_t KeyboardHands::settings_base;
 
-#warning "Resolve this"
-//void KeyboardHands::setSidePower(bool power)
-//{
-//    // 0 -> reset keyboard side, 1 -> run keyboard side
-//    if (power)
-//    {
-//        nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
-//        nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_NOPULL);
-//    }
-//    else
-//    {
-//        nrf_gpio_cfg_output(SIDE_NRESET_1);
-//        nrf_gpio_cfg_output(SIDE_NRESET_2);
-//        nrf_gpio_pin_write(SIDE_NRESET_1, power);
-//        nrf_gpio_pin_write(SIDE_NRESET_2, power);
-//    }
-//
-//
-//    side_power_ = power;
-//}
+void KeyboardHands::setSidePower(bool power)
+{
+    // 0 -> reset keyboard side, 1 -> run keyboard side
+    kbd_glue_side_power_left_set( power );
+    kbd_glue_side_power_right_set( power );
+
+    side_power_ = power;
+}
 // BLE       WIRED       RF
 Communications_protocol::Devices leftConnection[3]{UNKNOWN, UNKNOWN, UNKNOWN};
 Communications_protocol::Devices rightConnection[3]{UNKNOWN, UNKNOWN, UNKNOWN};
@@ -415,16 +408,15 @@ Communications_protocol::Devices KeyboardKeyScanner::rightHandDevice(void)
     return UNKNOWN;
 }
 
-#warning "Resolve this"
-//bool KeyboardKeyScanner::rightSideWiredConnection()
-//{
-//    return nrf_gpio_pin_read(SIDE_NRESET_2);
-//}
-//
-//bool KeyboardKeyScanner::leftSideWiredConnection()
-//{
-//    return nrf_gpio_pin_read(SIDE_NRESET_1);
-//}
+bool KeyboardKeyScanner::rightSideWiredConnection()
+{
+    return kbd_glue_right_wired_connected();
+}
+
+bool KeyboardKeyScanner::leftSideWiredConnection()
+{
+    return kbd_glue_left_wired_connected();
+}
 
 /********* KeyboardNrf class (Hardware plugin) *********/
 
