@@ -423,9 +423,8 @@ bool KeyboardKeyScanner::leftSideWiredConnection()
 void KeyboardNrf::setup()
 {
     // Check if we can live without this reset sides
-#warning "Resolve this"
-//    nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
-//    nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_NOPULL);
+    kbd_glue_side_power_left_set( true );
+    kbd_glue_side_power_right_set( true );
 
     status_leds.init();
     status_leds.static_green(NEURON_LED_BRIGHTNESS);
