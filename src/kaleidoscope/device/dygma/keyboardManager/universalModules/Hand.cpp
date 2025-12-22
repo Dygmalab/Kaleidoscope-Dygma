@@ -60,7 +60,7 @@ bool inline filterHand(Communications_protocol::Devices incomingDevice,Hand::Han
 void Hand::init()
 {
     /* Initialize the key data */
-    key_data_.all = 0;
+    keyDataReleaseAll( &key_data_ );
 
     auto keyScanFunction = [this](Packet const &packet)
     {
@@ -76,17 +76,35 @@ void Hand::init()
 
 void Hand::releaseAllKeys()
 {
-    if( key_data_.all == 0 )
+    if( keyDataAllReleased(&key_data_) == true )
     {
         /* The keys are released already */
         return;
     }
 
     /* Release all keys */
-    key_data_.all = 0;
+    keyDataReleaseAll( &key_data_ );
     new_key_ = true;
 }
 
+void Hand::keyDataReleaseAll( key_data * p_key_data )
+{
+    memset( p_key_data->rows, 0x00, sizeof(p_key_data->rows) );
+}
+
+bool Hand::keyDataAllReleased( key_data * p_key_data )
+{
+    uint8_t i;
+    for( i = 0; i < MATRIX_ROWS; i++ )
+    {
+        if( p_key_data->rows[i] != 0 )
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
 
 } // namespace dygma_keyboards
 } // namespace dygma

@@ -222,13 +222,20 @@ void KeyboardKeyScanner::actOnMatrixScan()
 {
     for (uint8_t row = 0; row < Props_::matrix_rows; row++)
     {
+#warning "This might be problematic if the number of columns is not symmetric. Please check!!!"
         for (uint8_t col = 0; col < Props_::left_columns; col++)
         {
+#warning "Is this working if the number of collumns is not 8? e.g. 12?"
             uint8_t keynum = (row * Props_::left_columns) + col;
+            uint8_t keyStatePrev;
+            uint8_t keyStateNow;
             uint8_t keyState;
 
             // left
-            keyState = (bitRead(previousLeftHandState.all, keynum) << 0) | (bitRead(leftHandState.all, keynum) << 1);
+            keyStatePrev = array_bit_get( (uint8_t *)previousLeftHandState.rows, sizeof(previousLeftHandState.rows), keynum );
+            keyStateNow = array_bit_get( (uint8_t *)leftHandState.rows, sizeof(leftHandState.rows), keynum );
+
+            keyState = (keyStatePrev << 0) | (keyStateNow << 1);
 
             if (keyState)
             {
@@ -245,7 +252,10 @@ void KeyboardKeyScanner::actOnMatrixScan()
             }
 
             // right
-            keyState = (bitRead(previousRightHandState.all, keynum) << 0) | (bitRead(rightHandState.all, keynum) << 1);
+            keyStatePrev = array_bit_get( (uint8_t *)previousRightHandState.rows, sizeof(previousRightHandState.rows), keynum );
+            keyStateNow = array_bit_get( (uint8_t *)rightHandState.rows, sizeof(rightHandState.rows), keynum );
+
+            keyState = (keyStatePrev << 0) | (keyStateNow << 1);
 
             if (keyState)
             {
@@ -354,12 +364,14 @@ bool KeyboardKeyScanner::wasKeyswitchPressed(KeyAddr key_addr)
 
 uint8_t KeyboardKeyScanner::pressedKeyswitchCount()
 {
-    return __builtin_popcountll(leftHandState.all) + __builtin_popcountll(rightHandState.all);
+    return array_popcount_get( (uint8_t *)leftHandState.rows, sizeof(leftHandState.rows) ) +
+            array_popcount_get( (uint8_t *)rightHandState.rows, sizeof(rightHandState.rows) );
 }
 
 uint8_t KeyboardKeyScanner::previousPressedKeyswitchCount()
 {
-    return __builtin_popcountll(previousLeftHandState.all) + __builtin_popcountll(previousRightHandState.all);
+    return array_popcount_get( (uint8_t *)previousLeftHandState.rows, sizeof(previousLeftHandState.rows) ) +
+            array_popcount_get( (uint8_t *)previousRightHandState.rows, sizeof(previousRightHandState.rows) );
 }
 
 void KeyboardKeyScanner::setup()
@@ -376,8 +388,8 @@ void KeyboardKeyScanner::setup()
 
 void KeyboardKeyScanner::reset(void)
 {
-    leftHandState.all = 0;
-    rightHandState.all = 0;
+    dygma_keyboards::Hand::keyDataReleaseAll( &leftHandState );
+    dygma_keyboards::Hand::keyDataReleaseAll( &rightHandState );
     Runtime.hid().keyboard().releaseAllKeys();
     Runtime.hid().keyboard().sendReport();
 }

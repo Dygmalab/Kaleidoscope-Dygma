@@ -28,8 +28,7 @@ namespace dygma {
 namespace dygma_keyboards {
 
 typedef union {
-  uint8_t rows[5];
-  uint64_t all;
+  uint16_t rows[MATRIX_ROWS];
 } key_data;
 class Hand {
  public:
@@ -56,6 +55,9 @@ public:
   }
 
   [[nodiscard]] bool newKey() const { return new_key_; }
+
+  static void keyDataReleaseAll( key_data * p_key_data );
+  static bool keyDataAllReleased( key_data * p_key_data );
 };
 
 }  // namespace dygma_keyboards
