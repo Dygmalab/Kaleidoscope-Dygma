@@ -196,6 +196,12 @@ dygma_keyboards::key_data KeyboardKeyScanner::previousRightHandState;
 dygma_keyboards::key_data KeyboardKeyScanner::leftHandMask;
 dygma_keyboards::key_data KeyboardKeyScanner::rightHandMask;
 
+// Extended format for keyboards with >8 columns
+dygma_keyboards::key_data_extended KeyboardKeyScanner::leftHandStateExtended;
+dygma_keyboards::key_data_extended KeyboardKeyScanner::rightHandStateExtended;
+dygma_keyboards::key_data_extended KeyboardKeyScanner::previousLeftHandStateExtended;
+dygma_keyboards::key_data_extended KeyboardKeyScanner::previousRightHandStateExtended;
+
 void KeyboardKeyScanner::scanMatrix()
 {
    // usbConnectionsStateMachine();
@@ -207,35 +213,49 @@ void KeyboardKeyScanner::readMatrix()
 {
     previousLeftHandState = leftHandState;
     previousRightHandState = rightHandState;
+    previousLeftHandStateExtended = leftHandStateExtended;
+    previousRightHandStateExtended = rightHandStateExtended;
 
     if (KeyboardHands::leftHand.newKey())
     {
         leftHandState = KeyboardHands::leftHand.getKeyData();
+        // Store extended data if available (for Sonshi with 12 columns)
+        if (KeyboardHands::leftHand.isExtendedFormat()) {
+            leftHandStateExtended = KeyboardHands::leftHand.getKeyDataExtended();
+        }
     }
     if (KeyboardHands::rightHand.newKey())
     {
         rightHandState = KeyboardHands::rightHand.getKeyData();
+        // Store extended data if available
+        if (KeyboardHands::rightHand.isExtendedFormat()) {
+            rightHandStateExtended = KeyboardHands::rightHand.getKeyDataExtended();
+        }
     }
 }
 
 void KeyboardKeyScanner::actOnMatrixScan()
 {
+    // Check if we're using extended format (for keyboards with >8 columns like Sonshi)
+    bool useExtendedLeft = KeyboardHands::leftHand.isExtendedFormat();
+    bool useExtendedRight = KeyboardHands::rightHand.isExtendedFormat();
+    
     for (uint8_t row = 0; row < Props_::matrix_rows; row++)
     {
-#warning "This might be problematic if the number of columns is not symmetric. Please check!!!"
         for (uint8_t col = 0; col < Props_::left_columns; col++)
         {
-#warning "Is this working if the number of collumns is not 8? e.g. 12?"
-            uint8_t keynum = (row * Props_::left_columns) + col;
-            uint8_t keyStatePrev;
-            uint8_t keyStateNow;
             uint8_t keyState;
 
-            // left
-            keyStatePrev = array_bit_get( (uint8_t *)previousLeftHandState.rows, sizeof(previousLeftHandState.rows), keynum );
-            keyStateNow = array_bit_get( (uint8_t *)leftHandState.rows, sizeof(leftHandState.rows), keynum );
-
-            keyState = (keyStatePrev << 0) | (keyStateNow << 1);
+            // left - use extended format if available, otherwise standard
+            bool prevState, currState;
+            if (useExtendedLeft) {
+                prevState = (previousLeftHandStateExtended.rows[row] & (1 << col)) != 0;
+                currState = (leftHandStateExtended.rows[row] & (1 << col)) != 0;
+            } else {
+                prevState = (previousLeftHandState.rows[row] & (1 << col)) != 0;
+                currState = (leftHandState.rows[row] & (1 << col)) != 0;
+            }
+            keyState = (prevState << 0) | (currState << 1);
 
             if (keyState)
             {
@@ -251,11 +271,15 @@ void KeyboardKeyScanner::actOnMatrixScan()
                 ThisType::handleKeyswitchEvent(Key_NoKey, KeyAddr(row, col), keyState);
             }
 
-            // right
-            keyStatePrev = array_bit_get( (uint8_t *)previousRightHandState.rows, sizeof(previousRightHandState.rows), keynum );
-            keyStateNow = array_bit_get( (uint8_t *)rightHandState.rows, sizeof(rightHandState.rows), keynum );
-
-            keyState = (keyStatePrev << 0) | (keyStateNow << 1);
+            // right - use extended format if available, otherwise standard
+            if (useExtendedRight) {
+                prevState = (previousRightHandStateExtended.rows[row] & (1 << col)) != 0;
+                currState = (rightHandStateExtended.rows[row] & (1 << col)) != 0;
+            } else {
+                prevState = (previousRightHandState.rows[row] & (1 << col)) != 0;
+                currState = (rightHandState.rows[row] & (1 << col)) != 0;
+            }
+            keyState = (prevState << 0) | (currState << 1);
 
             if (keyState)
             {
@@ -364,14 +388,22 @@ bool KeyboardKeyScanner::wasKeyswitchPressed(KeyAddr key_addr)
 
 uint8_t KeyboardKeyScanner::pressedKeyswitchCount()
 {
-    return array_popcount_get( (uint8_t *)leftHandState.rows, sizeof(leftHandState.rows) ) +
-            array_popcount_get( (uint8_t *)rightHandState.rows, sizeof(rightHandState.rows) );
+    uint8_t count = 0;
+    for (int i = 0; i < 5; i++) {
+        count += __builtin_popcount(leftHandState.rows[i]);
+        count += __builtin_popcount(rightHandState.rows[i]);
+    }
+    return count;
 }
 
 uint8_t KeyboardKeyScanner::previousPressedKeyswitchCount()
 {
-    return array_popcount_get( (uint8_t *)previousLeftHandState.rows, sizeof(previousLeftHandState.rows) ) +
-            array_popcount_get( (uint8_t *)previousRightHandState.rows, sizeof(previousRightHandState.rows) );
+    uint8_t count = 0;
+    for (int i = 0; i < 5; i++) {
+        count += __builtin_popcount(previousLeftHandState.rows[i]);
+        count += __builtin_popcount(previousRightHandState.rows[i]);
+    }
+    return count;
 }
 
 void KeyboardKeyScanner::setup()
@@ -388,8 +420,8 @@ void KeyboardKeyScanner::setup()
 
 void KeyboardKeyScanner::reset(void)
 {
-    dygma_keyboards::Hand::keyDataReleaseAll( &leftHandState );
-    dygma_keyboards::Hand::keyDataReleaseAll( &rightHandState );
+    memset(&leftHandState, 0, sizeof(leftHandState));
+    memset(&rightHandState, 0, sizeof(rightHandState));
     Runtime.hid().keyboard().releaseAllKeys();
     Runtime.hid().keyboard().sendReport();
 }
