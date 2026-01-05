@@ -34,7 +34,7 @@
 
 
 #define KEYBOARD_HANDS_DEBUG                    1
-#define PRINT_KEYSWITCH_EVENT_PARAMETERS    1
+#define PRINT_KEYSWITCH_EVENT_PARAMETERS    0
 
 #ifndef KEYBOARD_NEURON_FW_VERSION
 #error "Firmware version is not specified."
@@ -89,13 +89,6 @@ class KeyboardKeyScanner : public kaleidoscope::driver::keyscanner::Base<Keyboar
 
     static dygma_keyboards::key_data leftHandMask;
     static dygma_keyboards::key_data rightHandMask;
-    
-    // Extended format for keyboards with >8 columns (e.g., Sonshi with 12 columns)
-    static dygma_keyboards::key_data_extended leftHandStateExtended;
-    static dygma_keyboards::key_data_extended rightHandStateExtended;
-    static dygma_keyboards::key_data_extended previousLeftHandStateExtended;
-    static dygma_keyboards::key_data_extended previousRightHandStateExtended;
-    
     static void usbConnectionsStateMachine();
 };
 

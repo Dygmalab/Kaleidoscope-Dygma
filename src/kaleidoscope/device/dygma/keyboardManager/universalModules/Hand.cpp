@@ -60,36 +60,15 @@ bool inline filterHand(Communications_protocol::Devices incomingDevice,Hand::Han
 void Hand::init()
 {
     /* Initialize the key data */
-    key_data_.all = 0;
-    memset(&key_data_extended_, 0, sizeof(key_data_extended_));
+    keyDataReleaseAll( &key_data_ );
 
     auto keyScanFunction = [this](Packet const &packet)
     {
         if (filterHand(packet.header.device, this_device_))
         {
-            // Detect format based on packet size
-            // Split keyboards (Defy): 5 bytes (uint8_t rows[5])
-            // Regular keyboards (Sonshi): 10 bytes (uint16_t rows[5])
-            if (packet.header.size == 10) {
-                // Extended format for regular keyboards with >8 columns
-                use_extended_format_ = true;
-                if (memcmp(key_data_extended_.bytes, packet.data, 10) == 0) return;
-                new_key_ = true;
-                memcpy(key_data_extended_.bytes, packet.data, 10);
-                
-                // Convert extended format to standard format for compatibility
-                // Copy only the lower 8 bits of each row
-                for (int i = 0; i < 5; i++) {
-                    key_data_.rows[i] = key_data_extended_.rows[i] & 0xFF;
-                }
-            } else {
-                // Standard format for split keyboards
-                use_extended_format_ = false;
-                if (memcmp(key_data_.rows, packet.data, sizeof(key_data_.rows)) == 0) return;
-                new_key_ = true;
-                memcpy(key_data_.rows, packet.data, sizeof(key_data_.rows));
-                memset(&key_data_extended_, 0, sizeof(key_data_extended_));
-            }
+            if (memcmp(key_data_.rows, packet.data, sizeof(key_data_.rows)) == 0) return;
+            new_key_ = true;
+            memcpy(key_data_.rows, packet.data, sizeof(key_data_.rows));
         }
     };
     Communications.callbacks.bind(HAS_KEYS, keyScanFunction);
@@ -97,18 +76,35 @@ void Hand::init()
 
 void Hand::releaseAllKeys()
 {
-    if (key_data_.all == 0)
+    if( keyDataAllReleased(&key_data_) == true )
     {
         /* The keys are released already */
         return;
     }
 
     /* Release all keys */
-    key_data_.all = 0;
-    memset(&key_data_extended_, 0, sizeof(key_data_extended_));
+    keyDataReleaseAll( &key_data_ );
     new_key_ = true;
 }
 
+void Hand::keyDataReleaseAll( key_data * p_key_data )
+{
+    memset( p_key_data->rows, 0x00, sizeof(p_key_data->rows) );
+}
+
+bool Hand::keyDataAllReleased( key_data * p_key_data )
+{
+    uint8_t i;
+    for( i = 0; i < MATRIX_ROWS; i++ )
+    {
+        if( p_key_data->rows[i] != 0 )
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
 
 } // namespace dygma_keyboards
 } // namespace dygma

@@ -28,15 +28,8 @@ namespace dygma {
 namespace dygma_keyboards {
 
 typedef union {
-  uint8_t rows[5];   // Original format for split keyboards (5 bytes)
-  uint64_t all;      // For quick operations
+  uint16_t rows[MATRIX_ROWS];
 } key_data;
-
-typedef union {
-  uint16_t rows[5];  // Extended format for regular keyboards with >8 columns (10 bytes)
-  uint8_t bytes[10];
-} key_data_extended;
-
 class Hand {
  public:
    enum HandSide {
@@ -51,22 +44,20 @@ class Hand {
 
  private:
   dygma_keyboards::key_data key_data_{};
-  dygma_keyboards::key_data_extended key_data_extended_{};
   bool new_key_;
-  bool use_extended_format_{false};
+
+public:
 
 public:
   const key_data &getKeyData() {
     new_key_ = false;
     return key_data_;
   }
-  
-  const key_data_extended &getKeyDataExtended() {
-    return key_data_extended_;
-  }
-  
-  [[nodiscard]] bool isExtendedFormat() const { return use_extended_format_; }
+
   [[nodiscard]] bool newKey() const { return new_key_; }
+
+  static void keyDataReleaseAll( key_data * p_key_data );
+  static bool keyDataAllReleased( key_data * p_key_data );
 };
 
 }  // namespace dygma_keyboards
