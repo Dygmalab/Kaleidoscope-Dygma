@@ -27,8 +27,12 @@ namespace device {
 namespace dygma {
 namespace dygma_keyboards {
 
+typedef uint16_t column_bitmap_t;
+
+#define HAND_COLUMN_BITMAP_BIT_SIZE  (sizeof(kaleidoscope::device::dygma::dygma_keyboards::column_bitmap_t) * 8)
+
 typedef union {
-  uint16_t rows[MATRIX_ROWS];
+  column_bitmap_t rows[MATRIX_ROWS];
 } key_data;
 class Hand {
  public:

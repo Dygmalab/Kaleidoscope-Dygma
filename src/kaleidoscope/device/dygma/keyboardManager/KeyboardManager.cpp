@@ -222,11 +222,9 @@ void KeyboardKeyScanner::actOnMatrixScan()
 {
     for (uint8_t row = 0; row < Props_::matrix_rows; row++)
     {
-#warning "This might be problematic if the number of columns is not symmetric. Please check!!!"
-        for (uint8_t col = 0; col < Props_::left_columns; col++)
+        for (uint8_t col = 0; col < HAND_COLUMN_BITMAP_BIT_SIZE; col++)
         {
-#warning "Is this working if the number of collumns is not 8? e.g. 12?"
-            uint8_t keynum = (row * Props_::left_columns) + col;
+            uint32_t keynum = (row * HAND_COLUMN_BITMAP_BIT_SIZE) + col;
             uint8_t keyStatePrev;
             uint8_t keyStateNow;
             uint8_t keyState;
