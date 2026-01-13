@@ -469,36 +469,31 @@ uint8_t KeyboardNrf::side::rightVersion()
     //  return KeyboardHands::hand_spi2.readVersion();
 }
 
-#warning "Resolve this"
-//void KeyboardNrf::side::reset_sides()
-//{
-//    nrf_gpio_cfg_output(SIDE_NRESET_1);
-//    nrf_gpio_cfg_output(SIDE_NRESET_2);
-//    nrf_gpio_pin_write(SIDE_NRESET_1, 0);
-//    nrf_gpio_pin_write(SIDE_NRESET_2, 0);
-//    delay(10);
-//    nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
-//    nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_NOPULL);
-//    delay(50); // We should give a bit more time but for now lest leave it like this
-//}
-//
-//void KeyboardNrf::side::reset_right_side()
-//{
-//    nrf_gpio_cfg_output(SIDE_NRESET_1);
-//    nrf_gpio_pin_write(SIDE_NRESET_1, 0);
-//    delay(10);
-//    nrf_gpio_cfg_input(SIDE_NRESET_1, NRF_GPIO_PIN_NOPULL);
-//    delay(50); // We should give a bit more time but for now lest leave it like this
-//}
-//
-//void KeyboardNrf::side::reset_left_side()
-//{
-//    nrf_gpio_cfg_output(SIDE_NRESET_2);
-//    nrf_gpio_pin_write(SIDE_NRESET_2, 0);
-//    delay(10);
-//    nrf_gpio_cfg_input(SIDE_NRESET_2, NRF_GPIO_PIN_NOPULL);
-//    delay(50); // We should give a bit more time but for now lest leave it like this
-//}
+void KeyboardNrf::side::reset_sides()
+{
+    kbd_glue_side_power_left_set( false );
+    kbd_glue_side_power_right_set( false );
+    delay(10);
+    kbd_glue_side_power_left_set( true );
+    kbd_glue_side_power_right_set( true );
+    delay(50); // We should give a bit more time but for now lest leave it like this
+}
+
+void KeyboardNrf::side::reset_right_side()
+{
+    kbd_glue_side_power_right_set( false );
+    delay(10);
+    kbd_glue_side_power_right_set( true );
+    delay(50); // We should give a bit more time but for now lest leave it like this
+}
+
+void KeyboardNrf::side::reset_left_side()
+{
+    kbd_glue_side_power_left_set( false );
+    delay(10);
+    kbd_glue_side_power_left_set( true );
+    delay(50); // We should give a bit more time but for now lest leave it like this
+}
 
 void KeyboardNrf::side::prepareForFlash()
 {
