@@ -41,6 +41,14 @@
     #define KEYBOARD_NEURON_FW_VERSION "N/A"
 #endif
 
+#ifndef APP_KS_LEFT_BOOT_ADDRESS
+    #define APP_KS_LEFT_BOOT_ADDRESS    0x5A
+#endif /* APP_KS_LEFT_BOOT_ADDRESS */
+
+#ifndef APP_KS_RIGHT_BOOT_ADDRESS
+    #define APP_KS_RIGHT_BOOT_ADDRESS   0x5B
+#endif /* APP_KS_RIGHT_BOOT_ADDRESS */
+
 namespace kaleidoscope {
 namespace device {
 namespace dygma {
@@ -128,8 +136,8 @@ class KeyboardNrf : public kaleidoscope::device::Base<KeyboardProps> {
         void prepareForFlash();
 
         // Side bootloader addresses
-        static constexpr uint8_t left_boot_address  = 0x5A;
-        static constexpr uint8_t right_boot_address = 0x5B;
+        static constexpr uint8_t left_boot_address  = APP_KS_LEFT_BOOT_ADDRESS;
+        static constexpr uint8_t right_boot_address = APP_KS_RIGHT_BOOT_ADDRESS;
     } side;
 
     struct settings {
