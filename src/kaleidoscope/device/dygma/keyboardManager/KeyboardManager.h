@@ -77,6 +77,9 @@ class KeyboardKeyScanner : public kaleidoscope::driver::keyscanner::Base<Keyboar
     static bool leftSideWiredConnection();
     static Communications_protocol::Devices leftHandDevice(void);
 
+    static bool slideSwitchPositionUsb( void );
+    static bool slideSwitchPositionBle( void );
+
     static void maskKey(KeyAddr key_addr);
     static void unMaskKey(KeyAddr key_addr);
     static bool isKeyMasked(KeyAddr key_addr);

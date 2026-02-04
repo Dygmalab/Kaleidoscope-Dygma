@@ -46,11 +46,14 @@
 
 #define NEURON_LED_BRIGHTNESS 2
 
-/* External prototypes */
+/* External glue prototypes */
 extern bool_t kbd_glue_left_wired_connected( void );
 extern bool_t kbd_glue_right_wired_connected( void );
 extern void kbd_glue_side_power_left_set( bool_t power );
 extern void kbd_glue_side_power_right_set( bool_t power );
+
+extern bool_t kbd_glue_slide_switch_position_usb( void );
+extern bool_t kbd_glue_slide_switch_position_ble( void );
 
 //Twi_master twi_master(TWI_MASTER_SCL_PIN, TWI_MASTER_SDA_PIN);
 Status_leds status_leds(LED_GREEN_PIN, LED_RED_PIN);
@@ -426,6 +429,16 @@ bool KeyboardKeyScanner::rightSideWiredConnection()
 bool KeyboardKeyScanner::leftSideWiredConnection()
 {
     return kbd_glue_left_wired_connected();
+}
+
+bool KeyboardKeyScanner::slideSwitchPositionUsb( void )
+{
+    return kbd_glue_slide_switch_position_usb();
+}
+
+bool KeyboardKeyScanner::slideSwitchPositionBle( void )
+{
+    return kbd_glue_slide_switch_position_ble();
 }
 
 /********* KeyboardNrf class (Hardware plugin) *********/
