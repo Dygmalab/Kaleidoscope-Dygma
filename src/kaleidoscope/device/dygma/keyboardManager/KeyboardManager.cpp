@@ -46,6 +46,10 @@
 
 #define NEURON_LED_BRIGHTNESS 2
 
+#ifndef UPG_WIRE_CLOCK_FREQ_KHZ
+#define UPG_WIRE_CLOCK_FREQ_KHZ 100
+#endif /* UPG_WIRE_CLOCK_FREQ_KHZ */
+
 /* External glue prototypes */
 extern bool_t kbd_glue_left_wired_connected( void );
 extern bool_t kbd_glue_right_wired_connected( void );
@@ -510,7 +514,7 @@ void KeyboardNrf::side::reset_left_side()
 
 void KeyboardNrf::side::prepareForFlash()
 {
-    Wire::begin(100);
+    Wire::begin( UPG_WIRE_CLOCK_FREQ_KHZ );
 }
 
 void KeyboardNrf::settings::getChipID(char *buff, uint16_t len)
