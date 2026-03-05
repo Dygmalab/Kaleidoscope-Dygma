@@ -59,7 +59,6 @@ extern void kbd_glue_side_power_right_set( bool_t power );
 extern bool_t kbd_glue_slide_switch_position_usb( void );
 extern bool_t kbd_glue_slide_switch_position_ble( void );
 
-//Twi_master twi_master(TWI_MASTER_SCL_PIN, TWI_MASTER_SDA_PIN);
 Status_leds status_leds(LED_GREEN_PIN, LED_RED_PIN);
 
 
