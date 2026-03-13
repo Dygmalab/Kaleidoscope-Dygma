@@ -15,7 +15,7 @@
  */
 #ifndef NRF_NEURON_TIMELINE_H
 #define NRF_NEURON_TIMELINE_H
-#include "kaleidoscope/plugin/Superkeys/includes.h"
+#include "Superkeys/includes.h"
 
 class Timeline
 {

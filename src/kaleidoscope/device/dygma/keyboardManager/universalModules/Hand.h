@@ -22,35 +22,17 @@
 #include "Communications_protocol.h"
 #include "common.h"
 
-struct cRGB {
-  uint8_t r;
-  uint8_t g;
-  uint8_t b;
-  uint8_t w;
-};
-
 namespace kaleidoscope {
 namespace device {
 namespace dygma {
 namespace dygma_keyboards {
 
-#define LED_BANKS           11
+typedef uint16_t column_bitmap_t;
 
-#define LEDS_PER_HAND       88
-#define LPH                 LEDS_PER_HAND
-#define LEDS_PER_BANK       8
-#define LED_BYTES_PER_BANK  (sizeof(cRGB) * LEDS_PER_BANK)
-
-#define LED_RED_CHANNEL_MAX 229
+#define HAND_COLUMN_BITMAP_BIT_SIZE  (sizeof(kaleidoscope::device::dygma::dygma_keyboards::column_bitmap_t) * 8)
 
 typedef union {
-  cRGB leds[LEDS_PER_HAND];
-  uint8_t bytes[LED_BANKS][LED_BYTES_PER_BANK];
-} LEDData_t;
-
-typedef union {
-  uint8_t rows[5];
-  uint64_t all;
+  column_bitmap_t rows[MATRIX_ROWS];
 } key_data;
 class Hand {
  public:
@@ -63,7 +45,6 @@ class Hand {
   void releaseAllKeys();
 
   HandSide this_device_;
-  LEDData_t led_data{};
 
  private:
   dygma_keyboards::key_data key_data_{};
@@ -78,6 +59,9 @@ public:
   }
 
   [[nodiscard]] bool newKey() const { return new_key_; }
+
+  static void keyDataReleaseAll( key_data * p_key_data );
+  static bool keyDataAllReleased( key_data * p_key_data );
 };
 
 }  // namespace dygma_keyboards

@@ -14,20 +14,20 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "kbd_core.h"
+
 #ifndef NRF_NEURON_SUPERKEYSHANDLER_H
 #define NRF_NEURON_SUPERKEYSHANDLER_H
 
 #include <Kaleidoscope.h>
 #include <cstdint>
 #include "Kaleidoscope-Ranges.h"
-#include "EEPROM-Settings.h"
 #include "Kaleidoscope-FocusSerial.h"
 
-#include "kaleidoscope/plugin/Superkeys/includes.h"
+#include "Superkeys/includes.h"
+#include "Superkeys/Superkey/Superkey.h"
 
 using KeyID = uint16_t;
-
-class Superkey;
 
 namespace kaleidoscope
 {
@@ -35,8 +35,17 @@ namespace kaleidoscope
     {
         class SuperkeysHandler : public kaleidoscope::Plugin
         {
-            static constexpr uint8_t KEYS_IN_SUPERKEY = 6;
-            static constexpr uint8_t offset = 8;
+
+        public:
+            typedef struct PACK
+            {
+                // Superkey configurations
+                uint16_t wait_for_;
+                uint16_t hold_start_;
+                uint8_t repeat_interval_;
+                uint8_t overlap_threshold_;
+                uint16_t time_out_;
+            } superkey_config_t;
 
         public:
             // Kaleidoscope plugin methods
@@ -81,7 +90,7 @@ namespace kaleidoscope
              * It allocates a storage slice in EEPROM to store the DynamicSuperKeys settings, including size and offset.
              * After setting up the storage, it updates the SuperKeys cache to ensure consistency with the stored values.
              */
-            static void setup(uint8_t active_superkeys, const Key (*sk_map)[KEYS_IN_SUPERKEY]);
+            static void setup(uint8_t active_superkeys, const Superkey::superkey_config_t * p_sk_map);
 
             /**
              * @brief Get the number of active superkeys.
@@ -90,52 +99,22 @@ namespace kaleidoscope
              */
             static uint8_t get_configured_sk();
 
-            struct Configurations
-            {
-                // Memory space
-                uint16_t storage_base_;
-                uint16_t storage_size_;
-
-                // Superkey configurations
-                uint16_t delayed_time_;
-                uint16_t wait_for_;
-                uint16_t hold_start_;
-                uint8_t repeat_interval_;
-                uint8_t overlap_threshold_;
-                uint16_t time_out_;
-
-                void reset()
-                {
-                    delayed_time_ = 0;
-                    wait_for_ = 500;
-                    hold_start_ = 236;
-                    repeat_interval_ = 20;
-                    overlap_threshold_ = 80;
-                    time_out_ = 144;
-                }
-            };
-
-            static void set_minimum_hold(uint16_t minimum_hold);
-
-            static void save_superkey_map_from(const Key (*sk_map)[KEYS_IN_SUPERKEY], uint8_t active_superkeys);
+            static void save_superkey_map_from(const Superkey::superkey_config_t * p_sk_map, uint8_t active_superkeys);
 
             static void save_superkey_map();
 
             private:
             
-            static uint16_t settings_base_;
+            static const superkey_config_t * p_superkey_config;
             
             static uint8_t configured_superkeys;
             static uint8_t cache_modifiers;
 
-            // keys in Actions
-            static Key Actions[KEYS_IN_SUPERKEY];
-
-            static void init(const Key (*sk_map)[KEYS_IN_SUPERKEY]);
+            static void init(const Superkey::superkey_config_t * p_sk_map);
             static void config();
             static void enable();
             static void disable();
-            static void save_configurations(const Key (*sk_map)[KEYS_IN_SUPERKEY]);
+            static void refresh_configurations(const Superkey::superkey_config_t * p_sk_map);
 
             /*
              *  Erase superkeys instances to avoid memory leaks.
@@ -147,6 +126,13 @@ namespace kaleidoscope
             static EventHandlerResult handle_superkeys(Key &mapped_key, KeyAddr key_addr, uint8_t keyState);
 
             static EventHandlerResult handle_regular_keys(Key &mapped_key, KeyAddr key_addr, uint8_t keyState);
+
+            static void cfgmem_wait_for_save( uint16_t wait_for );
+            static void cfgmem_time_out_save( uint16_t time_out );
+            static void cfgmem_hold_start_save( uint16_t hold_start );
+            static void cfgmem_repeat_interval_save( uint8_t repeat_interval );
+            static void cfgmem_overlap_threshold_save( uint8_t overlap_threshold );
+            static void cfgmem_config_reset( void );
         };
     } // namespace plugin
 } // namespace kaleidoscope

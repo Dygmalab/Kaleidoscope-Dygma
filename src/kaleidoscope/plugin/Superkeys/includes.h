@@ -15,6 +15,7 @@
  */
 #ifndef NRF_NEURON_INCLUDES_H
 #define NRF_NEURON_INCLUDES_H
+
 #include <Kaleidoscope.h>
 #include <Kaleidoscope-Ranges.h>
 #include <cstdint>
@@ -28,14 +29,14 @@ namespace Utils
     static constexpr uint8_t SUPER_KEY_COUNT = kaleidoscope::ranges::DYNAMIC_SUPER_LAST - kaleidoscope::ranges::DYNAMIC_SUPER_FIRST + 2;
     static constexpr uint8_t MAX_SUPER_KEYS_ACTIVE = 70; // Limited by stack size.
     
-    struct Actions
-    {
-        Key tap;
-        Key hold;
-        Key tap_hold;
-        Key double_tap;
-        Key double_tap_hold;
-    };
+//    struct Actions
+//    {
+//        Key tap;
+//        Key hold;
+//        Key tap_hold;
+//        Key double_tap;
+//        Key double_tap_hold;
+//    };
 
     struct ExtendedActions
     {
@@ -45,7 +46,7 @@ namespace Utils
     };
 
     // Shared configuration structure (points to SuperkeysHandler::Configurations)
-    struct SharedConfig 
+    struct SharedConfig
     {
         uint16_t hold_start_;
         uint16_t time_out_;
@@ -113,7 +114,7 @@ namespace Utils
         UNKNOW
     };
 
-    enum class KeyType : uint8_t 
+    enum class KeyType : uint8_t
     {
         NONE,
         NORMAL,
@@ -134,6 +135,4 @@ namespace Utils
     };
 }
 #include "Timeline/Timeline.h"
-#include "Actions/ActionsDriver.h"
-#include "Superkey/Superkey.h"
 #endif // NRF_NEURON_INCLUDES_H

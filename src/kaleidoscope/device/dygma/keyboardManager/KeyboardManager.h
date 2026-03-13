@@ -28,16 +28,8 @@
 #include "kaleidoscope/driver/bootloader/nrf/NRF.h"
 #include "Ble_composite_dev.h"
 
-#define CRGB(r, g, b) \
-    (cRGB) {          \
-        b, g, r, 0    \
-    }
-
 #include "Arduino.h"
 #include "kaleidoscope/device/Base.h"
-#include "kaleidoscope/driver/keyscanner/Base.h"
-#include "kaleidoscope/driver/led/Base.h"
-#include "kaleidoscope/driver/storage/Flash.h"
 #include "libraries/KeyboardioHID/src/MultiReport/RawHID.h"
 
 
@@ -49,72 +41,17 @@
     #define KEYBOARD_NEURON_FW_VERSION "N/A"
 #endif
 
+#ifndef APP_KS_LEFT_BOOT_ADDRESS
+    #define APP_KS_LEFT_BOOT_ADDRESS    0x5A
+#endif /* APP_KS_LEFT_BOOT_ADDRESS */
+
+#ifndef APP_KS_RIGHT_BOOT_ADDRESS
+    #define APP_KS_RIGHT_BOOT_ADDRESS   0x5B
+#endif /* APP_KS_RIGHT_BOOT_ADDRESS */
+
 namespace kaleidoscope {
 namespace device {
 namespace dygma {
-
-// LHK = Left Hand Keys
-#define LHK 33
-
-using kaleidoscope::driver::led::no_led;
-
-struct KeyboardLEDDriverProps : public kaleidoscope::driver::led::BaseProps {
-    static constexpr uint8_t key_matrix_leds = KEY_MATRIX_LEDS;  // Per keyboard side. ANSI only.
-
-    static constexpr uint8_t underglow_leds_leftSide  = UNDERGLOW_LEDS_LEFT_SIDE;  //UG Left side.
-    static constexpr uint8_t leds_hand_left  = LEDS_HAND_LEFT;  // BL Left side
-
-    static constexpr uint8_t underglow_leds_rightSide  = UNDERGLOW_LEDS_RIGHT_SIDE;  // UG Right side.
-    static constexpr uint8_t leds_hand_right  = LEDS_HAND_RIGHT;  // BL Right side.
-
-    static constexpr uint8_t neuron_led = NEURON_LED;
-
-    static constexpr uint8_t leds_hand       = underglow_leds_rightSide + underglow_leds_leftSide + leds_hand_right + leds_hand_left;
-
-    static constexpr uint8_t led_count = leds_hand + neuron_led; //This number needs to be par so Neuron takes two LEDs
-    // clang-format off
-// clang-format off
- static constexpr uint8_t key_led_map[] = KEY_LED_MAP;
-   // clang-format on
-};
-
-#undef LHK
-
-class KeyboardLEDDriver : public kaleidoscope::driver::led::Base<KeyboardLEDDriverProps> {
-   public:
-    static void setup();
-
-    static void syncLeds();
-    static void setCrgbAt(uint8_t i, cRGB crgb);
-    static void setCrgbNeuron(cRGB crgb);
-    static cRGB getCrgbAt(uint8_t i);
-    //Wired parameters
-    static void setBrightness(uint8_t brightness);
-    static uint8_t getBrightness();
-    static void setBrightnessUG(uint8_t brightnessUG);
-    static uint8_t getBrightnessUG();
-    //Wireless parameters
-    static void setBrightnessWireless(uint8_t brightness);
-    static uint8_t getBrightnessWireless();
-    static void setBrightnessUGWireless(uint8_t brightnessUG);
-    static uint8_t getBrightnessUGWireless();
-    static void updateNeuronLED();
-    static constexpr uint8_t underglow_leds  = KeyboardLEDDriverProps::underglow_leds_leftSide;
-    static constexpr uint8_t key_matrix_left = KeyboardLEDDriverProps::leds_hand_left;
-    static constexpr uint8_t key_matrix_right = KeyboardLEDDriverProps::leds_hand_right;
-    static constexpr uint8_t underglow_leds_right = KeyboardLEDDriverProps::underglow_leds_rightSide;
-   private:
-    static bool isLEDChangedNeuron;
-    static bool leds_enabled_;
-    static uint8_t isLEDChangedLeft[LED_BANKS];
-    static uint8_t isLEDChangedRight[LED_BANKS];
-    static cRGB neuronLED;
-
-    static constexpr uint8_t lph = LEDS_PER_HAND;
-    // clang-format off
-    static constexpr uint8_t led_map[KeyboardLEDDriverProps::led_count] = LED_MAP;
-    // clang-format on
-};
 
 struct KeyboardKeyScannerProps : public kaleidoscope::driver::keyscanner::BaseProps {
     static constexpr uint8_t matrix_rows    = MATRIX_ROWS;
@@ -140,6 +77,9 @@ class KeyboardKeyScanner : public kaleidoscope::driver::keyscanner::Base<Keyboar
     static bool leftSideWiredConnection();
     static Communications_protocol::Devices leftHandDevice(void);
 
+    static bool slideSwitchPositionUsb( void );
+    static bool slideSwitchPositionBle( void );
+
     static void maskKey(KeyAddr key_addr);
     static void unMaskKey(KeyAddr key_addr);
     static bool isKeyMasked(KeyAddr key_addr);
@@ -164,12 +104,9 @@ class KeyboardKeyScanner : public kaleidoscope::driver::keyscanner::Base<Keyboar
 };
 
 struct KeyboardProps : kaleidoscope::device::BaseProps {
-    typedef KeyboardLEDDriverProps LEDDriverProps;
-    typedef KeyboardLEDDriver LEDDriver;
     typedef KeyboardKeyScannerProps KeyScannerProps;
     typedef KeyboardKeyScanner KeyScanner;
     typedef kaleidoscope::driver::bootloader::nrf::nrfBoot Bootloader;
-    typedef kaleidoscope::driver::storage::Flash<StorageProps> Storage;
 
     static constexpr const char *short_name = SHORT_NAME;
 };
@@ -202,8 +139,8 @@ class KeyboardNrf : public kaleidoscope::device::Base<KeyboardProps> {
         void prepareForFlash();
 
         // Side bootloader addresses
-        static constexpr uint8_t left_boot_address  = 0x5A;
-        static constexpr uint8_t right_boot_address = 0x5B;
+        static constexpr uint8_t left_boot_address  = APP_KS_LEFT_BOOT_ADDRESS;
+        static constexpr uint8_t right_boot_address = APP_KS_RIGHT_BOOT_ADDRESS;
     } side;
 
     struct settings {

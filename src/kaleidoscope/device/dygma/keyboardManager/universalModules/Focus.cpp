@@ -118,23 +118,23 @@ EventHandlerResult Focus::onFocusEvent(const char *command) {
         return EventHandlerResult::EVENT_CONSUMED;
     }
 
-    if (strcmp(command + 9, "keyscanInterval") == 0) {
-        if (::Focus.isEOL()) {
-            NRF_LOG_DEBUG("read request: hardware.keyscanInterval");
-
-            ::Focus.send(Runtime.device().settings.keyscanInterval());
-
-            return EventHandlerResult::EVENT_CONSUMED;
-        } else {
-            NRF_LOG_DEBUG("write request: hardware.keyscanInterval");
-
-            uint8_t keyscan;
-            ::Focus.read(keyscan);
-            Runtime.device().settings.keyscanInterval(keyscan);
-
-            return EventHandlerResult::EVENT_CONSUMED;
-        }
-    }
+//    if (strcmp(command + 9, "keyscanInterval") == 0) {
+//        if (::Focus.isEOL()) {
+//            NRF_LOG_DEBUG("read request: hardware.keyscanInterval");
+//
+//            ::Focus.send(Runtime.device().settings.keyscanInterval());
+//
+//            return EventHandlerResult::EVENT_CONSUMED;
+//        } else {
+//            NRF_LOG_DEBUG("write request: hardware.keyscanInterval");
+//
+//            uint8_t keyscan;
+//            ::Focus.read(keyscan);
+//            Runtime.device().settings.keyscanInterval(keyscan);
+//
+//            return EventHandlerResult::EVENT_CONSUMED;
+//        }
+//    }
 
     return EventHandlerResult::OK;
 }

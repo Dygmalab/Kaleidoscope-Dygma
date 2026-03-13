@@ -14,8 +14,11 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Superkeys/Superkey/Superkey.h"
+#include "kbdfal_ll_memory.h"
+
 #include "Superkeys/includes.h"
+#include "Superkeys/Superkey/Superkey.h"
+#include "Superkeys/Actions/ActionsDriver.h"
 #include <cstdint>
 // #pragma GCC push_options
 // #pragma GCC optimize("O0") // No optimization
@@ -24,12 +27,17 @@
 #include "SuperkeysHandler.h"
 #include "kaleidoscope/plugin/Qukeys.h"
 
+#define DEFAULT_WAIT_FOR            500
+#define DEFAULT_TIME_OUT            144
+#define DEFAULT_HOLD_START          236
+#define DEFAULT_REPEAT_INTERVAL     20
+#define DEFAULT_OVERLAP_THRESHOLD   80
+
 namespace kaleidoscope
 {
 namespace plugin
 {
-SuperkeysHandler::Configurations configurations;
-uint16_t SuperkeysHandler::settings_base_ = 0;
+const SuperkeysHandler::superkey_config_t * SuperkeysHandler::p_superkey_config = nullptr;
 uint8_t SuperkeysHandler::configured_superkeys = 0;
 
 Superkey SuperkeysHandler_sk_array[Utils::MAX_SUPER_KEYS_ACTIVE];
@@ -37,20 +45,26 @@ Superkey SuperkeysHandler_sk_array[Utils::MAX_SUPER_KEYS_ACTIVE];
 // Shared configuration for all Superkeys
 static Utils::SharedConfig shared_sk_config;
 
-Key SuperkeysHandler::Actions[6] = {};
 uint8_t super_key_index = 0;
 uint8_t SuperkeysHandler::cache_modifiers = 0;
 
-void SuperkeysHandler::setup(uint8_t active_superkeys, const Key (*sk_map)[KEYS_IN_SUPERKEY])
+void SuperkeysHandler::setup(uint8_t active_superkeys, const Superkey::superkey_config_t * p_sk_map )
 {
+    result_t result = RESULT_ERR;
+
     configured_superkeys = active_superkeys;
-    settings_base_ = kaleidoscope::plugin::EEPROMSettings::requestSlice(sizeof(SuperkeysHandler::Configurations));
+
+    result = kbdfal_ll_memory_item_request( KBDMEM_ITEM_TYPE_SUPERKEY, (const void **)&p_superkey_config );
+    ASSERT_DYGMA( result == RESULT_OK, "kbdfal_ll_memory_item_request failed" );
+
     cleanup();
     config();
-    init(sk_map);
+    init(p_sk_map);
+
+    UNUSED(result);
 }
 
-void SuperkeysHandler::init(const Key (*sk_map)[KEYS_IN_SUPERKEY])
+void SuperkeysHandler::init(const Superkey::superkey_config_t * p_sk_map)
 {
 
     //NRF_LOG_INFO("SIZE OF Superkey: %i", sizeof(Superkey));
@@ -58,9 +72,9 @@ void SuperkeysHandler::init(const Key (*sk_map)[KEYS_IN_SUPERKEY])
     //NRF_LOG_INFO("SIZE OF Superkey map: %i", sizeof(sk_map));
 
     // Update shared configuration
-    shared_sk_config.hold_start_ = configurations.hold_start_;
-    shared_sk_config.time_out_ = configurations.time_out_;
-    shared_sk_config.overlap_threshold_ = configurations.overlap_threshold_;
+    shared_sk_config.hold_start_ = p_superkey_config->hold_start_;
+    shared_sk_config.time_out_ = p_superkey_config->time_out_;
+    shared_sk_config.overlap_threshold_ = p_superkey_config->overlap_threshold_;
     
     uint16_t sk_index = 0;
     uint16_t max_sk = get_configured_sk();
@@ -76,8 +90,8 @@ void SuperkeysHandler::init(const Key (*sk_map)[KEYS_IN_SUPERKEY])
     {
         // Initialize superkey in static array with pointer directly to sk_map
         // No need to copy - sk_map persists for the lifetime of the program
-        SuperkeysHandler_sk_array[sk_index] = Superkey(sk_index, &shared_sk_config, sk_map[sk_index]);
-        SuperkeysHandler_sk_array[sk_index].init(sk_map[sk_index]);
+        SuperkeysHandler_sk_array[sk_index] = Superkey(sk_index, &shared_sk_config, &p_sk_map[sk_index]);
+        SuperkeysHandler_sk_array[sk_index].init(&p_sk_map[sk_index]);
         
         sk_index++;
     }
@@ -88,43 +102,36 @@ void SuperkeysHandler::init(const Key (*sk_map)[KEYS_IN_SUPERKEY])
 
 void SuperkeysHandler::config()
 {
-    Runtime.storage().get(settings_base_, configurations);
-
     // if one block is invalid, restart everything
-    if (configurations.hold_start_ == 0xFFFF)
+    if (p_superkey_config->hold_start_ == 0xFFFF)
     {
-        configurations.reset();
-        Runtime.storage().put(settings_base_, configurations);
-        Runtime.storage().commit();
+        cfgmem_config_reset();
     }
-    Runtime.storage().get(settings_base_, configurations);
 }
 
-void SuperkeysHandler::save_configurations(const Key (*sk_map)[KEYS_IN_SUPERKEY])
+void SuperkeysHandler::refresh_configurations(const Superkey::superkey_config_t * p_sk_map)
 {
-    Runtime.storage().put(settings_base_, configurations);
-    Runtime.storage().commit();
     config();
     
     // Update shared configuration for all superkeys
-    shared_sk_config.hold_start_ = configurations.hold_start_;
-    shared_sk_config.time_out_ = configurations.time_out_;
-    shared_sk_config.overlap_threshold_ = configurations.overlap_threshold_;
+    shared_sk_config.hold_start_ = p_superkey_config->hold_start_;
+    shared_sk_config.time_out_ = p_superkey_config->time_out_;
+    shared_sk_config.overlap_threshold_ = p_superkey_config->overlap_threshold_;
     
-    if(sk_map != nullptr)
+    if(p_sk_map != nullptr)
     {
         cleanup();
-        init(sk_map);   
+        init(p_sk_map);
     }
 }
 
-void SuperkeysHandler::save_superkey_map_from(const Key (*sk_map)[KEYS_IN_SUPERKEY], uint8_t active_superkeys)
+void SuperkeysHandler::save_superkey_map_from(const Superkey::superkey_config_t * p_sk_map, uint8_t active_superkeys)
 {
     configured_superkeys = active_superkeys;
-    if(sk_map != nullptr)
+    if(p_sk_map != nullptr)
     {
         cleanup();
-        init(sk_map);   
+        init(p_sk_map);
     }
 }
 
@@ -210,12 +217,6 @@ void SuperkeysHandler::save_pressed_modifiers(Key &mapped_key, uint8_t keyState)
         }
     }
 
-}
-
-void SuperkeysHandler::set_minimum_hold(uint16_t minimum_hold)
-{
-    configurations.overlap_threshold_ = minimum_hold;
-    save_configurations(nullptr);
 }
 
 EventHandlerResult SuperkeysHandler::handle_superkeys(Key &mapped_key, KeyAddr key_addr, uint8_t keyState)
@@ -408,16 +409,16 @@ EventHandlerResult SuperkeysHandler::onFocusEvent(const char *command)
     {
         if (::Focus.isEOL())
         {
-            ::Focus.send(configurations.wait_for_);
+            ::Focus.send(p_superkey_config->wait_for_);
         }
         else
         {
             uint16_t wait = 0;
             ::Focus.read(wait);
-            if (configurations.wait_for_ < 2000)
+            if (wait < 2000)
             {
-                configurations.wait_for_ = wait;
-                save_configurations(nullptr);
+                cfgmem_wait_for_save( wait );
+                refresh_configurations(nullptr);
             }
         }
     }
@@ -425,60 +426,127 @@ EventHandlerResult SuperkeysHandler::onFocusEvent(const char *command)
     {
         if (::Focus.isEOL())
         {
-            ::Focus.send(configurations.time_out_);
+            ::Focus.send(p_superkey_config->time_out_);
         }
         else
         {
             uint16_t time = 0;
             ::Focus.read(time);
-            configurations.time_out_ = time;
-            save_configurations(nullptr);
+
+            cfgmem_time_out_save( time );
+            refresh_configurations(nullptr);
         }
     }
     if (strcmp_P(command + 10, "holdstart") == 0)
     {
         if (::Focus.isEOL())
         {
-            ::Focus.send(configurations.hold_start_);
+            ::Focus.send(p_superkey_config->hold_start_);
         }
         else
         {
             uint16_t hold = 0;
             ::Focus.read(hold);
-            configurations.hold_start_ = hold;
-            save_configurations(nullptr);
+
+            cfgmem_hold_start_save( hold );
+            refresh_configurations(nullptr);
         }
     }
     if (strcmp_P(command + 10, "repeat") == 0)
     {
         if (::Focus.isEOL())
         {
-            ::Focus.send(configurations.repeat_interval_);
+            ::Focus.send(p_superkey_config->repeat_interval_);
         }
         else
         {
             uint8_t repeat = 0;
             ::Focus.read(repeat);
-            configurations.repeat_interval_ = repeat;
-            save_configurations(nullptr);
+
+            cfgmem_repeat_interval_save(repeat);
+            refresh_configurations(nullptr);
         }
     }
     if (strcmp_P(command + 10, "overlap") == 0)
     {
         if (::Focus.isEOL())
         {
-            ::Focus.send(configurations.overlap_threshold_);
+            ::Focus.send(p_superkey_config->overlap_threshold_);
         }
         else
         {
             uint16_t overlap_threshold = 0;
             ::Focus.read(overlap_threshold);
-            configurations.overlap_threshold_ = overlap_threshold;
-            save_configurations(nullptr);
+
+            cfgmem_overlap_threshold_save(overlap_threshold);
+            refresh_configurations(nullptr);
         }
     }
 
     return EventHandlerResult::EVENT_CONSUMED;
+}
+
+/****************************************************/
+/*                   Config Memory                  */
+/****************************************************/
+
+void SuperkeysHandler::cfgmem_wait_for_save( uint16_t wait_for )
+{
+    result_t result = RESULT_ERR;
+
+    result = kbdfal_ll_memory_data_save( &p_superkey_config->wait_for_, &wait_for, sizeof(p_superkey_config->wait_for_) );
+    ASSERT_DYGMA( result == RESULT_OK, "kbdfal_ll_memory_save failed" );
+
+    UNUSED( result );
+}
+
+void SuperkeysHandler::cfgmem_time_out_save( uint16_t time_out )
+{
+    result_t result = RESULT_ERR;
+
+    result = kbdfal_ll_memory_data_save( &p_superkey_config->time_out_, &time_out, sizeof(p_superkey_config->time_out_) );
+    ASSERT_DYGMA( result == RESULT_OK, "kbdfal_ll_memory_save failed" );
+
+    UNUSED( result );
+}
+
+void SuperkeysHandler::cfgmem_hold_start_save( uint16_t hold_start )
+{
+    result_t result = RESULT_ERR;
+
+    result = kbdfal_ll_memory_data_save( &p_superkey_config->hold_start_, &hold_start, sizeof(p_superkey_config->hold_start_) );
+    ASSERT_DYGMA( result == RESULT_OK, "kbdfal_ll_memory_save failed" );
+
+    UNUSED( result );
+}
+
+void SuperkeysHandler::cfgmem_repeat_interval_save( uint8_t repeat_interval )
+{
+    result_t result = RESULT_ERR;
+
+    result = kbdfal_ll_memory_data_save( &p_superkey_config->repeat_interval_, &repeat_interval, sizeof(p_superkey_config->repeat_interval_) );
+    ASSERT_DYGMA( result == RESULT_OK, "kbdfal_ll_memory_save failed" );
+
+    UNUSED( result );
+}
+
+void SuperkeysHandler::cfgmem_overlap_threshold_save( uint8_t overlap_threshold )
+{
+    result_t result = RESULT_ERR;
+
+    result = kbdfal_ll_memory_data_save( &p_superkey_config->overlap_threshold_, &overlap_threshold, sizeof(p_superkey_config->overlap_threshold_) );
+    ASSERT_DYGMA( result == RESULT_OK, "kbdfal_ll_memory_save failed" );
+
+    UNUSED( result );
+}
+
+void SuperkeysHandler::cfgmem_config_reset( void )
+{
+    cfgmem_wait_for_save( DEFAULT_WAIT_FOR );
+    cfgmem_time_out_save( DEFAULT_TIME_OUT );
+    cfgmem_hold_start_save( DEFAULT_HOLD_START );
+    cfgmem_repeat_interval_save( DEFAULT_REPEAT_INTERVAL );
+    cfgmem_overlap_threshold_save( DEFAULT_OVERLAP_THRESHOLD );
 }
 
 } // namespace plugin

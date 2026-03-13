@@ -14,28 +14,26 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+#include "kbdfal_ll_memory.h"
 #include "KeyRoleManager.h"
 
 #include "Kaleidoscope-Ranges.h"
 #include "kaleidoscope/key_defs.h"
-
-#include <Kaleidoscope-EEPROM-Keymap.h>
-#include <Kaleidoscope-EEPROM-Settings.h>
 #include <Kaleidoscope-FocusSerial.h>
 #include <cstdint>
 
-#include "Qukeys.h"
+#include "EEPROMKeymapDygma.h"
+#include "QukeysDygma.h"
 #include "SuperkeysHandler.h"
-#include "kaleidoscope/plugin/Superkeys/Actions/ActionsDriver.h"
-#include "kaleidoscope/plugin/Superkeys/includes.h"
+#include "Superkeys/Actions/ActionsDriver.h"
 
 namespace kaleidoscope
 {
 namespace plugin
 {
 
-uint8_t max_layers;
-uint16_t settings_base_ = 0;
+#define ACTION_IS_UNDEFINED( p_action )   ( (*(uint16_t *)p_action) == 0xFFFF )
 
 KeyRoleManager::KeyRoleManager()
 {
@@ -117,7 +115,7 @@ static inline int hidModToDumIndex(uint16_t hid)
 bool KeyRoleManager::is_only_modifier(Key key)
 {
     uint16_t key_id = key.getRaw() & 0x00FF; // We only take the HID keycode (lower part)
-    uint16_t flags = key.getRaw() & 0xFF00;  // Get the flags part
+//    uint16_t flags = key.getRaw() & 0xFF00;  // Get the flags part
 
     // HIDmodifier range: 224 (0xE0) to 231 (0xE7) for left modifiers
     // Right modifiers are in the same range but with the 0x100 bit set
@@ -187,7 +185,7 @@ uint16_t KeyRoleManager::calculate_qukey_code(uint32_t hold_action_raw, uint16_t
 
     // First check if this is a layer change key using the raw action
     // Case A: modifiers HID (Ctrl/Shift/Alt/OS/AltGr)
-    if (!has_layer_change(Key(hold_action_raw)) && (hold_hid >= 0xE0 && hold_hid <= 0xE7) || (hold_hid >= 0x1E0 && hold_hid <= 0x1E7)) 
+    if (!has_layer_change(Key(hold_action_raw)) && ( (hold_hid >= 0xE0 && hold_hid <= 0xE7) || (hold_hid >= 0x1E0 && hold_hid <= 0x1E7) ) )
     {
         const int idx = hidModToDumIndex(hold_hid);
         if (idx < 0) {
@@ -252,12 +250,13 @@ Key KeyRoleManager::search_and_replace(Key key)
     if (!IS_OUTSIDE_DYNAMIC_SUPER_RANGE(key))
     {
         uint8_t super_key_index = static_cast<uint8_t>(key.getRaw() - ranges::DYNAMIC_SUPER_FIRST);
-          
-        Key action_0 = key_storage.keys[super_key_index][0];
-        Key action_1 = key_storage.keys[super_key_index][1];
-        Key action_2 = key_storage.keys[super_key_index][2];
-        Key action_3 = key_storage.keys[super_key_index][3];
-        Key action_4 = key_storage.keys[super_key_index][4];
+        const Superkey::superkey_config_t * p_superkey_config = &p_keyrole_config->superkeys[super_key_index];
+
+        Key action_0 = Superkey::getActionAsKey( p_superkey_config, 0);
+        Key action_1 = Superkey::getActionAsKey( p_superkey_config, 1);
+        Key action_2 = Superkey::getActionAsKey( p_superkey_config, 2);
+        Key action_3 = Superkey::getActionAsKey( p_superkey_config, 3);
+        Key action_4 = Superkey::getActionAsKey( p_superkey_config, 4);
 
         if (!is_idle(action_0) && !is_idle(action_1) && is_idle(action_2) && is_idle(action_3) && is_idle(action_4))
         {
@@ -325,63 +324,31 @@ uint16_t KeyRoleManager::replace_superkey_with_qukey(const Key *action_0, const 
     return qukey_code;
 }
 
-void KeyRoleManager::config()
-{
-    Runtime.storage().get(settings_base_, key_storage);
-
-    // if one block is invalid, restart everything
-    bool reset_storage = true;
-
-    for (uint8_t i = 0; i < Utils::SUPER_KEY_COUNT; i++)
-    {
-        for (size_t j = 0; j < KEYS_IN_SUPERKEY; j++)
-        {
-            if (key_storage.keys[i][j] != 0xFFFF)
-            {
-                reset_storage = false;
-            }
-        }
-    }
-
-    if (reset_storage)
-    {
-        // Restart key_storage.
-        key_storage.reset();
-        Runtime.storage().put(settings_base_, key_storage);
-        Runtime.storage().commit();
-    }
-    Runtime.storage().get(settings_base_, key_storage);
-}
-
 void KeyRoleManager::setup_keys()
 {
-    config();
     set_active_sk();
     determine_key_role();
-    SuperkeysHandler::save_superkey_map_from(key_storage.keys, this->configured_superkeys);
-}
-
-void KeyRoleManager::save_configurations()
-{
-    Runtime.storage().put(settings_base_, key_storage);
-    Runtime.storage().commit();
-    setup_keys();
+    SuperkeysHandler::save_superkey_map_from( p_keyrole_config->superkeys, this->configured_superkeys);
 }
 
 EventHandlerResult KeyRoleManager::onSetup()
 {
-    settings_base_ = kaleidoscope::plugin::EEPROMSettings::requestSlice(sizeof(KeyRoleManager::key_storage_t));
-    config();
+    result_t result = RESULT_ERR;
+
+    result = kbdfal_ll_memory_item_request( KBDMEM_ITEM_TYPE_KEYROLE, (const void **)&p_keyrole_config );
+    ASSERT_DYGMA( result == RESULT_OK, "kbdfal_ll_memory_item_request failed" );
+
     set_active_sk();
     determine_key_role();
     return EventHandlerResult::OK;
+
+    UNUSED( result );
 }
 
-void KeyRoleManager::setup_superkeys(uint8_t _max_layers)
+void KeyRoleManager::setup_superkeys(void)
 {
-    max_layers = _max_layers;
     qukeys.onSetup();         // Initialize the Qukeys plugin.
-    SuperkeysHandler::setup(configured_superkeys,key_storage.keys); // Initialize the SuperkeysHandler plugin.
+    SuperkeysHandler::setup(configured_superkeys, p_keyrole_config->superkeys); // Initialize the SuperkeysHandler plugin.
 }
 
 void KeyRoleManager::set_active_sk() 
@@ -392,15 +359,15 @@ void KeyRoleManager::set_active_sk()
     {
       uint8_t _undefined_actions = 0;
   
-      for (int j = 0; j < KEYS_IN_SUPERKEY; ++j) 
+      for (int j = 0; j < ACTIONS_IN_SUPERKEY; ++j)
       {
-        if (key_storage.keys[i][j] == 0xFFFF) 
+        if ( ACTION_IS_UNDEFINED( &p_keyrole_config->superkeys[i].actions[j] ) == true)
         {
           ++_undefined_actions;
         }
       }
   
-      if (_undefined_actions == KEYS_IN_SUPERKEY) 
+      if (_undefined_actions == ACTIONS_IN_SUPERKEY)
       {
         break; // First row completely empty -> end of configured superkeys.
       }
@@ -414,7 +381,7 @@ void KeyRoleManager::set_active_sk()
         //NRF_LOG_FLUSH();
         this->configured_superkeys = Utils::MAX_SUPER_KEYS_ACTIVE;
     }
-  }
+}
 
 void KeyRoleManager::determine_key_role()
 {
@@ -423,11 +390,13 @@ void KeyRoleManager::determine_key_role()
     
     for (size_t i = 0; i < this->configured_superkeys; i++)
     {
-        Key action_0 = key_storage.keys[i][0];
-        Key action_1 = key_storage.keys[i][1];
-        Key action_2 = key_storage.keys[i][2];
-        Key action_3 = key_storage.keys[i][3];
-        Key action_4 = key_storage.keys[i][4];
+        const Superkey::superkey_config_t * p_superkey_config = &p_keyrole_config->superkeys[i];
+
+        Key action_0 = Superkey::getActionAsKey(p_superkey_config, 0);
+        Key action_1 = Superkey::getActionAsKey(p_superkey_config, 1);
+        Key action_2 = Superkey::getActionAsKey(p_superkey_config, 2);
+        Key action_3 = Superkey::getActionAsKey(p_superkey_config, 3);
+        Key action_4 = Superkey::getActionAsKey(p_superkey_config, 4);
 
         if (!is_idle(action_0) && !is_idle(action_1) && is_idle(action_2) && is_idle(action_3) && is_idle(action_4))
         {
@@ -476,12 +445,15 @@ void KeyRoleManager::determine_key_role()
 
 void KeyRoleManager::send_sk_map()
 {
-    Kaleidoscope.storage().get(settings_base_, key_storage);
+    Key key;
+
     for (uint16_t i = 0; i < Utils::SUPER_KEY_COUNT; ++i)
     {
-        for (int j = 0; j < KEYS_IN_SUPERKEY; ++j)
+        for (int j = 0; j < ACTIONS_IN_SUPERKEY; ++j)
         {
-            ::Focus.send(key_storage.keys[i][j]);
+            key = Superkey::getActionAsKey( &p_keyrole_config->superkeys[i].actions[j] );
+
+            ::Focus.send(key);
         }
     }
 }
@@ -503,12 +475,13 @@ Key KeyRoleManager::find_superkey_for_qukey(Key qukey)
     for (uint16_t i = 0; i < configured_superkeys; i++)
     {
         Key superkey = Key(ranges::DYNAMIC_SUPER_FIRST + i);
+        const Superkey::superkey_config_t * p_superkey_config = &p_keyrole_config->superkeys[i];
         
-        Key action_0 = key_storage.keys[i][0];
-        Key action_1 = key_storage.keys[i][1];
-        Key action_2 = key_storage.keys[i][2];
-        Key action_3 = key_storage.keys[i][3];
-        Key action_4 = key_storage.keys[i][4];
+        Key action_0 = Superkey::getActionAsKey(p_superkey_config, 0);
+        Key action_1 = Superkey::getActionAsKey(p_superkey_config, 1);
+        Key action_2 = Superkey::getActionAsKey(p_superkey_config, 2);
+        Key action_3 = Superkey::getActionAsKey(p_superkey_config, 3);
+        Key action_4 = Superkey::getActionAsKey(p_superkey_config, 4);
         
         if (is_idle(action_0)) continue;
         
@@ -546,8 +519,8 @@ Key KeyRoleManager::find_superkey_for_qukey(Key qukey)
 
 void KeyRoleManager::transform_keymap_superkeys_to_qukeys()
 {
-    uint16_t total_keys = static_cast<uint16_t>(Runtime.device().numKeys()) * max_layers;
-    uint16_t keymap_base = EEPROMKeymap::keymap_base();
+    uint16_t total_keys = static_cast<uint16_t>(Runtime.device().numKeys()) * APP_LAYERS_CNT;
+    const EEPROMKeymap::keymap_config_t * p_keymap_config = EEPROMKeymap::getKeymapConfig();
     uint16_t qk_to_sk = 0;
     uint16_t sk_to_qk = 0;
     
@@ -557,8 +530,7 @@ void KeyRoleManager::transform_keymap_superkeys_to_qukeys()
     //NRF_LOG_DEBUG("Pass 1: Reverting qukeys to superkeys using %d previous mappings", previous_modified_keys_count);
     for (uint16_t i = 0; i < total_keys; i++)
     {
-        Key stored_key = Key(Runtime.storage().read(keymap_base + i * 2 + 1),
-                             Runtime.storage().read(keymap_base + i * 2));
+        Key stored_key = Key( p_keymap_config->keys[i].keyCode, p_keymap_config->keys[i].flags );
         
         if (is_qukey(stored_key))
         {
@@ -582,8 +554,7 @@ void KeyRoleManager::transform_keymap_superkeys_to_qukeys()
     //NRF_LOG_DEBUG("Pass 2: Transforming superkeys to qukeys");
     for (uint16_t i = 0; i < total_keys; i++)
     {
-        Key stored_key = Key(Runtime.storage().read(keymap_base + i * 2 + 1),
-                             Runtime.storage().read(keymap_base + i * 2));
+        Key stored_key = Key( p_keymap_config->keys[i].keyCode, p_keymap_config->keys[i].flags );
         
         if (!IS_OUTSIDE_DYNAMIC_SUPER_RANGE(stored_key))
         {
@@ -633,11 +604,22 @@ EventHandlerResult KeyRoleManager::onFocusEvent(const char *command)
         {
             uint16_t pos = 0;
             Key key;
+            Superkey::action_config_t new_action_config;
+            const Superkey::superkey_config_t * p_superkey_config;
+            const Superkey::action_config_t * p_action_config;
 
-            while (!::Focus.isEOL() && pos < Utils::SUPER_KEY_COUNT * KEYS_IN_SUPERKEY)
+            while (!::Focus.isEOL() && pos < Utils::SUPER_KEY_COUNT * ACTIONS_IN_SUPERKEY)
             {
                 ::Focus.read(key);
-                key_storage.keys[pos / KEYS_IN_SUPERKEY][pos % KEYS_IN_SUPERKEY] = key;
+
+                new_action_config.flags = key.getFlags();
+                new_action_config.keyCode = key.getKeyCode();
+
+                p_superkey_config = &p_keyrole_config->superkeys[ pos / ACTIONS_IN_SUPERKEY ];
+                p_action_config = &p_superkey_config->actions[ pos % ACTIONS_IN_SUPERKEY ];
+
+                cfgmem_key_save( p_action_config, &new_action_config );
+
                 pos++;
             }
             
@@ -649,12 +631,8 @@ EventHandlerResult KeyRoleManager::onFocusEvent(const char *command)
             previous_modified_keys_count = modified_keys_count;
             //NRF_LOG_DEBUG("Saved %d previous qukey mappings", previous_modified_keys_count);
             
-            // Update configuration and rebuild superkey handlers
-            save_configurations();
-            
-            // Rebuild the qukey mappings based on new configuration
-            set_active_sk();
-            determine_key_role();
+            // Rebuild superkey handlers and qukey mappings based on new configuration
+            setup_keys();
             //NRF_LOG_DEBUG("Rebuilt mappings: found %d qukeys", modified_keys_count);
             
             // Transform the keymap
@@ -674,6 +652,46 @@ EventHandlerResult KeyRoleManager::beforeReportingState()
         return EventHandlerResult::EVENT_CONSUMED;
     }
     return superkeysHandler.beforeReportingState();
+}
+
+/****************************************************/
+/*                   Config Memory                  */
+/****************************************************/
+
+void KeyRoleManager::cfgmem_key_save( const Superkey::action_config_t * p_action_config, Superkey::action_config_t * p_action )
+{
+    result_t result = RESULT_ERR;
+
+    result = kbdfal_ll_memory_data_save( p_action_config, p_action, sizeof(Superkey::action_config_t) );
+    ASSERT_DYGMA( result == RESULT_OK, "ConfigManager.config_item_update failed" );
+
+    UNUSED( result );
+}
+
+void KeyRoleManager::cfgmem_superkey_reset( const Superkey::superkey_config_t * p_superkey_config)
+{
+    uint8_t i;
+
+    Superkey::action_config_t idle_action =
+    {
+        .flags = 0xFF,
+        .keyCode = 0xFF,
+    };
+
+    for (i = 0; i < ACTIONS_IN_SUPERKEY; i++)
+    {
+        cfgmem_key_save( &p_superkey_config->actions[i], &idle_action );
+    }
+}
+
+void KeyRoleManager::cfgmem_keyrole_reset( void )
+{
+    uint8_t i;
+
+    for (i = 0; i < Utils::SUPER_KEY_COUNT; i++)
+    {
+        cfgmem_superkey_reset( &p_keyrole_config->superkeys[i] );
+    }
 }
 
 } // namespace plugin

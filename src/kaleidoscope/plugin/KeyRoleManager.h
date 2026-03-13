@@ -17,10 +17,12 @@
 #ifndef KEY_ROLE_MANAGER_H
 #define KEY_ROLE_MANAGER_H
 
-#include "EEPROM-Settings.h"
+#include "kbd_core.h"
+
 #include "Kaleidoscope-FocusSerial.h"
 #include "Kaleidoscope-Ranges.h"
-#include "kaleidoscope/plugin/Superkeys/includes.h"
+#include "Superkeys/includes.h"
+#include "Superkeys/Superkey/Superkey.h"
 #include <Kaleidoscope.h>
 #include <cstdint>
 
@@ -31,6 +33,13 @@ namespace plugin
 
 class KeyRoleManager : public kaleidoscope::Plugin
 {
+  public:
+
+    typedef struct PACK
+    {
+        Superkey::superkey_config_t superkeys[Utils::SUPER_KEY_COUNT];
+    } keyrole_config_t;
+
   public:
 
     struct modified_keys_t
@@ -86,7 +95,7 @@ class KeyRoleManager : public kaleidoscope::Plugin
      * It allocates a storage slice in EEPROM to store the KeyRoleManager settings, including size and offset.
      * After setting up the storage, it updates the KeyRoleManager cache to ensure consistency with the stored values.
      */
-    void setup_superkeys(uint8_t _max_layers);
+    void setup_superkeys(void);
 
     Key search_and_replace(Key key);
 
@@ -121,28 +130,8 @@ class KeyRoleManager : public kaleidoscope::Plugin
     modified_keys_t* get_configured_qukeys(uint16_t qukey_id);
 
   private:
-    static constexpr uint8_t KEYS_IN_SUPERKEY = 6;
-    static constexpr uint8_t IDLE_KEY = 1;
 
-    struct key_storage_t
-    {
-        // Keys configured in every superkey action.
-        Key keys[Utils::SUPER_KEY_COUNT][KEYS_IN_SUPERKEY];
-
-        void reset()
-        {
-            static Key idle_key;
-            idle_key.setRaw(0xFFFF);
-            for (uint8_t i = 0; i < Utils::SUPER_KEY_COUNT; ++i)
-            {
-                for (uint8_t j = 0; j < KEYS_IN_SUPERKEY; ++j)
-                {
-                    keys[i][j] = idle_key;
-                }
-            }
-        }
-    };
-    key_storage_t key_storage;
+    const keyrole_config_t * p_keyrole_config = nullptr;
 
     // Current qukey mappings (superkey_id -> qukey_id)
     modified_keys_t modified_keys[Utils::MAX_SUPER_KEYS_ACTIVE];
@@ -166,7 +155,7 @@ class KeyRoleManager : public kaleidoscope::Plugin
 
     void determine_key_role();
 
-    void config();
+//    void config();
 
     void send_sk_map();
 
@@ -184,11 +173,14 @@ class KeyRoleManager : public kaleidoscope::Plugin
 
     uint16_t calculate_qukey_code(uint32_t base_raw, uint16_t selected_keycode);
 
-    void save_configurations();
 
     void set_active_sk();
 
     void save_sk(const Key *action_0, const Key *action_1, const Key *action_2, const Key *action_3, const Key *action_4);
+
+    void cfgmem_key_save( const Superkey::action_config_t * p_action_config, Superkey::action_config_t * p_action );
+    void cfgmem_superkey_reset( const Superkey::superkey_config_t * p_superkey_config);
+    void cfgmem_keyrole_reset( void );
 };
 
 } // namespace plugin
