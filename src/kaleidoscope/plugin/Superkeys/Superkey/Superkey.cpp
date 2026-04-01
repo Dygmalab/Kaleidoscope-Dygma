@@ -57,7 +57,6 @@ void Superkey::disable()
     superKeyState.triggered = false;
     superKeyState.type = Utils::TapType::None;
     superKeyState.interrupt = false;
-    superKeyState.start_time = 0;
     superKeyState.hold_start = 0;
     superKeyState.timeStamp = 0;
     superKeyState.pressed = false;
@@ -312,7 +311,6 @@ bool Superkey::is_triggered() const
 
 void Superkey::init_timer()
 {
-    superKeyState.start_time = kaleidoscope::Runtime_::millisAtCycleStart();
     update_timestamp();
 }
 

@@ -96,7 +96,6 @@ private:
     Utils::TapType type : 4; // 4 bits for enum (max 16 values)
 
     // Timers
-    uint32_t start_time{0};
     uint32_t hold_start{0};
     uint32_t timeStamp{0};
 
