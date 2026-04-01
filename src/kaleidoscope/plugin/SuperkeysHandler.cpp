@@ -27,10 +27,10 @@
 #include "SuperkeysHandler.h"
 #include "kaleidoscope/plugin/Qukeys.h"
 
-#define DEFAULT_WAIT_FOR            500
-#define DEFAULT_TIME_OUT            144
-#define DEFAULT_HOLD_START          236
-#define DEFAULT_REPEAT_INTERVAL     20
+#define DEFAULT_WAIT_FOR_MS         500
+#define DEFAULT_TRIGGER_TIMEOUT_MS  144
+#define DEFAULT_HOLD_TIMEOUT_MS     236
+#define DEFAULT_REPEAT_INTERVAL_MS  20
 #define DEFAULT_OVERLAP_THRESHOLD   80
 
 namespace kaleidoscope
@@ -72,8 +72,8 @@ void SuperkeysHandler::init(const Superkey::superkey_config_t * p_sk_map)
     //NRF_LOG_INFO("SIZE OF Superkey map: %i", sizeof(sk_map));
 
     // Update shared configuration
-    shared_sk_config.hold_start_ = p_superkey_config->hold_start_;
-    shared_sk_config.time_out_ = p_superkey_config->time_out_;
+    shared_sk_config.hold_timeout_ms = p_superkey_config->hold_timeout_ms;
+    shared_sk_config.trigger_timeout_ms = p_superkey_config->trigger_timeout_ms;
     shared_sk_config.overlap_threshold_ = p_superkey_config->overlap_threshold_;
     
     uint16_t sk_index = 0;
@@ -103,7 +103,7 @@ void SuperkeysHandler::init(const Superkey::superkey_config_t * p_sk_map)
 void SuperkeysHandler::config()
 {
     // if one block is invalid, restart everything
-    if (p_superkey_config->hold_start_ == 0xFFFF)
+    if (p_superkey_config->hold_timeout_ms == 0xFFFF)
     {
         cfgmem_config_reset();
     }
@@ -114,8 +114,8 @@ void SuperkeysHandler::refresh_configurations(const Superkey::superkey_config_t 
     config();
     
     // Update shared configuration for all superkeys
-    shared_sk_config.hold_start_ = p_superkey_config->hold_start_;
-    shared_sk_config.time_out_ = p_superkey_config->time_out_;
+    shared_sk_config.hold_timeout_ms = p_superkey_config->hold_timeout_ms;
+    shared_sk_config.trigger_timeout_ms = p_superkey_config->trigger_timeout_ms;
     shared_sk_config.overlap_threshold_ = p_superkey_config->overlap_threshold_;
     
     if(p_sk_map != nullptr)
@@ -413,7 +413,7 @@ EventHandlerResult SuperkeysHandler::onFocusEvent(const char *command)
 
         if (::Focus.isEOL())
         {
-            ::Focus.send( DEFAULT_WAIT_FOR );
+            ::Focus.send( DEFAULT_WAIT_FOR_MS );
         }
         else
         {
@@ -427,14 +427,14 @@ EventHandlerResult SuperkeysHandler::onFocusEvent(const char *command)
     {
         if (::Focus.isEOL())
         {
-            ::Focus.send(p_superkey_config->time_out_);
+            ::Focus.send(p_superkey_config->trigger_timeout_ms);
         }
         else
         {
-            uint16_t time = 0;
-            ::Focus.read(time);
+            uint16_t trigger_timeout_ms = 0;
+            ::Focus.read(trigger_timeout_ms);
 
-            cfgmem_time_out_save( time );
+            cfgmem_trigger_timeout_save( trigger_timeout_ms );
             refresh_configurations(nullptr);
         }
     }
@@ -442,14 +442,14 @@ EventHandlerResult SuperkeysHandler::onFocusEvent(const char *command)
     {
         if (::Focus.isEOL())
         {
-            ::Focus.send(p_superkey_config->hold_start_);
+            ::Focus.send(p_superkey_config->hold_timeout_ms);
         }
         else
         {
-            uint16_t hold = 0;
-            ::Focus.read(hold);
+            uint16_t hold_timeout_ms = 0;
+            ::Focus.read(hold_timeout_ms);
 
-            cfgmem_hold_start_save( hold );
+            cfgmem_hold_timeout_save( hold_timeout_ms );
             refresh_configurations(nullptr);
         }
     }
@@ -461,7 +461,7 @@ EventHandlerResult SuperkeysHandler::onFocusEvent(const char *command)
 
         if (::Focus.isEOL())
         {
-            ::Focus.send( DEFAULT_REPEAT_INTERVAL );
+            ::Focus.send( DEFAULT_REPEAT_INTERVAL_MS );
         }
         else
         {
@@ -494,21 +494,21 @@ EventHandlerResult SuperkeysHandler::onFocusEvent(const char *command)
 /*                   Config Memory                  */
 /****************************************************/
 
-void SuperkeysHandler::cfgmem_time_out_save( uint16_t time_out )
+void SuperkeysHandler::cfgmem_trigger_timeout_save( uint16_t trigger_timeout_ms )
 {
     result_t result = RESULT_ERR;
 
-    result = kbdfal_ll_memory_data_save( &p_superkey_config->time_out_, &time_out, sizeof(p_superkey_config->time_out_) );
+    result = kbdfal_ll_memory_data_save( &p_superkey_config->trigger_timeout_ms, &trigger_timeout_ms, sizeof(p_superkey_config->trigger_timeout_ms) );
     ASSERT_DYGMA( result == RESULT_OK, "kbdfal_ll_memory_save failed" );
 
     UNUSED( result );
 }
 
-void SuperkeysHandler::cfgmem_hold_start_save( uint16_t hold_start )
+void SuperkeysHandler::cfgmem_hold_timeout_save( uint16_t hold_timeout_ms )
 {
     result_t result = RESULT_ERR;
 
-    result = kbdfal_ll_memory_data_save( &p_superkey_config->hold_start_, &hold_start, sizeof(p_superkey_config->hold_start_) );
+    result = kbdfal_ll_memory_data_save( &p_superkey_config->hold_timeout_ms, &hold_timeout_ms, sizeof(p_superkey_config->hold_timeout_ms) );
     ASSERT_DYGMA( result == RESULT_OK, "kbdfal_ll_memory_save failed" );
 
     UNUSED( result );
@@ -526,8 +526,8 @@ void SuperkeysHandler::cfgmem_overlap_threshold_save( uint8_t overlap_threshold 
 
 void SuperkeysHandler::cfgmem_config_reset( void )
 {
-    cfgmem_time_out_save( DEFAULT_TIME_OUT );
-    cfgmem_hold_start_save( DEFAULT_HOLD_START );
+    cfgmem_trigger_timeout_save( DEFAULT_TRIGGER_TIMEOUT_MS );
+    cfgmem_hold_timeout_save( DEFAULT_HOLD_TIMEOUT_MS );
     cfgmem_overlap_threshold_save( DEFAULT_OVERLAP_THRESHOLD );
 }
 

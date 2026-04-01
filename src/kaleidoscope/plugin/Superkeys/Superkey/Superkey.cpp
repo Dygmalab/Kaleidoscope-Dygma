@@ -57,8 +57,8 @@ void Superkey::disable()
     superKeyState.triggered = false;
     superKeyState.type = Utils::TapType::None;
     superKeyState.interrupt = false;
-    superKeyState.hold_start = 0;
-    superKeyState.timeStamp = 0;
+    superKeyState.hold_timer = 0;
+    superKeyState.trigger_timer = 0;
     superKeyState.pressed = false;
     superKeyState.released = false;
     timeline.remove(this->keyaddr_);
@@ -116,7 +116,7 @@ void Superkey::run()
         
         // Check timeout for both pressed and released states
         // This allows detecting multiple taps after release
-        if (shared_config_ && kaleidoscope::Runtime_::hasTimeExpired(superKeyState.timeStamp, shared_config_->time_out_))
+        if (shared_config_ && kbdtimer_check( &superKeyState.trigger_timer ) )
         {
             timeout();
             disable();
@@ -167,7 +167,7 @@ void Superkey::key_released()
 
 void Superkey::key_is_pressed()
 {
-    if (shared_config_ && kaleidoscope::Runtime_::hasTimeExpired(superKeyState.hold_start, shared_config_->hold_start_))
+    if ( shared_config_ && kbdtimer_check( &superKeyState.hold_timer ) )
     {
         hold();
     }
@@ -179,7 +179,7 @@ void Superkey::key_is_pressed()
 void Superkey::tap()
 {
     superKeyState.released = false;
-    superKeyState.hold_start = kaleidoscope::Runtime_::millisAtCycleStart();
+    kbdtimer_set_ms( &superKeyState.hold_timer, shared_config_->hold_timeout_ms );
     update_timestamp();
     ++superKeyState.tap_count;
 }
@@ -203,7 +203,7 @@ void Superkey::release()
     superKeyState.holded = false;
     ++superKeyState.tap_count;
     // Restart timer.
-    superKeyState.hold_start = kaleidoscope::Runtime_::millisAtCycleStart();
+    kbdtimer_set_ms( &superKeyState.hold_timer, shared_config_->hold_timeout_ms );
 }
 
 void Superkey::timeout()
@@ -316,7 +316,7 @@ void Superkey::init_timer()
 
 void Superkey::update_timestamp()
 {
-    superKeyState.timeStamp = kaleidoscope::Runtime_::millisAtCycleStart();
+    kbdtimer_set_ms( &superKeyState.trigger_timer, shared_config_->trigger_timeout_ms );
 }
 
 uint16_t Superkey::get_index() const
