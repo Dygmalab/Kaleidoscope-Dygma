@@ -407,19 +407,20 @@ EventHandlerResult SuperkeysHandler::onFocusEvent(const char *command)
 
     if (strcmp_P(command + 10, "waitfor") == 0)
     {
+        /*
+         * NOTE: waitfor is not actually used, but we keep the command active for backward compatibility with older Bazecor versions
+         */
+
         if (::Focus.isEOL())
         {
-            ::Focus.send(p_superkey_config->wait_for_);
+            ::Focus.send( DEFAULT_WAIT_FOR );
         }
         else
         {
             uint16_t wait = 0;
             ::Focus.read(wait);
-            if (wait < 2000)
-            {
-                cfgmem_wait_for_save( wait );
-                refresh_configurations(nullptr);
-            }
+
+            /* We just read the data to clear it from the input buffers */
         }
     }
     if (strcmp_P(command + 10, "timeout") == 0)
@@ -454,17 +455,20 @@ EventHandlerResult SuperkeysHandler::onFocusEvent(const char *command)
     }
     if (strcmp_P(command + 10, "repeat") == 0)
     {
+        /*
+         * NOTE: repeat is not actually used, but we keep the command active for backward compatibility with older Bazecor versions
+         */
+
         if (::Focus.isEOL())
         {
-            ::Focus.send(p_superkey_config->repeat_interval_);
+            ::Focus.send( DEFAULT_REPEAT_INTERVAL );
         }
         else
         {
             uint8_t repeat = 0;
             ::Focus.read(repeat);
 
-            cfgmem_repeat_interval_save(repeat);
-            refresh_configurations(nullptr);
+            /* We just read the data to clear it from the input buffers */
         }
     }
     if (strcmp_P(command + 10, "overlap") == 0)
@@ -490,16 +494,6 @@ EventHandlerResult SuperkeysHandler::onFocusEvent(const char *command)
 /*                   Config Memory                  */
 /****************************************************/
 
-void SuperkeysHandler::cfgmem_wait_for_save( uint16_t wait_for )
-{
-    result_t result = RESULT_ERR;
-
-    result = kbdfal_ll_memory_data_save( &p_superkey_config->wait_for_, &wait_for, sizeof(p_superkey_config->wait_for_) );
-    ASSERT_DYGMA( result == RESULT_OK, "kbdfal_ll_memory_save failed" );
-
-    UNUSED( result );
-}
-
 void SuperkeysHandler::cfgmem_time_out_save( uint16_t time_out )
 {
     result_t result = RESULT_ERR;
@@ -520,16 +514,6 @@ void SuperkeysHandler::cfgmem_hold_start_save( uint16_t hold_start )
     UNUSED( result );
 }
 
-void SuperkeysHandler::cfgmem_repeat_interval_save( uint8_t repeat_interval )
-{
-    result_t result = RESULT_ERR;
-
-    result = kbdfal_ll_memory_data_save( &p_superkey_config->repeat_interval_, &repeat_interval, sizeof(p_superkey_config->repeat_interval_) );
-    ASSERT_DYGMA( result == RESULT_OK, "kbdfal_ll_memory_save failed" );
-
-    UNUSED( result );
-}
-
 void SuperkeysHandler::cfgmem_overlap_threshold_save( uint8_t overlap_threshold )
 {
     result_t result = RESULT_ERR;
@@ -542,10 +526,8 @@ void SuperkeysHandler::cfgmem_overlap_threshold_save( uint8_t overlap_threshold 
 
 void SuperkeysHandler::cfgmem_config_reset( void )
 {
-    cfgmem_wait_for_save( DEFAULT_WAIT_FOR );
     cfgmem_time_out_save( DEFAULT_TIME_OUT );
     cfgmem_hold_start_save( DEFAULT_HOLD_START );
-    cfgmem_repeat_interval_save( DEFAULT_REPEAT_INTERVAL );
     cfgmem_overlap_threshold_save( DEFAULT_OVERLAP_THRESHOLD );
 }
 

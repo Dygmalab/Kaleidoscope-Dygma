@@ -40,9 +40,7 @@ namespace kaleidoscope
             typedef struct PACK
             {
                 // Superkey configurations
-                uint16_t wait_for_;
                 uint16_t hold_start_;
-                uint8_t repeat_interval_;
                 uint8_t overlap_threshold_;
                 uint16_t time_out_;
             } superkey_config_t;
@@ -127,10 +125,8 @@ namespace kaleidoscope
 
             static EventHandlerResult handle_regular_keys(Key &mapped_key, KeyAddr key_addr, uint8_t keyState);
 
-            static void cfgmem_wait_for_save( uint16_t wait_for );
             static void cfgmem_time_out_save( uint16_t time_out );
             static void cfgmem_hold_start_save( uint16_t hold_start );
-            static void cfgmem_repeat_interval_save( uint8_t repeat_interval );
             static void cfgmem_overlap_threshold_save( uint8_t overlap_threshold );
             static void cfgmem_config_reset( void );
         };
