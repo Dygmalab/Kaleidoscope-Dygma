@@ -48,9 +48,9 @@ namespace Utils
     // Shared configuration structure (points to SuperkeysHandler::Configurations)
     struct SharedConfig
     {
-        uint8_t overlap_threshold_;
         uint16_t hold_timeout_ms;
         uint16_t trigger_timeout_ms;
+        uint8_t overlap_threshold_ms;
     };
 
     enum class TapType : uint8_t

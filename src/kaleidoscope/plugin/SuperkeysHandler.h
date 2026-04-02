@@ -40,8 +40,8 @@ namespace kaleidoscope
             typedef struct PACK
             {
                 // Superkey configurations
-                uint8_t overlap_threshold_;
                 uint16_t hold_timeout_ms;
+                uint8_t overlap_threshold_ms;
                 uint16_t trigger_timeout_ms;
             } superkey_config_t;
 

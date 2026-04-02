@@ -27,11 +27,11 @@
 #include "SuperkeysHandler.h"
 #include "kaleidoscope/plugin/Qukeys.h"
 
-#define DEFAULT_WAIT_FOR_MS         500
-#define DEFAULT_TRIGGER_TIMEOUT_MS  144
-#define DEFAULT_HOLD_TIMEOUT_MS     236
-#define DEFAULT_REPEAT_INTERVAL_MS  20
-#define DEFAULT_OVERLAP_THRESHOLD   80
+#define DEFAULT_WAIT_FOR_MS             500
+#define DEFAULT_TRIGGER_TIMEOUT_MS      144
+#define DEFAULT_HOLD_TIMEOUT_MS         236
+#define DEFAULT_REPEAT_INTERVAL_MS      20
+#define DEFAULT_OVERLAP_THRESHOLD_MS    80
 
 namespace kaleidoscope
 {
@@ -74,7 +74,7 @@ void SuperkeysHandler::init(const Superkey::superkey_config_t * p_sk_map)
     // Update shared configuration
     shared_sk_config.hold_timeout_ms = p_superkey_config->hold_timeout_ms;
     shared_sk_config.trigger_timeout_ms = p_superkey_config->trigger_timeout_ms;
-    shared_sk_config.overlap_threshold_ = p_superkey_config->overlap_threshold_;
+    shared_sk_config.overlap_threshold_ms = p_superkey_config->overlap_threshold_ms;
     
     uint16_t sk_index = 0;
     uint16_t max_sk = get_configured_sk();
@@ -116,7 +116,7 @@ void SuperkeysHandler::refresh_configurations(const Superkey::superkey_config_t 
     // Update shared configuration for all superkeys
     shared_sk_config.hold_timeout_ms = p_superkey_config->hold_timeout_ms;
     shared_sk_config.trigger_timeout_ms = p_superkey_config->trigger_timeout_ms;
-    shared_sk_config.overlap_threshold_ = p_superkey_config->overlap_threshold_;
+    shared_sk_config.overlap_threshold_ms = p_superkey_config->overlap_threshold_ms;
     
     if(p_sk_map != nullptr)
     {
@@ -475,14 +475,14 @@ EventHandlerResult SuperkeysHandler::onFocusEvent(const char *command)
     {
         if (::Focus.isEOL())
         {
-            ::Focus.send(p_superkey_config->overlap_threshold_);
+            ::Focus.send(p_superkey_config->overlap_threshold_ms);
         }
         else
         {
-            uint16_t overlap_threshold = 0;
-            ::Focus.read(overlap_threshold);
+            uint16_t overlap_threshold_ms = 0;
+            ::Focus.read(overlap_threshold_ms);
 
-            cfgmem_overlap_threshold_save(overlap_threshold);
+            cfgmem_overlap_threshold_save(overlap_threshold_ms);
             refresh_configurations(nullptr);
         }
     }
@@ -514,11 +514,11 @@ void SuperkeysHandler::cfgmem_hold_timeout_save( uint16_t hold_timeout_ms )
     UNUSED( result );
 }
 
-void SuperkeysHandler::cfgmem_overlap_threshold_save( uint8_t overlap_threshold )
+void SuperkeysHandler::cfgmem_overlap_threshold_save( uint8_t overlap_threshold_ms )
 {
     result_t result = RESULT_ERR;
 
-    result = kbdfal_ll_memory_data_save( &p_superkey_config->overlap_threshold_, &overlap_threshold, sizeof(p_superkey_config->overlap_threshold_) );
+    result = kbdfal_ll_memory_data_save( &p_superkey_config->overlap_threshold_ms, &overlap_threshold_ms, sizeof(p_superkey_config->overlap_threshold_ms) );
     ASSERT_DYGMA( result == RESULT_OK, "kbdfal_ll_memory_save failed" );
 
     UNUSED( result );
@@ -528,7 +528,7 @@ void SuperkeysHandler::cfgmem_config_reset( void )
 {
     cfgmem_trigger_timeout_save( DEFAULT_TRIGGER_TIMEOUT_MS );
     cfgmem_hold_timeout_save( DEFAULT_HOLD_TIMEOUT_MS );
-    cfgmem_overlap_threshold_save( DEFAULT_OVERLAP_THRESHOLD );
+    cfgmem_overlap_threshold_save( DEFAULT_OVERLAP_THRESHOLD_MS );
 }
 
 } // namespace plugin
