@@ -24,9 +24,7 @@ Timeline::Timeline() : count(0)
     {
             Key(0xFFFF), // Invalid key
             KeyAddr(0xff, 0xff), // Invalid address
-            0, // Timestamp
             Utils::KeyType::NONE, // Type
-            false, // is_interruptible
             nullptr // context
     };
 

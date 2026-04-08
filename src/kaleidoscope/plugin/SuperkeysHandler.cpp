@@ -240,7 +240,7 @@ EventHandlerResult SuperkeysHandler::handle_superkeys(Key &mapped_key, KeyAddr k
                     SuperkeysHandler_sk_array[pos].key_pressed();
 
                     Utils::TimelineEntry entry = {
-                        mapped_key, key_addr, Runtime.millisAtCycleStart(), Utils::KeyType::SUPERKEY, false, static_cast<void *>(&SuperkeysHandler_sk_array[pos])};
+                        mapped_key, key_addr, Utils::KeyType::SUPERKEY, static_cast<void *>(&SuperkeysHandler_sk_array[pos])};
 
                     timeline.add(entry);
                     return EventHandlerResult::EVENT_CONSUMED;
@@ -260,7 +260,7 @@ EventHandlerResult SuperkeysHandler::handle_superkeys(Key &mapped_key, KeyAddr k
                         SuperkeysHandler_sk_array[pos].key_pressed();
 
                         Utils::TimelineEntry entry = {
-                            mapped_key, key_addr, Runtime.millisAtCycleStart(), Utils::KeyType::SUPERKEY, false, static_cast<void *>(&SuperkeysHandler_sk_array[pos])};
+                            mapped_key, key_addr, Utils::KeyType::SUPERKEY, static_cast<void *>(&SuperkeysHandler_sk_array[pos])};
 
                         timeline.add(entry);
                         return EventHandlerResult::EVENT_CONSUMED;
@@ -279,7 +279,7 @@ EventHandlerResult SuperkeysHandler::handle_superkeys(Key &mapped_key, KeyAddr k
                             SuperkeysHandler_sk_array[pos].key_pressed();
 
                             Utils::TimelineEntry entry = {
-                                mapped_key, key_addr, Runtime.millisAtCycleStart(), Utils::KeyType::SUPERKEY, false, static_cast<void *>(&SuperkeysHandler_sk_array[pos])};
+                                mapped_key, key_addr, Utils::KeyType::SUPERKEY, static_cast<void *>(&SuperkeysHandler_sk_array[pos])};
 
                             timeline.add(entry);
                             return EventHandlerResult::EVENT_CONSUMED;
@@ -344,7 +344,7 @@ EventHandlerResult SuperkeysHandler::handle_regular_keys(Key &mapped_key, KeyAdd
             return EventHandlerResult::OK;
         }
 
-        Utils::TimelineEntry entry = {mapped_key, key_addr, Runtime.millisAtCycleStart(), Utils::KeyType::NORMAL, false, nullptr};
+        Utils::TimelineEntry entry = {mapped_key, key_addr, Utils::KeyType::NORMAL, nullptr};
 
         if (timeline.add(entry))
         {

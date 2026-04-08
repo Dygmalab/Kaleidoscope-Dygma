@@ -128,9 +128,7 @@ namespace Utils
     {
         Key key;
         KeyAddr addr;
-        uint32_t timestamp;
         KeyType type;
-        bool is_interruptible; // Solo relevante para Superkeys
         void* context; // Apunta a la instancia que gestiona esta key (Superkey*, Macro*, etc.)
     };
 }
