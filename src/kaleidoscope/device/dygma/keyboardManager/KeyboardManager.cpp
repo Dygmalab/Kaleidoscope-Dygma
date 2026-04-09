@@ -35,16 +35,12 @@
 #include "Communications.h"
 #include "KeyboardManager.h"
 //#include "Radio_manager.h"
-#include "Status_leds.h"
 #include "Wire.h" // Arduino Wire wrapper for the NRF52 chips
 #include "universalModules/Focus.h"
 #include "nrf_gpio.h"
 //#include "Battery.h"
 
 #include "LEDManager.h"
-
-
-#define NEURON_LED_BRIGHTNESS 2
 
 #ifndef UPG_WIRE_CLOCK_FREQ_KHZ
 #define UPG_WIRE_CLOCK_FREQ_KHZ 100
@@ -55,12 +51,10 @@ extern bool_t kbd_glue_left_wired_connected( void );
 extern bool_t kbd_glue_right_wired_connected( void );
 extern void kbd_glue_side_power_left_set( bool_t power );
 extern void kbd_glue_side_power_right_set( bool_t power );
+extern void kbd_glue_status_leds_init( void );
 
 extern bool_t kbd_glue_slide_switch_position_usb( void );
 extern bool_t kbd_glue_slide_switch_position_ble( void );
-
-Status_leds status_leds(LED_GREEN_PIN, LED_RED_PIN);
-
 
 namespace kaleidoscope
 {
@@ -452,8 +446,8 @@ void KeyboardNrf::setup()
     kbd_glue_side_power_left_set( true );
     kbd_glue_side_power_right_set( true );
 
-    status_leds.init();
-    status_leds.static_green(NEURON_LED_BRIGHTNESS);
+    /* Initialize the status leds */
+    kbd_glue_status_leds_init();
 
     KeyboardHands::setup();
     KeyboardFocus.init();
