@@ -135,8 +135,6 @@ void Timeline::process_superkeys_in_order()
     // CRITICAL: Only allow ONE entry to finalize per cycle to preserve order
     // Process both superkeys and normal keys to maintain chronological order
     
-    bool one_processed = false;  // Track if we've already processed one entry this cycle
-    
     // Process from oldest to newest (forward iteration)
     uint8_t i = 0;
     while (i < count)
@@ -153,9 +151,6 @@ void Timeline::process_superkeys_in_order()
                 // count decreased and all entries shifted left.
                 if (count < count_before)
                 {
-                    
-                    one_processed = true;
-                    
                     // CRITICAL: Stop processing after first finalization
                     // This ensures entries finalize in separate cycles, preserving order
                     break;
@@ -184,8 +179,6 @@ void Timeline::process_superkeys_in_order()
                 
                 // Remove from timeline
                 remove(entries[i].addr);
-                
-                one_processed = true;
                 
                 break;
             }
