@@ -19,6 +19,8 @@
 #include "kaleidoscope/keyswitch_state.h"
 #include "kaleidoscope/key_events.h"
 
+#error "Dygma version of OneShot has been moved to kaleidoscope_adapter/plugins/OneShotDygma.cpp"
+
 namespace kaleidoscope {
 namespace plugin {
 

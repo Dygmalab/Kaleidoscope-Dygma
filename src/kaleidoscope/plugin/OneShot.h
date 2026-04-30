@@ -20,6 +20,8 @@
 #include "kaleidoscope/Runtime.h"
 #include <Kaleidoscope-Ranges.h>
 
+#error "Dygma version of OneShot has been moved to kaleidoscope_adapter/plugins/OneShotDygma.h"
+
 #define OSM(kc) Key(kaleidoscope::ranges::OSM_FIRST + (Key_ ## kc).getKeyCode() - Key_LeftControl.getKeyCode())
 #define OSL(n) Key(kaleidoscope::ranges::OSL_FIRST + n)
 

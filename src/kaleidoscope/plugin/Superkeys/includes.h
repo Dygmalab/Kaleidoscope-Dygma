@@ -48,9 +48,9 @@ namespace Utils
     // Shared configuration structure (points to SuperkeysHandler::Configurations)
     struct SharedConfig
     {
-        uint16_t hold_start_;
-        uint16_t time_out_;
-        uint8_t overlap_threshold_;
+        uint16_t hold_timeout_ms;
+        uint16_t trigger_timeout_ms;
+        uint8_t overlap_threshold_ms;
     };
 
     enum class TapType : uint8_t
@@ -128,9 +128,7 @@ namespace Utils
     {
         Key key;
         KeyAddr addr;
-        uint32_t timestamp;
         KeyType type;
-        bool is_interruptible; // Solo relevante para Superkeys
         void* context; // Apunta a la instancia que gestiona esta key (Superkey*, Macro*, etc.)
     };
 }

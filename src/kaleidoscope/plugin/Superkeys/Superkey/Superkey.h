@@ -96,9 +96,8 @@ private:
     Utils::TapType type : 4; // 4 bits for enum (max 16 values)
 
     // Timers
-    uint32_t start_time{0};
-    uint32_t hold_start{0};
-    uint32_t timeStamp{0};
+    kbdtimer_t hold_timer{0};
+    kbdtimer_t trigger_timer{0};
 
     // Active external modifiers
     uint8_t cache_modifiers{0}; // This is used to cache the modifiers that are active when the superkey is pressed.
