@@ -26,7 +26,7 @@
 
 #include "kaleidoscope/device/dygma/keyboardManager/universalModules/Hand.h"
 #include "kaleidoscope/driver/bootloader/nrf/NRF.h"
-#include "Ble_composite_dev.h"
+#include "Ble_manager.h"
 
 #include "Arduino.h"
 #include "kaleidoscope/device/Base.h"
@@ -117,7 +117,7 @@ class KeyboardNrf : public kaleidoscope::device::Base<KeyboardProps> {
     static void setup();
 
     auto serialPort() -> Stream & {
-        if(ble_innited()){
+        if(BleManager.is_enabled()){
             return RawHID;
         }
         return Serial;

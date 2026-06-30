@@ -31,7 +31,7 @@
 //#include "Twi_master.h"
 //
 //#include "Adafruit_USBD_Device.h"
-//#include "Ble_manager.h"
+#include "Ble_manager.h"
 #include "Communications.h"
 #include "KeyboardManager.h"
 //#include "Radio_manager.h"
@@ -116,16 +116,16 @@ void KeyboardHands::setup()
                                                      if (p.header.device == BLE_DEFY_RIGHT) rightConnection[0] = BLE_DEFY_RIGHT;
                                                      if (p.header.device == BLE_DEFY_LEFT) leftConnection[0] = BLE_DEFY_LEFT;
                                                      if (p.header.device == KEYSCANNER_DEFY_LEFT)
-                                                         leftConnection[1] = ble_innited() ? BLE_DEFY_LEFT : KEYSCANNER_DEFY_LEFT;
+                                                         leftConnection[1] = BleManager.is_enabled() ? BLE_DEFY_LEFT : KEYSCANNER_DEFY_LEFT;
                                                      if (p.header.device == KEYSCANNER_DEFY_RIGHT)
-                                                         rightConnection[1] = ble_innited() ? BLE_DEFY_RIGHT : KEYSCANNER_DEFY_RIGHT;
+                                                         rightConnection[1] = BleManager.is_enabled() ? BLE_DEFY_RIGHT : KEYSCANNER_DEFY_RIGHT;
                                                      if (p.header.device == RF_DEFY_LEFT) leftConnection[2] = RF_DEFY_LEFT;
                                                      if (p.header.device == RF_DEFY_RIGHT) rightConnection[2] = RF_DEFY_RIGHT;
 
                                                      auto &keyScanner = Runtime.device().keyScanner();
                                                      auto isKSLeftWired = keyScanner.leftSideWiredConnection();
                                                      auto isKSRightWired = keyScanner.rightSideWiredConnection();
-                                                     LEDManager.com_mode_set( isKSLeftWired && isKSRightWired && !ble_innited() );
+                                                     LEDManager.com_mode_set( isKSLeftWired && isKSRightWired && !BleManager.is_enabled() );
                                                      LEDManager.leds_enable();
                                                  }));
     Communications.callbacks.bind(DISCONNECTED, (

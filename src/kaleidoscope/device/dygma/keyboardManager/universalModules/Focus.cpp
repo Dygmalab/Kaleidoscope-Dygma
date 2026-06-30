@@ -23,6 +23,8 @@
 
 #include "Communications.h"
 
+#include "nrf_log.h"
+
 namespace kaleidoscope {
 namespace device {
 namespace dygma {
