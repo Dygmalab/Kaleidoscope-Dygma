@@ -18,43 +18,9 @@
 
 #ifdef ARDUINO_ARCH_NRF52
 
-
 #include "kaleidoscope/Runtime.h"
-//#include <Kaleidoscope-LEDControl.h>
-
-//#include "kaleidoscope/driver/color/GammaCorrection.h"
 #include "kaleidoscope/driver/keyscanner/Base_Impl.h"
-//#include "kaleidoscope/util/crc16.h"
-
-//#include "common.h"
-//
-//#include "Twi_master.h"
-//
-//#include "Adafruit_USBD_Device.h"
-#include "Ble_manager.h"
-#include "Communications.h"
 #include "KeyboardManager.h"
-//#include "Radio_manager.h"
-#include "Wire.h" // Arduino Wire wrapper for the NRF52 chips
-#include "universalModules/Focus.h"
-#include "nrf_gpio.h"
-//#include "Battery.h"
-
-#include "LEDManager.h"
-
-#ifndef UPG_WIRE_CLOCK_FREQ_KHZ
-#define UPG_WIRE_CLOCK_FREQ_KHZ 100
-#endif /* UPG_WIRE_CLOCK_FREQ_KHZ */
-
-/* External glue prototypes */
-extern bool_t kbd_glue_left_wired_connected( void );
-extern bool_t kbd_glue_right_wired_connected( void );
-extern void kbd_glue_side_power_left_set( bool_t power );
-extern void kbd_glue_side_power_right_set( bool_t power );
-extern void kbd_glue_status_leds_init( void );
-
-extern bool_t kbd_glue_slide_switch_position_usb( void );
-extern bool_t kbd_glue_slide_switch_position_ble( void );
 
 namespace kaleidoscope
 {
@@ -71,120 +37,15 @@ struct KeyboardHands
     static dygma_keyboards::Hand rightHand;
 
     static void setup();
-
-    static void setSidePower(bool power);
-    static bool getSidePower()
-    {
-        return side_power_;
-    }
-
-    static void getChipID(char *buff, uint16_t len);
-    static void get_chip_info(char *buff, uint16_t len);
-
-  private:
-    static bool side_power_;
-    static uint16_t settings_interval_;
-    static uint16_t settings_base;
 };
 
 dygma_keyboards::Hand KeyboardHands::leftHand(dygma_keyboards::Hand::LEFT);
 dygma_keyboards::Hand KeyboardHands::rightHand(dygma_keyboards::Hand::RIGHT);
-bool KeyboardHands::side_power_;
-uint16_t KeyboardHands::settings_interval_;
-uint16_t KeyboardHands::settings_base;
-
-void KeyboardHands::setSidePower(bool power)
-{
-    // 0 -> reset keyboard side, 1 -> run keyboard side
-    kbd_glue_side_power_left_set( power );
-    kbd_glue_side_power_right_set( power );
-
-    side_power_ = power;
-}
-// BLE       WIRED       RF
-Communications_protocol::Devices leftConnection[3]{UNKNOWN, UNKNOWN, UNKNOWN};
-Communications_protocol::Devices rightConnection[3]{UNKNOWN, UNKNOWN, UNKNOWN};
 
 void KeyboardHands::setup()
 {
     rightHand.init();
     leftHand.init();
-
-    Communications.callbacks.bind(CONNECTED, (
-                                                 [](const Packet &p)
-                                                 {
-                                                     if (p.header.device == BLE_DEFY_RIGHT) rightConnection[0] = BLE_DEFY_RIGHT;
-                                                     if (p.header.device == BLE_DEFY_LEFT) leftConnection[0] = BLE_DEFY_LEFT;
-                                                     if (p.header.device == KEYSCANNER_DEFY_LEFT)
-                                                         leftConnection[1] = BleManager.is_enabled() ? BLE_DEFY_LEFT : KEYSCANNER_DEFY_LEFT;
-                                                     if (p.header.device == KEYSCANNER_DEFY_RIGHT)
-                                                         rightConnection[1] = BleManager.is_enabled() ? BLE_DEFY_RIGHT : KEYSCANNER_DEFY_RIGHT;
-                                                     if (p.header.device == RF_DEFY_LEFT) leftConnection[2] = RF_DEFY_LEFT;
-                                                     if (p.header.device == RF_DEFY_RIGHT) rightConnection[2] = RF_DEFY_RIGHT;
-
-                                                     auto &keyScanner = Runtime.device().keyScanner();
-                                                     auto isKSLeftWired = keyScanner.leftSideWiredConnection();
-                                                     auto isKSRightWired = keyScanner.rightSideWiredConnection();
-                                                     LEDManager.com_mode_set( isKSLeftWired && isKSRightWired && !BleManager.is_enabled() );
-                                                     LEDManager.leds_enable();
-                                                 }));
-    Communications.callbacks.bind(DISCONNECTED, (
-                                                    [](const Packet &p)
-                                                    {
-                                                        if (p.header.device == BLE_DEFY_RIGHT)
-                                                        {
-                                                            rightConnection[0] = UNKNOWN;
-                                                            rightConnection[1] = UNKNOWN;
-                                                        }
-                                                        if (p.header.device == BLE_DEFY_LEFT)
-                                                        {
-                                                            leftConnection[0] = UNKNOWN;
-                                                            leftConnection[1] = UNKNOWN;
-                                                        }
-                                                        if (p.header.device == KEYSCANNER_DEFY_LEFT) leftConnection[1] = UNKNOWN;
-                                                        if (p.header.device == KEYSCANNER_DEFY_RIGHT) rightConnection[1] = UNKNOWN;
-                                                        if (p.header.device == RF_DEFY_LEFT) leftConnection[2] = UNKNOWN;
-                                                        if (p.header.device == RF_DEFY_RIGHT) rightConnection[2] = UNKNOWN;
-
-                                                        if ( leftConnection[0] == UNKNOWN &&
-                                                                leftConnection[1] == UNKNOWN &&
-                                                                leftConnection[2] == UNKNOWN )
-                                                        {
-                                                            leftHand.releaseAllKeys();
-                                                        }
-
-                                                        if ( rightConnection[0] == UNKNOWN &&
-                                                                rightConnection[1] == UNKNOWN &&
-                                                                rightConnection[2] == UNKNOWN )
-                                                        {
-                                                            rightHand.releaseAllKeys();
-                                                        }
-                                                    }));
-}
-
-void KeyboardHands::getChipID(char *cstring, uint16_t len)
-{
-    /*
-        Returns the 64 bit unique device identifier.
-
-        See: FICR - Factory information configuration registers on pag. 30 of the datasheet.
-
-        returns a cstring.
-    */
-
-    snprintf(cstring, len, "%8lx%8lx", NRF_FICR->DEVICEID[1], NRF_FICR->DEVICEID[0]);
-}
-
-void KeyboardHands::get_chip_info(char *cstring, uint16_t len)
-{
-    /*
-        See: FICR - Factory information configuration registers on pag. 30 of the datasheet.
-
-        returns a cstring.
-    */
-
-    snprintf(cstring, len, "DEVICEID=%8lx%8lx\nPART=%lx\nVARIANT=%lx\nPACKAGE=%lx\nRAM=%ld\nFLASH=%ld", NRF_FICR->DEVICEID[1], NRF_FICR->DEVICEID[0],
-             NRF_FICR->INFO.PART, NRF_FICR->INFO.VARIANT, NRF_FICR->INFO.PACKAGE, NRF_FICR->INFO.RAM, NRF_FICR->INFO.FLASH);
 }
 
 /********* Key scanner *********/
@@ -198,7 +59,6 @@ dygma_keyboards::key_data KeyboardKeyScanner::rightHandMask;
 
 void KeyboardKeyScanner::scanMatrix()
 {
-   // usbConnectionsStateMachine();
     readMatrix();
     actOnMatrixScan();
 }
@@ -392,132 +252,30 @@ void KeyboardKeyScanner::reset(void)
     Runtime.hid().keyboard().sendReport();
 }
 
-Communications_protocol::Devices KeyboardKeyScanner::leftHandDevice(void)
-{
-    for (const auto &connection : leftConnection)
-    {
-        if (connection != UNKNOWN)
-        {
-            return connection;
-        }
-    }
-
-    return UNKNOWN;
-}
-
-Communications_protocol::Devices KeyboardKeyScanner::rightHandDevice(void)
-{
-    for (const auto &connection : rightConnection)
-    {
-        if (connection != UNKNOWN)
-        {
-            return connection;
-        }
-    }
-
-    return UNKNOWN;
-}
-
-bool KeyboardKeyScanner::rightSideWiredConnection()
-{
-    return kbd_glue_right_wired_connected();
-}
-
-bool KeyboardKeyScanner::leftSideWiredConnection()
-{
-    return kbd_glue_left_wired_connected();
-}
-
-bool KeyboardKeyScanner::slideSwitchPositionUsb( void )
-{
-    return kbd_glue_slide_switch_position_usb();
-}
-
-bool KeyboardKeyScanner::slideSwitchPositionBle( void )
-{
-    return kbd_glue_slide_switch_position_ble();
-}
-
 /********* KeyboardNrf class (Hardware plugin) *********/
 
 void KeyboardNrf::setup()
 {
-    // Check if we can live without this reset sides
-    kbd_glue_side_power_left_set( true );
-    kbd_glue_side_power_right_set( true );
-
-    /* Initialize the status leds */
-    kbd_glue_status_leds_init();
-
     KeyboardHands::setup();
-    KeyboardFocus.init();
     KeyScanner::setup();
 }
 
-uint8_t KeyboardNrf::side::getPower()
+result_t KeyboardNrf::key_data_add( kbdapi_side_type_t side_type, const uint8_t * p_data, uint32_t data_len )
 {
-    return KeyboardHands::getSidePower();
-}
+    if( side_type == KBDAPI_SIDE_TYPE_LEFT )
+    {
+        KeyboardHands::leftHand.keyDataAdd( p_data, data_len );
 
-void KeyboardNrf::side::setPower(uint8_t power)
-{
-    KeyboardHands::setSidePower(power);
-}
+        return RESULT_OK;
+    }
+    else if( side_type == KBDAPI_SIDE_TYPE_RIGHT )
+    {
+        KeyboardHands::rightHand.keyDataAdd( p_data, data_len );
 
-uint8_t KeyboardNrf::side::leftVersion()
-{
-    // TODO: Versions of keyscanner
-    return 0;
-    //  return KeyboardHands::hand_spi1.readVersion();
-}
+        return RESULT_OK;
+    }
 
-uint8_t KeyboardNrf::side::rightVersion()
-{
-    // TODO: Versions of keyscanner
-    return 0;
-
-    //  return KeyboardHands::hand_spi2.readVersion();
-}
-
-void KeyboardNrf::side::reset_sides()
-{
-    kbd_glue_side_power_left_set( false );
-    kbd_glue_side_power_right_set( false );
-    delay(10);
-    kbd_glue_side_power_left_set( true );
-    kbd_glue_side_power_right_set( true );
-    delay(50); // We should give a bit more time but for now lest leave it like this
-}
-
-void KeyboardNrf::side::reset_right_side()
-{
-    kbd_glue_side_power_right_set( false );
-    delay(10);
-    kbd_glue_side_power_right_set( true );
-    delay(50); // We should give a bit more time but for now lest leave it like this
-}
-
-void KeyboardNrf::side::reset_left_side()
-{
-    kbd_glue_side_power_left_set( false );
-    delay(10);
-    kbd_glue_side_power_left_set( true );
-    delay(50); // We should give a bit more time but for now lest leave it like this
-}
-
-void KeyboardNrf::side::prepareForFlash()
-{
-    Wire::begin( UPG_WIRE_CLOCK_FREQ_KHZ );
-}
-
-void KeyboardNrf::settings::getChipID(char *buff, uint16_t len)
-{
-    KeyboardHands::getChipID(buff, len);
-}
-
-void KeyboardNrf::settings::get_chip_info(char *buff, uint16_t len)
-{
-    KeyboardHands::get_chip_info(buff, len);
+    return RESULT_ERR;
 }
 
 } // namespace dygma

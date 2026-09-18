@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "keyboard_config.h"
+//#include "keyboard_config.h"
 
 #include "kaleidoscope/device/dygma/keyboardManager/universalModules/Hand.h"
 #include "kaleidoscope/driver/bootloader/nrf/NRF.h"
@@ -30,24 +30,11 @@
 
 #include "Arduino.h"
 #include "kaleidoscope/device/Base.h"
-#include "libraries/KeyboardioHID/src/MultiReport/RawHID.h"
+//#include "libraries/KeyboardioHID/src/MultiReport/RawHID.h"
 
 
 #define KEYBOARD_HANDS_DEBUG                    1
 #define PRINT_KEYSWITCH_EVENT_PARAMETERS    0
-
-#ifndef KEYBOARD_NEURON_FW_VERSION
-#error "Firmware version is not specified."
-    #define KEYBOARD_NEURON_FW_VERSION "N/A"
-#endif
-
-#ifndef APP_KS_LEFT_BOOT_ADDRESS
-    #define APP_KS_LEFT_BOOT_ADDRESS    0x5A
-#endif /* APP_KS_LEFT_BOOT_ADDRESS */
-
-#ifndef APP_KS_RIGHT_BOOT_ADDRESS
-    #define APP_KS_RIGHT_BOOT_ADDRESS   0x5B
-#endif /* APP_KS_RIGHT_BOOT_ADDRESS */
 
 namespace kaleidoscope {
 namespace device {
@@ -72,13 +59,6 @@ class KeyboardKeyScanner : public kaleidoscope::driver::keyscanner::Base<Keyboar
     static void scanMatrix();
     static void readMatrix();
     static void actOnMatrixScan();
-    static Communications_protocol::Devices rightHandDevice(void);
-    static bool rightSideWiredConnection();
-    static bool leftSideWiredConnection();
-    static Communications_protocol::Devices leftHandDevice(void);
-
-    static bool slideSwitchPositionUsb( void );
-    static bool slideSwitchPositionBle( void );
 
     static void maskKey(KeyAddr key_addr);
     static void unMaskKey(KeyAddr key_addr);
@@ -115,6 +95,7 @@ class KeyboardNrf : public kaleidoscope::device::Base<KeyboardProps> {
 
    public:
     static void setup();
+    static result_t key_data_add( kbdapi_side_type_t side_type, const uint8_t * p_data, uint32_t data_len );
 
     auto serialPort() -> Stream & {
         if(BleManager.is_enabled()){
@@ -122,34 +103,8 @@ class KeyboardNrf : public kaleidoscope::device::Base<KeyboardProps> {
         }
         return Serial;
     }
-
-    struct side {
-        uint8_t getPower();
-        void setPower(uint8_t power);
-
-        uint8_t leftVersion();
-        uint8_t rightVersion();
-
-        static void reset_sides();
-
-        static void reset_right_side();
-
-        static void reset_left_side();
-
-        void prepareForFlash();
-
-        // Side bootloader addresses
-        static constexpr uint8_t left_boot_address  = APP_KS_LEFT_BOOT_ADDRESS;
-        static constexpr uint8_t right_boot_address = APP_KS_RIGHT_BOOT_ADDRESS;
-    } side;
-
-    struct settings {
-        uint16_t keyscanInterval();
-        void keyscanInterval(uint16_t interval);
-        void getChipID(char *buff, uint16_t len);
-        void get_chip_info(char *buff, uint16_t len);
-    } settings;
 };
+
 
 
 }  // namespace dygma
