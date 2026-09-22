@@ -34,10 +34,7 @@ class OverlayKeyDygma : public kaleidoscope::Plugin {
  private:
   bool initial_sent_ = false;
 
-  void notifyLayerChange(uint8_t layer);
-  void notifyOverlayEvent(uint8_t event_type);
-  void notifyOverlayTapKey(uint8_t event_type);
-  void notifyOverlayHoldKey(uint8_t event_type);
+  void sendPacket(uint8_t packet_type, uint8_t value);
 
   // Tap / hold / double-tap state machine for the OVERLAY key
   enum class State : uint8_t { IDLE, PRESSED, FIRST_UP, HOLD_ACTIVE, DOUBLE_PRESSED };

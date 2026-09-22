@@ -19,13 +19,17 @@
 #include "kaleidoscope/keyswitch_state.h"
 #include "kaleidoscope/layers.h"
 #include "KeyboardioHID.h"
+#include "Adafruit_TinyUSB.h"   // TinyUSBDevice.mounted()
+
+// The wired neuron has no radio, so it always reports over USB.
+#ifndef NEURON_WIRED
 #include "ble_hid_service.h"    // INPUT_REPORT_LEN_RAW
 #include "Ble_composite_dev.h"  // ble_connected()
-#include "Adafruit_TinyUSB.h"   // TinyUSBDevice.mounted()
+#endif
 
 #define DEBUG_LOG_OVERLAY_KEY 0
 
-#if DEBUG_LOG_OVERLAY_KEY
+#if DEBUG_LOG_OVERLAY_KEY && !defined(NEURON_WIRED)
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -39,8 +43,10 @@ extern "C" {
 #endif
 
 // USB Full Speed endpoint max is 64 bytes; 1 byte is the report ID, so 63 data bytes.
-// Must match USB_RAW_HID_REPORT_SIZE in hid_report_descriptor.cpp.
+// Must match USB_RAW_HID_REPORT_SIZE in the HID descriptor.
+#ifndef USB_RAW_HID_REPORT_SIZE
 #define USB_RAW_HID_REPORT_SIZE  63
+#endif
 
 // Packet framing — must match constants.ts in Dygma-Lens
 #define OVERLAY_MAGIC_BYTE       0xAA
@@ -59,76 +65,25 @@ namespace plugin {
 
 // ---- HID send helpers -------------------------------------------------------
 
-void OverlayKeyDygma::notifyLayerChange(uint8_t layer) {
-    OVERLAY_LOG("OverlayKeyDygma: layer=%d ble=%d", layer, (int)ble_connected());
+void OverlayKeyDygma::sendPacket(uint8_t packet_type, uint8_t value) {
+    OVERLAY_LOG("OverlayKeyDygma: type=0x%02X value=0x%02X", packet_type, value);
 
+#ifndef NEURON_WIRED
     if (ble_connected()) {
         uint8_t buf[INPUT_REPORT_LEN_RAW] = {};
         buf[0] = OVERLAY_MAGIC_BYTE;
-        buf[1] = PACKET_TYPE_LAYER;
-        buf[2] = layer;
+        buf[1] = packet_type;
+        buf[2] = value;
         HID().SendReport(HID_REPORTID_RAWHID, buf, INPUT_REPORT_LEN_RAW);
-    } else {
-        uint8_t buf[USB_RAW_HID_REPORT_SIZE] = {};
-        buf[0] = OVERLAY_MAGIC_BYTE;
-        buf[1] = PACKET_TYPE_LAYER;
-        buf[2] = layer;
-        HID().SendReport(HID_REPORTID_RAWHID, buf, USB_RAW_HID_REPORT_SIZE);
+        return;
     }
-}
+#endif
 
-void OverlayKeyDygma::notifyOverlayEvent(uint8_t event_type) {
-    OVERLAY_LOG("OverlayKeyDygma: overlay event=0x%02X ble=%d", event_type, (int)ble_connected());
-
-    if (ble_connected()) {
-        uint8_t buf[INPUT_REPORT_LEN_RAW] = {};
-        buf[0] = OVERLAY_MAGIC_BYTE;
-        buf[1] = PACKET_TYPE_OVERLAY;
-        buf[2] = event_type;
-        HID().SendReport(HID_REPORTID_RAWHID, buf, INPUT_REPORT_LEN_RAW);
-    } else {
-        uint8_t buf[USB_RAW_HID_REPORT_SIZE] = {};
-        buf[0] = OVERLAY_MAGIC_BYTE;
-        buf[1] = PACKET_TYPE_OVERLAY;
-        buf[2] = event_type;
-        HID().SendReport(HID_REPORTID_RAWHID, buf, USB_RAW_HID_REPORT_SIZE);
-    }
-}
-
-void OverlayKeyDygma::notifyOverlayTapKey(uint8_t event_type) {
-    OVERLAY_LOG("OverlayKeyDygma: OVERLAY_TAP key event=0x%02X ble=%d", event_type, (int)ble_connected());
-
-    if (ble_connected()) {
-        uint8_t buf[INPUT_REPORT_LEN_RAW] = {};
-        buf[0] = OVERLAY_MAGIC_BYTE;
-        buf[1] = PACKET_TYPE_OVERLAY_TAP;
-        buf[2] = event_type;
-        HID().SendReport(HID_REPORTID_RAWHID, buf, INPUT_REPORT_LEN_RAW);
-    } else {
-        uint8_t buf[USB_RAW_HID_REPORT_SIZE] = {};
-        buf[0] = OVERLAY_MAGIC_BYTE;
-        buf[1] = PACKET_TYPE_OVERLAY_TAP;
-        buf[2] = event_type;
-        HID().SendReport(HID_REPORTID_RAWHID, buf, USB_RAW_HID_REPORT_SIZE);
-    }
-}
-
-void OverlayKeyDygma::notifyOverlayHoldKey(uint8_t event_type) {
-    OVERLAY_LOG("OverlayKeyDygma: OVERLAY_HOLD key event=0x%02X ble=%d", event_type, (int)ble_connected());
-
-    if (ble_connected()) {
-        uint8_t buf[INPUT_REPORT_LEN_RAW] = {};
-        buf[0] = OVERLAY_MAGIC_BYTE;
-        buf[1] = PACKET_TYPE_OVERLAY_HOLD;
-        buf[2] = event_type;
-        HID().SendReport(HID_REPORTID_RAWHID, buf, INPUT_REPORT_LEN_RAW);
-    } else {
-        uint8_t buf[USB_RAW_HID_REPORT_SIZE] = {};
-        buf[0] = OVERLAY_MAGIC_BYTE;
-        buf[1] = PACKET_TYPE_OVERLAY_HOLD;
-        buf[2] = event_type;
-        HID().SendReport(HID_REPORTID_RAWHID, buf, USB_RAW_HID_REPORT_SIZE);
-    }
+    uint8_t buf[USB_RAW_HID_REPORT_SIZE] = {};
+    buf[0] = OVERLAY_MAGIC_BYTE;
+    buf[1] = packet_type;
+    buf[2] = value;
+    HID().SendReport(HID_REPORTID_RAWHID, buf, USB_RAW_HID_REPORT_SIZE);
 }
 
 // ---- Overlay key state machine -----------------------------------------------
@@ -137,9 +92,9 @@ EventHandlerResult OverlayKeyDygma::onKeyswitchEvent(Key &mapped_key, KeyAddr ke
     // Handle OVERLAY_TAP - simple tap key (sends PACKET_TYPE_OVERLAY_TAP)
     if (mapped_key.getRaw() == kaleidoscope::ranges::OVERLAY_TAP) {
         if (keyToggledOn(key_state)) {
-            notifyOverlayTapKey(OVERLAY_EVENT_TAP);
+            sendPacket(PACKET_TYPE_OVERLAY_TAP, OVERLAY_EVENT_TAP);
         } else if (keyToggledOff(key_state)) {
-            notifyOverlayTapKey(OVERLAY_EVENT_RELEASE);
+            sendPacket(PACKET_TYPE_OVERLAY_TAP, OVERLAY_EVENT_RELEASE);
         }
         return EventHandlerResult::EVENT_CONSUMED;
     }
@@ -147,9 +102,9 @@ EventHandlerResult OverlayKeyDygma::onKeyswitchEvent(Key &mapped_key, KeyAddr ke
     // Handle OVERLAY_HOLD - simple hold key (sends PACKET_TYPE_OVERLAY_HOLD)
     if (mapped_key.getRaw() == kaleidoscope::ranges::OVERLAY_HOLD) {
         if (keyToggledOn(key_state)) {
-            notifyOverlayHoldKey(OVERLAY_EVENT_HOLD);
+            sendPacket(PACKET_TYPE_OVERLAY_HOLD, OVERLAY_EVENT_HOLD);
         } else if (keyToggledOff(key_state)) {
-            notifyOverlayHoldKey(OVERLAY_EVENT_RELEASE);
+            sendPacket(PACKET_TYPE_OVERLAY_HOLD, OVERLAY_EVENT_RELEASE);
         }
         return EventHandlerResult::EVENT_CONSUMED;
     }
@@ -169,7 +124,7 @@ EventHandlerResult OverlayKeyDygma::onKeyswitchEvent(Key &mapped_key, KeyAddr ke
             case State::FIRST_UP:
                 // Second press within TAP_WINDOW_MS → double tap
                 overlay_state_ = State::DOUBLE_PRESSED;
-                notifyOverlayEvent(OVERLAY_EVENT_DOUBLE_TAP);
+                sendPacket(PACKET_TYPE_OVERLAY, OVERLAY_EVENT_DOUBLE_TAP);
                 break;
 
             default:
@@ -186,7 +141,7 @@ EventHandlerResult OverlayKeyDygma::onKeyswitchEvent(Key &mapped_key, KeyAddr ke
             case State::HOLD_ACTIVE:
             case State::DOUBLE_PRESSED:
                 overlay_state_ = State::IDLE;
-                notifyOverlayEvent(OVERLAY_EVENT_RELEASE);
+                sendPacket(PACKET_TYPE_OVERLAY, OVERLAY_EVENT_RELEASE);
                 break;
 
             default:
@@ -202,9 +157,15 @@ EventHandlerResult OverlayKeyDygma::onKeyswitchEvent(Key &mapped_key, KeyAddr ke
 
 EventHandlerResult OverlayKeyDygma::beforeReportingState() {
     // Send initial layer once a HID connection is established
-    if (!initial_sent_ && (ble_connected() || TinyUSBDevice.mounted())) {
+#ifdef NEURON_WIRED
+    const bool host_connected = TinyUSBDevice.mounted();
+#else
+    const bool host_connected = ble_connected() || TinyUSBDevice.mounted();
+#endif
+
+    if (!initial_sent_ && host_connected) {
         initial_sent_ = true;
-        notifyLayerChange(Layer.mostRecent());
+        sendPacket(PACKET_TYPE_LAYER, Layer.mostRecent());
     }
 
     // Resolve pending overlay key states by timer
@@ -212,14 +173,14 @@ EventHandlerResult OverlayKeyDygma::beforeReportingState() {
         case State::PRESSED:
             if (Runtime.hasTimeExpired(press_start_ms_, HOLD_TIMEOUT_MS)) {
                 overlay_state_ = State::HOLD_ACTIVE;
-                notifyOverlayEvent(OVERLAY_EVENT_HOLD);
+                sendPacket(PACKET_TYPE_OVERLAY, OVERLAY_EVENT_HOLD);
             }
             break;
 
         case State::FIRST_UP:
             if (Runtime.hasTimeExpired(release_ms_, TAP_WINDOW_MS)) {
                 overlay_state_ = State::IDLE;
-                notifyOverlayEvent(OVERLAY_EVENT_TAP);
+                sendPacket(PACKET_TYPE_OVERLAY, OVERLAY_EVENT_TAP);
             }
             break;
 
@@ -233,7 +194,7 @@ EventHandlerResult OverlayKeyDygma::beforeReportingState() {
 // ---- Layer change -----------------------------------------------------------
 
 EventHandlerResult OverlayKeyDygma::onLayerChange() {
-    notifyLayerChange(Layer.mostRecent());
+    sendPacket(PACKET_TYPE_LAYER, Layer.mostRecent());
     return EventHandlerResult::OK;
 }
 
