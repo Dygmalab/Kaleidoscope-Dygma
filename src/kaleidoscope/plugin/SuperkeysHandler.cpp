@@ -54,7 +54,7 @@ void SuperkeysHandler::setup(uint8_t active_superkeys, const Superkey::superkey_
 
     configured_superkeys = active_superkeys;
 
-    result = kbdfal_ll_memory_item_request( KBDMEM_ITEM_TYPE_SUPERKEY, (const void **)&p_superkey_config );
+    result = kbdfal_ll_memory_item_request( (const void **)&p_superkey_config, sizeof( superkey_config_t ) );
     ASSERT_DYGMA( result == RESULT_OK, "kbdfal_ll_memory_item_request failed" );
 
     cleanup();

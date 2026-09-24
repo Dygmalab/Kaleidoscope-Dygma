@@ -37,15 +37,6 @@ namespace kaleidoscope
         {
 
         public:
-            typedef struct PACK
-            {
-                // Superkey configurations
-                uint16_t hold_timeout_ms;
-                uint8_t overlap_threshold_ms;
-                uint16_t trigger_timeout_ms;
-            } superkey_config_t;
-
-        public:
             // Kaleidoscope plugin methods
 
             /**
@@ -101,7 +92,15 @@ namespace kaleidoscope
 
             static void save_superkey_map();
 
-            private:
+        private:
+
+            typedef struct PACK
+            {
+                // Superkey configurations
+                uint16_t hold_timeout_ms;
+                uint8_t overlap_threshold_ms;
+                uint16_t trigger_timeout_ms;
+            } superkey_config_t;
             
             static const superkey_config_t * p_superkey_config;
             

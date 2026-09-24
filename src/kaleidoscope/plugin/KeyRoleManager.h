@@ -35,13 +35,6 @@ class KeyRoleManager : public kaleidoscope::Plugin
 {
   public:
 
-    typedef struct PACK
-    {
-        Superkey::superkey_config_t superkeys[Utils::SUPER_KEY_COUNT];
-    } keyrole_config_t;
-
-  public:
-
     struct modified_keys_t
     {
         uint16_t sk_id;
@@ -130,6 +123,11 @@ class KeyRoleManager : public kaleidoscope::Plugin
     modified_keys_t* get_configured_qukeys(uint16_t qukey_id);
 
   private:
+
+    typedef struct PACK
+    {
+        Superkey::superkey_config_t superkeys[Utils::SUPER_KEY_COUNT];
+    } keyrole_config_t;
 
     const keyrole_config_t * p_keyrole_config = nullptr;
 
