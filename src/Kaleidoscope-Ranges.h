@@ -62,6 +62,13 @@ enum : uint16_t {
   OVERLAY_KEY,
   OVERLAY_TAP,
   OVERLAY_HOLD,
+  /* Autoshift: one code per base HID keycode. AUTOSHIFT_FIRST + keyCode, where
+   * keyCode must be in 0x04..0x38 (letters, digits, punctuation). Tap emits the
+   * base key, hold emits it with SHIFT_HELD. */
+  AUTOSHIFT_FIRST,
+  AUTOSHIFT_LAST = AUTOSHIFT_FIRST + 255,
+  /* CapsWord: single toggle key. Shifts alpha keys until the word ends. */
+  CAPS_WORD,
   SAFE_START,
   KALEIDOSCOPE_SAFE_START = SAFE_START
 };

@@ -101,6 +101,16 @@ namespace kaleidoscope
 
             static void save_superkey_map();
 
+            /**
+             * @brief Is there a superkey in flight, waiting to resolve?
+             *
+             * Plugins registered before keyRoleManager consume their events, so
+             * the timeline never sees them and cannot detect the interruption
+             * that would finalize a pending superkey. They must query this and
+             * let the key through as an ordinary key when it returns true.
+             */
+            static bool hasPendingSuperkey();
+
             private:
             
             static const superkey_config_t * p_superkey_config;
