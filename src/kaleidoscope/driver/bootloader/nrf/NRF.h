@@ -19,7 +19,7 @@ namespace nrf {
 class nrfBoot : public kaleidoscope::driver::bootloader::Base {
    public:
     static void rebootBootloader() {
-        EEPROM.erase();
+        EEPROM.erase_all();
         TinyUSBDevice.detach();
         bldrUtil::init();
         bldrUtil::update_request();
