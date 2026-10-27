@@ -31,9 +31,6 @@ extern "C"
 }
 #endif
 
-#include "Communications.h"
-
-
 namespace kaleidoscope
 {
 namespace device
@@ -47,31 +44,10 @@ Hand::Hand(HandSide side) : this_device_(side)
 {
 }
 
-bool inline filterHand(Communications_protocol::Devices incomingDevice,Hand::HandSide selectedDevice){
-    if(selectedDevice==Hand::RIGHT){
-        return incomingDevice == Communications_protocol::KEYSCANNER_DEFY_RIGHT || incomingDevice == Communications_protocol::BLE_DEFY_RIGHT ||
-               incomingDevice == Communications_protocol::RF_DEFY_RIGHT;
-    }else{
-        return incomingDevice == Communications_protocol::KEYSCANNER_DEFY_LEFT || incomingDevice == Communications_protocol::BLE_DEFY_LEFT ||
-               incomingDevice == Communications_protocol::RF_DEFY_LEFT;
-    }
-}
-
 void Hand::init()
 {
     /* Initialize the key data */
     keyDataReleaseAll( &key_data_ );
-
-    auto keyScanFunction = [this](Packet const &packet)
-    {
-        if (filterHand(packet.header.device, this_device_))
-        {
-            if (memcmp(key_data_.rows, packet.data, sizeof(key_data_.rows)) == 0) return;
-            new_key_ = true;
-            memcpy(key_data_.rows, packet.data, sizeof(key_data_.rows));
-        }
-    };
-    Communications.callbacks.bind(HAS_KEYS, keyScanFunction);
 }
 
 void Hand::releaseAllKeys()
@@ -104,6 +80,13 @@ bool Hand::keyDataAllReleased( key_data * p_key_data )
     }
 
     return true;
+}
+
+void Hand::keyDataAdd( const uint8_t * p_data, uint32_t data_len )
+{
+    if (memcmp(key_data_.rows, p_data, sizeof(key_data_.rows)) == 0) return;
+    new_key_ = true;
+    memcpy(key_data_.rows, p_data, sizeof(key_data_.rows));
 }
 
 } // namespace dygma_keyboards

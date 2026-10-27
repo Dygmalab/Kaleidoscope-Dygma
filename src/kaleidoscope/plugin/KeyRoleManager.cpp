@@ -335,7 +335,7 @@ EventHandlerResult KeyRoleManager::onSetup()
 {
     result_t result = RESULT_ERR;
 
-    result = kbdfal_ll_memory_item_request( KBDMEM_ITEM_TYPE_KEYROLE, (const void **)&p_keyrole_config );
+    result = kbdfal_ll_memory_item_request( (const void **)&p_keyrole_config, sizeof( keyrole_config_t ) );
     ASSERT_DYGMA( result == RESULT_OK, "kbdfal_ll_memory_item_request failed" );
 
     set_active_sk();
