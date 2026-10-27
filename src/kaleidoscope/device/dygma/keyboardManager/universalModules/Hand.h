@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include "kbd_core.h"
+
 #include "Communications_protocol.h"
 #include "common.h"
 
@@ -43,6 +45,7 @@ class Hand {
   explicit Hand(HandSide side);
   void init();
   void releaseAllKeys();
+  void keyDataAdd( const uint8_t * p_data, uint32_t data_len );
 
   HandSide this_device_;
 
