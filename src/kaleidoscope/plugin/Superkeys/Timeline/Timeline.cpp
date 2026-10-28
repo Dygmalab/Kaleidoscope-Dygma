@@ -223,4 +223,26 @@ bool Timeline::has_previous_superkey_pending(const KeyAddr& addr) const
     return false;
 }
 
+bool Timeline::has_pending_superkey() const
+{
+    for (uint8_t i = 0; i < count; ++i)
+    {
+        if (entries[i].type != Utils::KeyType::SUPERKEY ||
+            entries[i].context == nullptr)
+        {
+            continue;
+        }
+
+        // A superkey held past its hold timeout has already emitted its hold
+        // action and stays in the timeline only until it is released. Its
+        // outcome is settled, so it is not pending.
+        const Superkey* sk = static_cast<const Superkey*>(entries[i].context);
+        if (!sk->is_holded())
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 Timeline timeline; // Global instance of Timeline
