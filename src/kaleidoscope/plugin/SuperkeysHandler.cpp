@@ -387,6 +387,11 @@ EventHandlerResult SuperkeysHandler::onKeyswitchEvent(Key &mapped_key, KeyAddr k
     return result;
 }
 
+bool SuperkeysHandler::hasPendingSuperkey()
+{
+    return timeline.has_pending_superkey();
+}
+
 EventHandlerResult SuperkeysHandler::beforeReportingState()
 {
     // Process superkeys in timeline order to preserve correct finalization sequence

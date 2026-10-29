@@ -34,6 +34,14 @@ public:
     // appears before the entry at the provided address, and is still active.
     bool has_previous_superkey_pending(const KeyAddr& addr) const;
 
+    // Returns true if there is any SUPERKEY entry in the timeline whose outcome
+    // is still undecided. A superkey already resolved as a hold does not count,
+    // even though it stays in the timeline until released. Unlike
+    // has_previous_superkey_pending(), this is not relative to an address, so
+    // it can answer "is a superkey in flight right now?" for plugins that run
+    // before keyRoleManager and would otherwise hide keys from the timeline.
+    bool has_pending_superkey() const;
+
 private:
 
     Utils::TimelineEntry entries[MAX_ENTRIES];

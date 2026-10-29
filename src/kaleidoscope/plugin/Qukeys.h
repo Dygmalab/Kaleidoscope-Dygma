@@ -165,6 +165,31 @@ class Qukeys : public kaleidoscope::Plugin {
   // A wildcard value for a qukey that exists on every layer.
   static constexpr int8_t layer_wildcard{-1};
 
+  // Is there a key press sitting unflushed at the head of the queue, i.e. a
+  // tap/hold decision still in flight?
+  //
+  // Plugins registered before keyRoleManager consume their own events, so
+  // Qukeys never sees them and cannot close a chord with them. They must query
+  // this and let the key through as an ordinary key when it returns true.
+  //
+  // Deliberately conservative: this fires for any unflushed press, not just
+  // qukeys. `isQukey()` is not usable here because it is non-const and writes
+  // `queue_head_` as a side effect.
+  bool hasPendingQukey() const {
+    return active_ && !event_queue_.isEmpty() && !event_queue_.isRelease(0);
+  }
+
+  // Is this event Qukeys replaying something it swallowed earlier, rather than
+  // a fresh physical keypress?
+  //
+  // Flushed events deliberately do NOT carry INJECTED (see the comment on
+  // `flushing_queue_` below), so downstream plugins cannot tell a replay from a
+  // real press. Any plugin that makes a decision on toggle-on and needs that
+  // decision to survive the queue has to ask.
+  bool isReplayingQueuedEvent() const {
+    return flushing_queue_;
+  }
+
   // Kaleidoscope hook functions.
   EventHandlerResult onKeyswitchEvent(Key &mapped_key,
                                       KeyAddr key_addr,

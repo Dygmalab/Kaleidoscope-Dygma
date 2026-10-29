@@ -242,6 +242,21 @@ bool OneShot::isModifierActive(Key key) {
   return state_[idx].active;
 }
 
+bool OneShot::consumeOnKeyPress(Key key) {
+  bool is_cancelled = false;
+
+  prev_key_ = key;
+
+  for (uint8_t i = 0; i < ONESHOT_KEY_COUNT; i++) {
+    if (state_[i].active && !state_[i].pressed && !state_[i].sticky) {
+      is_cancelled = true;
+      cancelOneShot(i);
+    }
+  }
+
+  return is_cancelled;
+}
+
 void OneShot::cancel(bool with_stickies) {
   should_cancel_ = true;
   should_cancel_stickies_ = with_stickies;

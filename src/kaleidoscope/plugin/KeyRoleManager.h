@@ -77,6 +77,31 @@ class KeyRoleManager : public kaleidoscope::Plugin
      */
     EventHandlerResult beforeReportingState();
 
+    /**
+     * @brief Is a qukey or a superkey still waiting to resolve?
+     *
+     * Plugins registered before keyRoleManager (Autoshift, CapsWordTrigger)
+     * consume their own key events, which makes those keys invisible to the
+     * Qukeys chord detection and to the SuperKeys interruption detection --
+     * re-injecting them later does not help, because both filter INJECTED.
+     *
+     * The result is that e.g. a qukey with hold=Ctrl followed by an Autoshift
+     * key would emit a bare 'c' and only later the Ctrl, instead of Ctrl+C.
+     *
+     * Those plugins must call this before retaining a key and, when it returns
+     * true, let the key flow through untouched as an ordinary key.
+     */
+    bool hasPendingRoleKey();
+
+    /**
+     * @brief Is the current event a replay of a queued one, not a fresh press?
+     *
+     * Qukeys re-emits the events it swallowed without the INJECTED flag, so a
+     * toggle-on may be a replay. Plugins that decide something on toggle-on
+     * must not re-decide on the replay.
+     */
+    bool isReplayingQueuedEvent();
+
     EventHandlerResult onSetup();
 
     /**

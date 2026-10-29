@@ -53,6 +53,10 @@ class EEPROMSettings : public kaleidoscope::Plugin {
   static void version(uint8_t) DEPRECATED(EEPROMSETTINGS_VERSION_SET) {}
 
   static uint16_t requestSlice(uint16_t size);
+  /* Like requestSlice(), but the size stays out of the layout CRC. Only for
+   * blocks requested after every other slice: units flashed with an older
+   * firmware keep a matching CRC, so their default layer is still applied. */
+  static uint16_t requestAppendedSlice(uint16_t size);
   static void seal(void);
   static uint16_t crc(void);
   static uint16_t used(void);

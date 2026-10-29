@@ -72,6 +72,12 @@ class OneShot : public kaleidoscope::Plugin {
 
   static bool isModifierActive(Key key);
 
+  // For plugins that retain a key and emit it later on their own (Autoshift),
+  // so OneShot never sees that key press. Consumes every active, non-sticky,
+  // released one-shot right away, as an ordinary key press would at the end of
+  // its cycle. Returns true if anything was cancelled.
+  static bool consumeOnKeyPress(Key key);
+
   EventHandlerResult beforeReportingState();
   EventHandlerResult afterEachCycle();
   EventHandlerResult onKeyswitchEvent(Key &mapped_key, KeyAddr key_addr, uint8_t keyState);

@@ -610,6 +610,16 @@ EventHandlerResult KeyRoleManager::onKeyswitchEvent(Key &mapped_key, KeyAddr key
     return superkeysHandler.onKeyswitchEvent(mapped_key, key_addr, keyState);
 }
 
+bool KeyRoleManager::hasPendingRoleKey()
+{
+    return qukeys.hasPendingQukey() || superkeysHandler.hasPendingSuperkey();
+}
+
+bool KeyRoleManager::isReplayingQueuedEvent()
+{
+    return qukeys.isReplayingQueuedEvent();
+}
+
 EventHandlerResult KeyRoleManager::onFocusEvent(const char *command)
 {
     EventHandlerResult result = EventHandlerResult::OK;

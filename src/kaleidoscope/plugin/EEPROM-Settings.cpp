@@ -140,6 +140,16 @@ uint16_t EEPROMSettings::requestSlice(uint16_t size) {
   return start;
 }
 
+uint16_t EEPROMSettings::requestAppendedSlice(uint16_t size) {
+  if (sealed_)
+    return 0;
+
+  uint16_t start = next_start_;
+  next_start_ += size;
+
+  return start;
+}
+
 void EEPROMSettings::invalidate(void) {
   is_valid_ = false;
 }
