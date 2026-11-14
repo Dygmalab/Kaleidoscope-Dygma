@@ -69,6 +69,8 @@ enum : uint16_t {
   AUTOSHIFT_LAST = AUTOSHIFT_FIRST + 255,
   /* CapsWord: single toggle key. Shifts alpha keys until the word ends. */
   CAPS_WORD,
+  /* Grave Escape (QMK's QK_GESC): sends Escape, or ` when Shift or GUI is held. */
+  GRAVE_ESCAPE,
   SAFE_START,
   KALEIDOSCOPE_SAFE_START = SAFE_START
 };
